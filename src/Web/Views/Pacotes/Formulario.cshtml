@@ -1,0 +1,52 @@
+@model PacoteRequisicao
+@{
+    var novo = Model.Id is null;
+    ViewData["Title"] = novo ? "Novo pacote" : "Editar pacote";
+    var preco = Model.Preco == 0 ? "" : Model.Preco.ToString("0.00", new System.Globalization.CultureInfo("pt-BR"));
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@(novo ? "Novo pacote de créditos" : $"Editar {Model.Nome}")" voltar-href="/Pacotes" voltar-texto="Pacotes de créditos"
+                      descricao="A escolinha vê o nome, a quantidade de créditos e o preço. Fora de venda, o pacote some da tela de créditos."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[640px]">
+        <form asp-action="Salvar" method="post" novalidate>
+            <input type="hidden" asp-for="Id" />
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1 md:col-span-2">
+                        <label class="kt-form-label" asp-for="Nome">Nome</label>
+                        <input class="kt-input" asp-for="Nome" required maxlength="80" placeholder="Ex.: Básico, Temporada" autofocus />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Creditos">Créditos</label>
+                        <input class="kt-input" asp-for="Creditos" type="number" min="1" step="1" required />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Preco">Preço</label>
+                        <div class="kt-input-group">
+                            <span class="kt-input-addon">R$</span>
+                            <input class="kt-input" asp-for="Preco" type="text" inputmode="decimal" value="@preco" placeholder="0,00" required />
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Ordem">Ordem na vitrine</label>
+                        <input class="kt-input" asp-for="Ordem" type="number" min="0" max="999" step="1" />
+                        <span class="text-xs text-muted-foreground">Menor aparece primeiro.</span>
+                    </div>
+                    <div class="flex flex-col gap-1 justify-end">
+                        <label class="kt-label">
+                            <input class="kt-switch" asp-for="Ativo" type="checkbox" />
+                            <span class="text-sm text-foreground">À venda</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" asp-action="Index">Cancelar</a>
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>

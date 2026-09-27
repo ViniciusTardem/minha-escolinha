@@ -1,0 +1,114 @@
+@model PacotesViewModel
+@{
+    ViewData["Title"] = "Pacotes de créditos";
+    var integracao = Model.Integracao;
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Pacotes de créditos" descricao="O que as escolinhas compram pelo Stripe da LDNA. Mudar o preço não muda compra já feita: cada compra guarda o dela."
+                      meta="@($"{Model.Pacotes.Count} pacote(s)")">
+        <a class="kt-btn kt-btn-primary" asp-action="Novo"><i class="ki-filled ki-plus"></i> Novo pacote</a>
+    </cabecalho-pagina>
+
+    <div class="kt-card mb-5">
+        @if (Model.Pacotes.Count == 0)
+        {
+            <estado-vazio icone="ki-package" titulo="Nenhum pacote ainda" texto="Crie o primeiro pacote: nome, quantidade de créditos e preço. A escolinha vê os pacotes à venda na tela de créditos.">
+                <a class="kt-btn kt-btn-primary" asp-action="Novo"><i class="ki-filled ki-plus"></i> Novo pacote</a>
+            </estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[180px]">Pacote</th>
+                            <th class="min-w-[100px] text-end">Créditos</th>
+                            <th class="min-w-[110px] text-end">Preço</th>
+                            <th class="min-w-[120px] text-end hidden md:table-cell">Por crédito</th>
+                            <th class="min-w-[120px]">Situação</th>
+                            <th class="w-[1%] text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.Pacotes)
+                        {
+                            <tr>
+                                <td class="font-medium text-mono">@p.Nome</td>
+                                <td class="text-end text-mono">@Formatacao.Numero(p.Creditos)</td>
+                                <td class="text-end text-mono">@Formatacao.Moeda(p.Preco)</td>
+                                <td class="text-end text-secondary-foreground hidden md:table-cell">@Formatacao.Moeda(Math.Round(p.Preco / p.Creditos, 4))</td>
+                                <td><selo-status valor="p.Ativo ? SinalTela.PacoteAVenda : SinalTela.PacoteForaDeVenda"></selo-status></td>
+                                <td class="text-end">
+                                    <a class="kt-btn kt-btn-sm kt-btn-outline" asp-action="Editar" asp-route-id="@p.Id"><i class="ki-filled ki-notepad-edit"></i> Editar</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="kt-card">
+        <div class="kt-card-header flex-wrap gap-2">
+            <h3 class="kt-card-title">Integração com o Stripe</h3>
+            <span class="text-xs text-secondary-foreground">@integracao.Descricao</span>
+        </div>
+        <div class="kt-card-content flex flex-col gap-5">
+            <dl class="esc-dados">
+                <dt>Modo</dt>
+                <dd>@integracao.Descricao</dd>
+                <dt>Endereço do webhook</dt>
+                <dd>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <code class="text-xs" id="url-webhook-stripe">@integracao.UrlWebhook</code>
+                        <button class="kt-btn kt-btn-sm kt-btn-outline" type="button" data-esc-copiar="#url-webhook-stripe"><i class="ki-filled ki-copy"></i> Copiar</button>
+                    </div>
+                </dd>
+                <dt>Eventos a assinar</dt>
+                <dd class="flex flex-col gap-0.5">
+                    @foreach (var evento in integracao.EventosAssinar)
+                    {
+                        <code class="text-xs">@evento</code>
+                    }
+                </dd>
+                <dt>Segredo do webhook</dt>
+                <dd>@(integracao.SegredoWebhookConfigurado ? "configurado" : "não configurado: os webhooks são recusados; a varredura (a cada 20 min) e a volta do pagamento conferem as compras")</dd>
+            </dl>
+            <p class="text-xs text-muted-foreground">
+                No painel do Stripe, em Desenvolvedores › Webhooks, crie um endpoint com este endereço e só estes eventos, e grave o
+                segredo de assinatura (whsec_...) em Stripe:SegredoWebhook. Os eventos de outros usos da mesma conta chegam, ficam
+                registrados e são ignorados. Com o sistema em localhost, o Stripe não alcança o endereço: use o Stripe CLI
+                (stripe listen) ou conte com a varredura.
+            </p>
+        </div>
+        @if (integracao.UltimosWebhooks.Count > 0)
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[140px]">Recebido</th>
+                            <th class="min-w-[220px]">Evento</th>
+                            <th class="min-w-[110px]">Situação</th>
+                            <th class="min-w-[220px] hidden md:table-cell">Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var w in integracao.UltimosWebhooks)
+                        {
+                            <tr>
+                                <td class="text-secondary-foreground">@Formatacao.DataHora(w.RecebidoEm)</td>
+                                <td><code class="text-xs">@(w.Tipo ?? "—")</code></td>
+                                <td><selo-status valor="w.Situacao"></selo-status></td>
+                                <td class="hidden md:table-cell text-secondary-foreground">@(w.Observacao ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

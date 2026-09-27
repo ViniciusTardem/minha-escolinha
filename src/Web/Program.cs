@@ -11,10 +11,12 @@ using MinhaEscolinha.Application;
 using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
+using MinhaEscolinha.Application.Integracao.Stripe;
 using MinhaEscolinha.Domain.Comum;
 using MinhaEscolinha.Infrastructure;
 using MinhaEscolinha.Infrastructure.Data.Contexto;
 using MinhaEscolinha.Infrastructure.Data.Seed;
+using MinhaEscolinha.Infrastructure.Plataforma;
 using MinhaEscolinha.Infrastructure.Seguranca;
 using MinhaEscolinha.Web.Filters;
 using MinhaEscolinha.Web.Infraestrutura;
@@ -63,7 +65,7 @@ try
     builder.Services.AddScoped<IUsuarioAtual, UsuarioAtualHttp>();
     builder.Services.AddSingleton<IAmbienteExecucao, AmbienteExecucaoWeb>();
     builder.Services.AddAplicacao();
-    builder.Services.AddInfraestrutura(builder.Configuration);
+    builder.Services.AddInfraestrutura(builder.Configuration, builder.Environment.EnvironmentName, aviso => Log.Warning(aviso));
 
     // Chaves no banco: o cookie de login sobrevive à reciclagem do app pool (e a chave Asaas cifrada continua legível).
     var dataProtection = builder.Services.AddDataProtection()
@@ -163,6 +165,10 @@ try
             escopo.ServiceProvider.GetRequiredService<IHashSenha>(),
             escopo.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(SeedAdministradorPlataforma)));
         await escopo.ServiceProvider.GetRequiredService<ReconciliadorParametros>().ReconciliarAsync();
+
+        // Varredura das compras de créditos pendentes no Stripe (cobre o webhook perdido)
+        JobsPlataforma.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>(),
+            escopo.ServiceProvider.GetRequiredService<OpcoesStripe>());
     }
 
     // ── Pipeline ──

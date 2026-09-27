@@ -7,6 +7,8 @@ using MinhaEscolinha.Domain.Auditoria;
 using MinhaEscolinha.Domain.Comum;
 using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
+using MinhaEscolinha.Domain.Integracao;
+using MinhaEscolinha.Domain.Plataforma;
 
 namespace MinhaEscolinha.Infrastructure.Data.Contexto;
 
@@ -45,6 +47,9 @@ public class EscolinhaDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<ContaCreditos> ContasCreditos => Set<ContaCreditos>();
     public DbSet<MovimentoCredito> MovimentosCredito => Set<MovimentoCredito>();
     public DbSet<RegistroAlteracao> RegistrosAlteracao => Set<RegistroAlteracao>();
+    public DbSet<PacoteCreditos> PacotesCreditos => Set<PacoteCreditos>();
+    public DbSet<CompraCreditos> ComprasCreditos => Set<CompraCreditos>();
+    public DbSet<WebhookRecebido> WebhooksRecebidos => Set<WebhookRecebido>();
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

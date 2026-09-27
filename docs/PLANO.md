@@ -76,6 +76,7 @@ O registro completo, com data, está em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-AB
 | F0 — Esqueleto vivo (template §13) | — | **Pronto** | 26/09/2026 |
 | Design system (4 superfícies + vitrine `/dev/design`) | — | **Pronto** | 26/09/2026 |
 | S0 — Fundação: conta, identidade e permissões | 12 | **Pronto**: 11 concluídos + 1 parcial que depende da Turma (S1); aguardando commit | 26/09/2026 |
+| Extra EX-01 — Compra de pacotes de créditos pelo Stripe da LDNA (X08) | — | **Pronto** no modo Simulado; falta configurar as chaves de teste | 26/09/2026 |
 | S1 — Cadastro: turma, sessões, aluno, responsável, equipe | 20 | Próxima | — |
 | S2 — Mensageria e acesso das famílias | 14 | — | — |
 | S3 — Presença e controle de evasão | 6 | — | — |
@@ -91,8 +92,12 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
 ## 4. Próximos passos
 
 ### 4.0 Agora
-1. **Autorização de commit** do arranque + F0 + S0. O repositório tem a branch `main`, ainda sem commits. Proposta: um commit inicial com o esqueleto e o S0, e daí em diante uma branch por fatia (`fatia/s1-cadastro` etc.), com os IDs `BL-` nas mensagens.
-2. Confiar o certificado de desenvolvimento do SDK novo (§7).
+1. O S0 foi commitado na `main` (`a444b48`, 26/09/2026). A compra de créditos pelo Stripe (EX-01) aguarda autorização de commit; daí em diante, uma branch por fatia (`fatia/s1-cadastro` etc.), com os IDs `BL-` nas mensagens.
+2. **Stripe em modo de teste**, quando o responsável quiser sair do simulador:
+   - criar um sandbox próprio no painel do Stripe (P27);
+   - gravar em user-secrets `Stripe:Modo = Teste` e `Stripe:ChaveSecreta` (chave de teste, `sk_test_` ou `rk_test_` restrita);
+   - para os webhooks em localhost, rodar o Stripe CLI (`stripe listen --forward-to https://localhost:7186/api/v1/webhooks/stripe`) e gravar o `whsec_` que ele mostrar em `Stripe:SegredoWebhook`. Sem isso, a volta do pagamento e a varredura confirmam as compras.
+3. Confiar o certificado de desenvolvimento (§7).
 
 ### 4.1 O que o S1 precisa e ainda não existe
 - **A planilha real da escolinha piloto** (P21). Ela orienta os campos do cadastro e a deduplicação desde já, não só no S7.
@@ -197,6 +202,8 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | Hospedagem com HTTPS público | Webhooks do WhatsApp e da Asaas | P21 |
 | Identidade visual (logo, cor) | Trocar a marca provisória | D17 |
 | Confirmar os valores provisórios dos parâmetros com a escolinha | Nada bloqueia; a tela marca os provisórios | P05 |
+| Chaves de teste do Stripe (sandbox próprio) e, para produção, chave de produção + segredo do webhook | Sair do simulador (EX-01) | P27 |
+| Definir o plano recorrente (preço, periodicidade, créditos incluídos) e os pacotes à venda | Cobrança do plano pelo Stripe; venda real dos pacotes | P25, P26 |
 | A "Especificação Funcional e Técnica", se existir | Detalhe de campos por módulo | P21 |
 
 ---
@@ -213,3 +220,5 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | 26/09/2026 | **Volta ao .NET 9** (pedido do responsável: o servidor só tem o runtime 9): <ul><li>versões iguais às do DP;</li><li>o filtro por escolinha deixou de ser nomeado (recurso do EF 10);</li><li>a migration `Inicial` continua válida: o EF 9 não vê diferença de modelo, então não houve migração nova nem perda de dado.</li></ul> Build sem aviso, 132 testes passando, app conferido no navegador. |
 | 26/09/2026 | **Integrações:** a varredura por conteúdo achou dois clientes Asaas reaproveitáveis (HERANCA §3). Nenhum cliente de WhatsApp Cloud API. |
 | 26/09/2026 | **Resultado:** build sem aviso; 132 testes passando; 0 classes faltando; nenhum elemento fora da tela em 375 e 320 px nas 19 telas, no claro e no escuro. |
+| 26/09/2026 | **Commit do S0** na `main` (`a444b48`), autorizado pelo responsável. |
+| 26/09/2026 | **Extra EX-01, Stripe da LDNA** (decisão do responsável: só a LDNA cobra as escolinhas; a mensalidade do aluno continua na Asaas). Pacotes de créditos com compra pelo Checkout (cartão, boleto ou Pix), webhook assinado, job de conferência e varredura, no padrão de integração do DP, sem SDK. <ul><li>Validado no navegador com o simulador: compra por cartão (créditos na hora) e por boleto (créditos na confirmação).</li><li>Achado e tratado: o webhook e a volta do pagamento conferem a mesma compra ao mesmo tempo; a versão de linha já impedia o crédito em dobro, e agora a segunda conferência relê em vez de falhar (D27).</li></ul> 184 testes passando. |

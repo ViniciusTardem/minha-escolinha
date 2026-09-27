@@ -95,7 +95,7 @@ public partial class RegrasDeOuroTestes
 
     private static IEnumerable<(Type Controlador, MethodInfo Acao)> AcoesDosControllers() =>
         typeof(PermissaoAttribute).Assembly.GetTypes()
-            .Where(t => typeof(Controller).IsAssignableFrom(t) && !t.IsAbstract)
+            .Where(t => typeof(ControllerBase).IsAssignableFrom(t) && !t.IsAbstract)
             .SelectMany(c => c.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                 .Where(m => !m.IsSpecialName && m.GetCustomAttribute<NonActionAttribute>() is null)
                 .Select(m => (Controlador: c, Acao: m)));

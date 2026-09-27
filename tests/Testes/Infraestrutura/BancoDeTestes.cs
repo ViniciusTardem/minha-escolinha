@@ -8,11 +8,14 @@ using Microsoft.Extensions.Time.Testing;
 using MinhaEscolinha.Application;
 using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Comum;
+using MinhaEscolinha.Application.Integracao.Stripe;
+using MinhaEscolinha.Application.Plataforma;
 using MinhaEscolinha.Infrastructure.Acesso;
 using MinhaEscolinha.Infrastructure.Comum;
 using MinhaEscolinha.Infrastructure.Configuracao;
 using MinhaEscolinha.Infrastructure.Data.Contexto;
 using MinhaEscolinha.Infrastructure.Data.Interceptadores;
+using MinhaEscolinha.Infrastructure.Plataforma;
 using MinhaEscolinha.Infrastructure.Seguranca;
 using MinhaEscolinha.Infrastructure.Tempo;
 
@@ -67,6 +70,9 @@ public sealed class BancoDeTestes : IAsyncLifetime
         GarantirBancoDeTeste();
         await using var contexto = NovoContextoSemEscolinha();
         await contexto.Database.ExecuteSqlRawAsync("""
+            DELETE FROM WebhookRecebido;
+            DELETE FROM CompraCreditos;
+            DELETE FROM PacoteCreditos;
             DELETE FROM RegistroAlteracao;
             DELETE FROM MovimentoCredito;
             DELETE FROM ContaCreditos;
@@ -132,6 +138,19 @@ public sealed class AmbienteAplicacao : IDisposable
     public UsuarioDeTeste Usuario { get; } = new();
     public AmbienteDeTeste Ambiente { get; } = new();
 
+    /// <summary>Stripe em modo Teste, com segredo de webhook: o teste assina os eventos com <see cref="OpcoesStripe.SegredoWebhook"/>.</summary>
+    public OpcoesStripe Stripe { get; } = new()
+    {
+        Habilitado = true,
+        Modo = OpcoesStripe.ModoTeste,
+        ChaveSecreta = "sk_test_testes",
+        SegredoWebhook = "whsec_testes",
+        UrlPublica = "https://localhost:7186"
+    };
+
+    public GatewayStripeFalso GatewayStripe { get; } = new();
+    public AgendadorPlataformaDeTeste Agendador { get; } = new();
+
     private readonly ServiceProvider _servicos;
 
     public AmbienteAplicacao()
@@ -158,6 +177,10 @@ public sealed class AmbienteAplicacao : IDisposable
         services.AddScoped<IAcessoRepositorio, AcessoRepositorio>();
         services.AddScoped<MinhaEscolinha.Application.Configuracao.IConfiguracaoRepositorio, ConfiguracaoRepositorio>();
         services.AddScoped<MinhaEscolinha.Application.Configuracao.IConsultasPlataforma, ConsultasPlataforma>();
+        services.AddScoped<IPlataformaRepositorio, PlataformaRepositorio>();
+        services.AddSingleton(Stripe);
+        services.AddSingleton<IGatewayStripe>(GatewayStripe);
+        services.AddSingleton<IAgendadorPlataforma>(Agendador);
         _servicos = services.BuildServiceProvider();
     }
 

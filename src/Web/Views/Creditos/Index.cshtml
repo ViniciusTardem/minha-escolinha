@@ -1,45 +1,130 @@
-@model CreditosResposta
+@model CreditosViewModel
 @{
     ViewData["Title"] = "Créditos de mensagem";
-    var baixo = Model.Saldo < Model.AvisoSaldoAbaixoDe;
-    var paginacao = PaginacaoViewModel.De(Model.Movimentos, "movimento(s)", new Dictionary<string, string?>());
+    var creditos = Model.Creditos;
+    var baixo = creditos.Saldo < creditos.AvisoSaldoAbaixoDe;
+    var paginacao = PaginacaoViewModel.De(creditos.Movimentos, "movimento(s)", new Dictionary<string, string?>());
 }
 
 <div class="kt-container-fixed">
-    <cabecalho-pagina titulo="Créditos de mensagem" descricao="Cada mensagem de WhatsApp consome um crédito. A recarga é feita pela equipe da plataforma."></cabecalho-pagina>
+    <cabecalho-pagina titulo="Créditos de mensagem" descricao="Cada mensagem de WhatsApp consome um crédito. Compre pacotes aqui, pagando pelo Stripe, ou peça à equipe da LDNA."></cabecalho-pagina>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
         <div class="kt-card">
             <div class="kt-card-content flex flex-col gap-1">
                 <span class="text-xs text-secondary-foreground">Saldo</span>
-                <span class="text-3xl font-semibold text-mono">@Formatacao.Numero(Model.Saldo)</span>
+                <span class="text-3xl font-semibold text-mono">@Formatacao.Numero(creditos.Saldo)</span>
                 @if (baixo)
                 {
-                    <selo-status class="self-start" valor="SinalTela.SaldoCreditosBaixo" texto="@($"abaixo de {Model.AvisoSaldoAbaixoDe}")"></selo-status>
+                    <selo-status class="self-start" valor="SinalTela.SaldoCreditosBaixo" texto="@($"abaixo de {creditos.AvisoSaldoAbaixoDe}")"></selo-status>
                 }
             </div>
         </div>
         <div class="kt-card">
             <div class="kt-card-content flex flex-col gap-1">
                 <span class="text-xs text-secondary-foreground">Plano</span>
-                <span class="text-xl font-semibold text-mono">@Model.Plano</span>
-                <span class="text-xs text-muted-foreground">@(Model.Pacote ?? "Sem pacote definido")</span>
+                <span class="text-xl font-semibold text-mono">@creditos.Plano</span>
+                <span class="text-xs text-muted-foreground">@(creditos.Pacote ?? "Sem pacote definido")</span>
             </div>
         </div>
         <div class="kt-card">
             <div class="kt-card-content flex flex-col gap-1">
                 <span class="text-xs text-secondary-foreground">Aviso de saldo baixo</span>
-                <span class="text-xl font-semibold text-mono">@Model.AvisoSaldoAbaixoDe créditos</span>
+                <span class="text-xl font-semibold text-mono">@creditos.AvisoSaldoAbaixoDe créditos</span>
                 <a class="kt-link text-xs" href="/Parametros?dominio=Mensagem">Ajustar nos parâmetros</a>
             </div>
         </div>
     </div>
 
+    @if (Model.Compra.Habilitado)
+    {
+        <div class="kt-card mb-5">
+            <div class="kt-card-header flex-wrap gap-2">
+                <h3 class="kt-card-title">Comprar créditos</h3>
+                <span class="text-xs text-secondary-foreground">Pagamento pelo Stripe: cartão, boleto ou Pix · @Model.Compra.DescricaoIntegracao</span>
+            </div>
+            @if (Model.Compra.Pacotes.Count == 0)
+            {
+                <estado-vazio icone="ki-package" titulo="Nenhum pacote à venda" texto="A equipe da LDNA ainda não publicou os pacotes de créditos."></estado-vazio>
+            }
+            else
+            {
+                <div class="kt-card-content flex flex-col gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @foreach (var pacote in Model.Compra.Pacotes)
+                        {
+                            <div class="flex flex-col gap-3 rounded-xl border border-border p-4">
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-sm font-semibold text-mono">@pacote.Nome</span>
+                                    <span class="text-2xl font-semibold text-mono">@Formatacao.Numero(pacote.Creditos) <span class="text-sm font-normal text-secondary-foreground">créditos</span></span>
+                                    <span class="text-sm text-secondary-foreground">@Formatacao.Moeda(pacote.Preco)</span>
+                                </div>
+                                @if (Model.PodeComprar)
+                                {
+                                    <form asp-action="Comprar" method="post" class="mt-auto">
+                                        <input type="hidden" name="pacoteId" value="@pacote.Id" />
+                                        <button class="kt-btn kt-btn-primary w-full justify-center" type="submit"><i class="ki-filled ki-basket"></i> Comprar</button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <p class="text-xs text-muted-foreground">
+                        Os créditos entram no saldo quando o pagamento é confirmado: na hora, no cartão; boleto e Pix, quando o banco avisar.
+                        @(Model.PodeComprar ? "" : "Só o gestor da escolinha pode comprar.")
+                    </p>
+                </div>
+            }
+        </div>
+    }
+
+    @if (Model.Compra.Compras.Count > 0)
+    {
+        <div class="kt-card mb-5">
+            <div class="kt-card-header"><h3 class="kt-card-title">Compras</h3></div>
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[140px]">Quando</th>
+                            <th class="min-w-[160px]">Pacote</th>
+                            <th class="min-w-[90px] text-end">Créditos</th>
+                            <th class="min-w-[100px] text-end hidden md:table-cell">Valor</th>
+                            <th class="min-w-[150px]">Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Compra.Compras)
+                        {
+                            <tr>
+                                <td class="text-secondary-foreground">
+                                    <a class="kt-link" asp-action="Compra" asp-route-id="@c.Id">@Formatacao.DataHora(c.IniciadaEm)</a>
+                                </td>
+                                <td class="text-mono">@c.NomePacote</td>
+                                <td class="text-end text-mono">@Formatacao.Numero(c.Creditos)</td>
+                                <td class="text-end text-mono hidden md:table-cell">@Formatacao.Moeda(c.Valor)</td>
+                                <td>
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <selo-status valor="c.Situacao"></selo-status>
+                                        @if (c.RotuloMeio is { } meio)
+                                        {
+                                            <span class="text-xs text-secondary-foreground">@meio</span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
     <div class="kt-card">
         <div class="kt-card-header"><h3 class="kt-card-title">Histórico</h3></div>
-        @if (Model.Movimentos.Total == 0)
+        @if (creditos.Movimentos.Total == 0)
         {
-            <estado-vazio icone="ki-wallet" titulo="Nenhum movimento" texto="Quando a equipe conceder créditos e as mensagens começarem a sair (fatia S2), cada lançamento aparece aqui."></estado-vazio>
+            <estado-vazio icone="ki-wallet" titulo="Nenhum movimento" texto="Quando os créditos entrarem (compra ou concessão da equipe) e as mensagens começarem a sair (fatia S2), cada lançamento aparece aqui."></estado-vazio>
         }
         else
         {
@@ -55,7 +140,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var m in Model.Movimentos.Itens)
+                        @foreach (var m in creditos.Movimentos.Itens)
                         {
                             <tr>
                                 <td class="text-secondary-foreground">@Formatacao.DataHora(m.Em)</td>

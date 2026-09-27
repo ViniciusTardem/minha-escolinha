@@ -127,9 +127,10 @@ public static class CatalogoModulos
             "S0", SituacaoModulo.Disponivel, "/ContaRecebimento", Recurso.FinanceiroEscolinha),
 
         new("creditos", "Créditos de mensagem", "ki-wallet", SecaoEscolinha,
-            "Plano, saldo e histórico dos créditos de WhatsApp.",
-            "Cada mensagem de WhatsApp consome um crédito. Aqui ficam o plano, o saldo e cada concessão ou consumo.",
-            ["Saldo e plano", "Histórico de concessões e consumo"],
+            "Saldo, histórico e compra de pacotes de créditos de WhatsApp.",
+            "Cada mensagem de WhatsApp consome um crédito. Aqui ficam o saldo, cada concessão ou consumo e a compra de pacotes, " +
+            "paga pelo Stripe (cartão, boleto ou Pix): os créditos entram sozinhos quando o pagamento é confirmado.",
+            ["Saldo e plano", "Histórico de concessões e consumo", "Compra de pacotes pelo Stripe"],
             "S0", SituacaoModulo.Disponivel, "/Creditos", Recurso.ConfiguracaoEscolinha),
 
         new("importacao", "Importação", "ki-file-up", SecaoEscolinha,
@@ -143,6 +144,13 @@ public static class CatalogoModulos
             "Área da equipe LDNA: cria a escolinha junto com o 1º gestor, concede créditos de mensagem e dá acesso da equipe (auditado).",
             ["Nova escolinha com o 1º gestor", "Créditos de mensagem", "Acesso da equipe como gestor"],
             "S0", SituacaoModulo.Disponivel, "/Plataforma", SoPlataforma: true),
+
+        new("pacotes", "Pacotes de créditos", "ki-package", SecaoPlataforma,
+            "Pacotes de créditos que as escolinhas compram pelo Stripe da LDNA.",
+            "Nome, quantidade de créditos e preço de cada pacote à venda, e a integração com o Stripe: modo, endereço do " +
+            "webhook e os últimos eventos recebidos.",
+            ["Pacotes à venda", "Integração com o Stripe"],
+            "Extra", SituacaoModulo.Disponivel, "/Pacotes", SoPlataforma: true),
 
         new("jobs", "Jobs", "ki-timer", SecaoPlataforma,
             "Painel do Hangfire: tudo o que roda em segundo plano.",

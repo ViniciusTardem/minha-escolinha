@@ -18,7 +18,7 @@ namespace MinhaEscolinha.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "9.0.20")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -406,7 +406,7 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Property<Guid?>("UsuarioCadastro_ID")
                         .HasColumnType("uniqueidentifier");
 
-                    b.ComplexProperty(typeof(Dictionary<string, object>), "Endereco", "MinhaEscolinha.Domain.Configuracao.Escolinha.Endereco#Endereco", b1 =>
+                    b.ComplexProperty<Dictionary<string, object>>("Endereco", "MinhaEscolinha.Domain.Configuracao.Escolinha.Endereco#Endereco", b1 =>
                         {
                             b1.IsRequired();
 
@@ -603,6 +603,225 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.ToTable("ParametroEscolinha", (string)null);
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Integracao.WebhookRecebido", b =>
+                {
+                    b.Property<Guid>("WebhookRecebido_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("Corpo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EventoExterno")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Ip")
+                        .HasMaxLength(45)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(45)");
+
+                    b.Property<string>("Observacao")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Origem")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("ProcessadoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("RecebidoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Tentativas")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Tipo")
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("WebhookRecebido_ID")
+                        .HasName("PK_WebhookRecebido");
+
+                    b.HasIndex("Origem", "EventoExterno")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_WebhookRecebido_Origem_Evento");
+
+                    b.HasIndex("Origem", "RecebidoEm")
+                        .HasDatabaseName("IX_WebhookRecebido_Origem_RecebidoEm");
+
+                    b.ToTable("WebhookRecebido", (string)null);
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Plataforma.CompraCreditos", b =>
+                {
+                    b.Property<Guid>("CompraCreditos_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("AutorNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("Autor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ConcluidaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<int>("Creditos")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Erro")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ExpiraEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("IniciadaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("MeioPagamento")
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("NomePacote")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<Guid>("PacoteCreditos_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PagamentoId")
+                        .HasMaxLength(255)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("SessaoCheckoutId")
+                        .HasMaxLength(255)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Valor")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<byte[]>("Versao")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("CompraCreditos_ID")
+                        .HasName("PK_CompraCreditos");
+
+                    b.HasIndex("PacoteCreditos_ID");
+
+                    b.HasIndex("SessaoCheckoutId")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_CompraCreditos_SessaoCheckout")
+                        .HasFilter("[SessaoCheckoutId] IS NOT NULL");
+
+                    b.HasIndex("Escolinha_ID", "IniciadaEm")
+                        .HasDatabaseName("IX_CompraCreditos_Escolinha_IniciadaEm");
+
+                    b.HasIndex("Escolinha_ID", "Situacao")
+                        .HasDatabaseName("IX_CompraCreditos_Escolinha_Situacao");
+
+                    b.ToTable("CompraCreditos", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CompraCreditos_Creditos", "[Creditos] > 0");
+
+                            t.HasCheckConstraint("CK_CompraCreditos_Valor", "[Valor] > 0");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Plataforma.PacoteCreditos", b =>
+                {
+                    b.Property<Guid>("PacoteCreditos_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Creditos")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("Ordem")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Preco")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("PacoteCreditos_ID")
+                        .HasName("PK_PacoteCreditos");
+
+                    b.HasIndex("Ativo", "Ordem")
+                        .HasDatabaseName("IX_PacoteCreditos_Ativo_Ordem");
+
+                    b.ToTable("PacoteCreditos", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PacoteCreditos_Creditos", "[Creditos] > 0");
+
+                            t.HasCheckConstraint("CK_PacoteCreditos_Preco", "[Preco] >= 1");
+                        });
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Acesso.Credencial", b =>
                 {
                     b.HasOne("MinhaEscolinha.Domain.Acesso.Pessoa", "Pessoa")
@@ -692,6 +911,23 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_ParametroEscolinha_Escolinha");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Plataforma.CompraCreditos", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_CompraCreditos_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Plataforma.PacoteCreditos", null)
+                        .WithMany()
+                        .HasForeignKey("PacoteCreditos_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_CompraCreditos_PacoteCreditos");
                 });
 
             modelBuilder.Entity("MinhaEscolinha.Domain.Acesso.Pessoa", b =>

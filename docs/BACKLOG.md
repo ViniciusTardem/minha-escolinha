@@ -169,6 +169,16 @@ O parcial do S0 é o `BL-M02-12`: os parâmetros de turma estão no catálogo, m
 
 ---
 
+## Extras — pedidos do responsável fora dos 81 itens
+
+| ID | Entregável | Status | Onde está | Testes |
+|---|---|---|---|---|
+| `EX-01` | **Compra de pacotes de créditos pelo Stripe da LDNA** (X08): a equipe cadastra os pacotes; o gestor compra na tela de créditos e paga no Checkout do Stripe (cartão, boleto ou Pix); os créditos entram sozinhos quando o Stripe confirma, uma vez só. | Concluído (26/09/2026), no modo Simulado. Pronto para o modo Teste assim que as chaves forem configuradas. | <ul><li>Domínio: `Domain/Plataforma` (`PacoteCreditos`, `CompraCreditos`) e `Domain/Integracao/WebhookRecebido`.</li><li>Casos de uso: `Application/Plataforma` (serviços, `ProcessadorPagamentosStripe`, `ConferenciaCompraCreditos`) e `Application/Integracao/Stripe`.</li><li>Integração: `Infrastructure/Integracao/Stripe` (cliente HTTP, simulador, trava de ambiente) e `Infrastructure/Plataforma` (repositório e jobs).</li><li>Telas `/Creditos`, `/Creditos/Compra/{id}` e `/Pacotes`; webhook `/api/v1/webhooks/stripe`; simulador `/dev/stripe`.</li></ul> | 52 testes (`Plataforma/*`): assinatura do webhook, contrato HTTP, trava de ambiente, transições da compra e, no banco, o fluxo completo (webhook repetido, fora de ordem, conferências simultâneas, boleto, expiração, isolamento entre escolinhas, varredura) |
+
+Pendências do extra: P25 (plano recorrente), P26 (pacotes e preços comerciais), P27 (sandbox próprio no Stripe).
+
+---
+
 ## Critérios de aceite (seção 11) — onde nasce o teste de cada um
 
 | CA | Resumo | Fatia | Status |

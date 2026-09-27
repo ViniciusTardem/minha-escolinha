@@ -106,7 +106,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 
 **Herdadas do DP:**
 1. ❌ **Nunca `DateTime.Now`, `DateTime.UtcNow` ou `DateTime.Today`.** Use `IRelogioBrasil`, `DataHoraBrasil` ou `TimeProvider` (teste de arquitetura).
-2. ❌ **Nunca chamar sistema externo dentro do request HTTP.** Asaas e WhatsApp sempre por job Hangfire com retentativa.
+2. ❌ **Nunca chamar sistema externo dentro do request HTTP.** Asaas, WhatsApp e Stripe sempre por job Hangfire com retentativa. **Única exceção (D26):** abrir a sessão de pagamento do Stripe na compra de créditos. A pessoa espera para ir ao pagamento; a compra é gravada antes e a chamada é idempotente.
 3. ❌ **Nunca gravar URL temporária de terceiro.** Grave o identificador e busque de novo.
 4. ✅ **Todo job relê o estado antes de agir.** Entre agendar e executar, tudo pode ter mudado.
 5. ✅ **Quando o evento chega, cancele o que ficou pendente.** Pagamento confirmado para a régua na hora.
@@ -137,6 +137,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - o retorno é `ResultadoOperacao`, nunca exceção para regra de negócio: `Ok`, `Erro(mensagem, campo?)` ou `Invalido(validacao)`, que traz o campo da 1ª falha;
   - no controller, `ModelState.AdicionarErro(resultado)`: o campo com erro ganha `aria-invalid` (`CampoInvalidoTagHelper`), e o assistente em etapas abre na etapa dele;
   - em erro, devolva a tela com o que foi digitado; em sucesso, PRG + toast (`TempData[ChavesTempData.Sucesso]`).
+- **Concorrência:** entidade disputada tem versão de linha. O repositório traduz o conflito do EF para `ConflitoDeConcorrenciaException` (Application), e quem chama relê num escopo novo e decide de novo (D27). Nunca ignore o conflito.
 - **Validação:** FluentValidation na `Application`, com validador ao lado do DTO. Não use `FluentValidation.AspNetCore` (descontinuado).
 - **Usuário e contexto:**
   - `IUsuarioAtual.Id` é o `Pessoa_ID`;
@@ -205,6 +206,12 @@ dotnet user-secrets set "Seed:Administrador:Login" "<e-mail>" --project src/Web
 dotnet user-secrets set "Seed:Administrador:Nome" "<nome>" --project src/Web
 dotnet user-secrets set "Seed:Administrador:Senha" "<senha temporária>" --project src/Web   # troca obrigatória no 1º acesso
 
+# Stripe da LDNA (compra de créditos). Padrão: Simulado (/dev/stripe, sem conta). Para o modo de teste do Stripe:
+dotnet user-secrets set "Stripe:Modo" "Teste" --project src/Web
+dotnet user-secrets set "Stripe:ChaveSecreta" "sk_test_..." --project src/Web        # ou uma chave restrita rk_test_
+dotnet user-secrets set "Stripe:SegredoWebhook" "whsec_..." --project src/Web        # o que o Stripe CLI mostrar
+stripe listen --forward-to https://localhost:7186/api/v1/webhooks/stripe             # Stripe CLI: webhook em localhost
+
 # Certificado HTTPS de desenvolvimento do SDK novo (uma vez; o Windows pede confirmação)
 dotnet dev-certs https --trust
 ```
@@ -216,6 +223,11 @@ dotnet dev-certs https --trust
 - **.NET 9 perde o suporte em 10/11/2026.** O projeto está em .NET 9 porque o servidor só tem esse runtime (D02). Antes dessa data, instale o Hosting Bundle do .NET 10 no servidor e suba o projeto, ou publique self-contained (P24).
 - **Production exige certificado do Data Protection:** `DataProtection:CertificadoArquivo` e `DataProtection:CertificadoSenha`. Sem ele, o app **não sobe**. Perder o certificado significa perder as chaves Asaas de todas as escolinhas, e cada uma terá de vincular a conta de novo.
 - **Integrações:** os clientes Asaas (S4) e WhatsApp (S2) ainda não existem. Quando entrarem, nascem em modo **Simulado** (opções Simulado/Api e trava de ambiente, no padrão do DP) e só mudam para Api com credencial real. Já hoje, a conta Asaas de Produção só é aceita com o sistema em Production.
+- **Stripe da LDNA** (só a LDNA cobra as escolinhas, pelos pacotes de créditos; a mensalidade do aluno é da Asaas, R1). Trava de ambiente (`GuardaStripe`):
+  - **Simulado** em Production: a compra de créditos fica desligada, com aviso no log;
+  - **Teste** em Production: o app **não sobe**, porque crédito comprado com cartão de teste gastaria WhatsApp de verdade. Para testar num servidor, use o ambiente Homologacao;
+  - **Producao**: só em Production, com `Stripe:ConfirmarProducao = true`, chave `sk_live_`/`rk_live_` e `Stripe:SegredoWebhook`;
+  - em produção, cadastre no painel do Stripe o endpoint `https://<site>/api/v1/webhooks/stripe` com os 4 eventos de Checkout (a tela Plataforma › Pacotes de créditos mostra a URL e a lista).
 - **`docs/metronic/` não está no git.** Para rodar `npm run metronic` em outra máquina, copie de `Projetos\SaaS\Adama\docs\metronic`. O recorte servido (`wwwroot/assets`) já está versionado.
 - **SQL Express:** teto de 10 GB por banco (P22). O banco de desenvolvimento está com `AUTO_CLOSE` desligado, porque o Hangfire consulta o banco sem parar.
 - **O banco de desenvolvimento tem dados de validação:** as escolinhas A e B com os seus gestores. Não use esses dados em demonstração ao cliente sem limpar.

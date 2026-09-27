@@ -4,6 +4,8 @@ using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
+using MinhaEscolinha.Domain.Integracao;
+using MinhaEscolinha.Domain.Plataforma;
 
 namespace MinhaEscolinha.Web.Infraestrutura;
 
@@ -42,7 +44,9 @@ public enum SinalTela
 {
     ContaRecebimentoVinculada,
     ContaRecebimentoAusente,
-    SaldoCreditosBaixo
+    SaldoCreditosBaixo,
+    PacoteAVenda,
+    PacoteForaDeVenda
 }
 
 /// <summary>
@@ -68,9 +72,22 @@ public static class ApresentacaoStatus
         PapelAtuacao.Professor => ("Professor", VarianteSelo.Info),
         PapelAtuacao.Responsavel => ("Responsável", VarianteSelo.Neutro),
 
+        SituacaoCompraCreditos.AguardandoPagamento => ("Aguardando pagamento", VarianteSelo.Info),
+        SituacaoCompraCreditos.AguardandoConfirmacao => ("Boleto ou Pix emitido", VarianteSelo.Alerta),
+        SituacaoCompraCreditos.Paga => ("Paga", VarianteSelo.Sucesso),
+        SituacaoCompraCreditos.Expirada => ("Expirada", VarianteSelo.Neutro),
+        SituacaoCompraCreditos.Falhou => ("Falhou", VarianteSelo.Perigo),
+
+        SituacaoWebhook.Recebido => ("Recebido", VarianteSelo.Info),
+        SituacaoWebhook.Processado => ("Processado", VarianteSelo.Sucesso),
+        SituacaoWebhook.Ignorado => ("Ignorado", VarianteSelo.Neutro),
+        SituacaoWebhook.Falhou => ("Falhou", VarianteSelo.Perigo),
+
         SinalTela.ContaRecebimentoVinculada => ("Conta vinculada", VarianteSelo.Sucesso),
         SinalTela.ContaRecebimentoAusente => ("Sem conta", VarianteSelo.Alerta),
         SinalTela.SaldoCreditosBaixo => ("Saldo baixo", VarianteSelo.Alerta),
+        SinalTela.PacoteAVenda => ("À venda", VarianteSelo.Sucesso),
+        SinalTela.PacoteForaDeVenda => ("Fora de venda", VarianteSelo.Neutro),
 
         _ => (valor.ToString(), VarianteSelo.Neutro)
     };
@@ -149,4 +166,7 @@ public static class Formatacao
     public static string Data(DateTime? quando) => quando?.ToString("dd/MM/yyyy", PtBr) ?? "—";
 
     public static string Numero(int valor) => valor.ToString("N0", PtBr);
+
+    /// <summary>"R$ 1.234,50".</summary>
+    public static string Moeda(decimal valor) => valor.ToString("C", PtBr);
 }

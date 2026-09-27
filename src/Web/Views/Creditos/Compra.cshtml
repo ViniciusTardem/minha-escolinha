@@ -1,0 +1,94 @@
+@model CompraCreditosViewModel
+@{
+    ViewData["Title"] = "Compra de créditos";
+    var c = Model.Compra;
+    var acompanhar = !c.Final && !Model.Cancelada;
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Compra de créditos" voltar-href="/Creditos" voltar-texto="Créditos de mensagem"
+                      descricao="@($"{c.NomePacote}: {Formatacao.Numero(c.Creditos)} créditos por {Formatacao.Moeda(c.Valor)}.")"></cabecalho-pagina>
+
+    <div class="kt-card max-w-[720px]">
+        <div class="kt-card-content flex flex-col gap-5">
+            @switch (c.Situacao)
+            {
+                case SituacaoCompraCreditos.Paga:
+                    <div class="kt-alert kt-alert-light kt-alert-success flex items-start gap-3" role="status">
+                        <i class="ki-filled ki-check-circle text-lg shrink-0"></i>
+                        <span class="text-sm">Pagamento confirmado: @Formatacao.Numero(c.Creditos) créditos entraram no saldo@(Model.Saldo is { } saldo ? $" (saldo atual: {Formatacao.Numero(saldo)})" : "").</span>
+                    </div>
+                    break;
+                case SituacaoCompraCreditos.AguardandoConfirmacao:
+                    <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="status">
+                        <i class="ki-filled ki-time text-lg shrink-0"></i>
+                        <span class="text-sm">Boleto ou Pix emitido. Os créditos entram quando o banco confirmar o pagamento; o Stripe nos avisa, e esta página se atualiza sozinha enquanto estiver aberta.</span>
+                    </div>
+                    break;
+                case SituacaoCompraCreditos.Expirada:
+                    <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3" role="status">
+                        <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                        <span class="text-sm">O prazo do pagamento acabou sem pagamento. Nada foi cobrado; é só comprar de novo.</span>
+                    </div>
+                    break;
+                case SituacaoCompraCreditos.Falhou:
+                    <div class="kt-alert kt-alert-light kt-alert-destructive flex items-start gap-3" role="alert">
+                        <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                        <span class="text-sm">Não deu certo: @(c.Erro ?? "o pagamento não foi concluído"). Nada foi cobrado.</span>
+                    </div>
+                    break;
+                default:
+                    if (Model.Cancelada)
+                    {
+                        <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3" role="status">
+                            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                            <span class="text-sm">Você voltou sem concluir o pagamento. Nada foi cobrado; pode comprar de novo quando quiser.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3" role="status">
+                            <i class="ki-filled ki-time text-lg shrink-0"></i>
+                            <span class="text-sm">Confirmando o pagamento com o Stripe. Esta página se atualiza sozinha.</span>
+                        </div>
+                    }
+                    break;
+            }
+
+            <dl class="esc-dados">
+                <dt>Situação</dt>
+                <dd><selo-status valor="c.Situacao"></selo-status></dd>
+                <dt>Pacote</dt>
+                <dd>@c.NomePacote</dd>
+                <dt>Créditos</dt>
+                <dd>@Formatacao.Numero(c.Creditos)</dd>
+                <dt>Valor</dt>
+                <dd>@Formatacao.Moeda(c.Valor)</dd>
+                <dt>Meio de pagamento</dt>
+                <dd>@(c.RotuloMeio ?? "—")</dd>
+                <dt>Iniciada em</dt>
+                <dd>@Formatacao.DataHora(c.IniciadaEm) · @c.AutorNome</dd>
+                <dt>Concluída em</dt>
+                <dd>@Formatacao.DataHora(c.ConcluidaEm)</dd>
+            </dl>
+
+            @if (acompanhar)
+            {
+                <div hidden data-esc-compra-url="@Url.Action("SituacaoCompra", new { id = c.Id })" data-esc-compra-situacao="@c.Situacao"></div>
+                <p class="text-xs text-muted-foreground" hidden data-esc-compra-aviso>
+                    Ainda sem resposta do Stripe. Pode fechar esta página: quando o pagamento for confirmado, os créditos entram sozinhos.
+                </p>
+            }
+        </div>
+        <div class="kt-card-footer justify-end">
+            <a class="kt-btn kt-btn-outline" asp-action="Index"><i class="ki-filled ki-arrow-left"></i> Voltar aos créditos</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @if (acompanhar)
+    {
+        <script src="~/js/compra-creditos.js" asp-append-version="true"></script>
+    }
+}

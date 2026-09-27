@@ -192,7 +192,7 @@
 ```text
 default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;
 font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none';
-base-uri 'self'; frame-ancestors 'self'; form-action 'self'
+base-uri 'self'; frame-ancestors 'self'; form-action 'self' https://checkout.stripe.com
 ```
 
 | Diretiva | O que muda na tela |
@@ -203,6 +203,7 @@ base-uri 'self'; frame-ancestors 'self'; form-action 'self'
 | `connect-src 'self'` | `fetch` e SignalR só na mesma origem |
 | `worker-src` e `manifest-src` com `'self'` | já preparam a chamada offline (service worker, S3) |
 | `frame-ancestors 'self'` (e `X-Frame-Options: SAMEORIGIN`) | a vitrine põe a quadra e o portal em `<iframe>`; outro site não consegue |
+| `form-action 'self' https://checkout.stripe.com` | o POST "Comprar" dos pacotes de créditos redireciona para o Checkout do Stripe, e o navegador aplica o `form-action` também ao redirecionamento. Qualquer outro destino externo de formulário precisa entrar aqui, registrado |
 
 Também vão em toda resposta: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` e `Permissions-Policy` com câmera, microfone e geolocalização desligados.
 
@@ -319,7 +320,9 @@ A utility que falta nasce no `npm run css` quando uma View passa a usá-la; o ve
 | `AmbienteAsaas` | `Sandbox` → "Sandbox" · Info; `Producao` → "Produção" · Sucesso | Conta de recebimento |
 | `TipoMovimentoCredito` | `Concessao` → "Concessão" · Sucesso; `Consumo` → "Consumo" · Neutro; `Estorno` → "Estorno" · Info; `Ajuste` → "Ajuste" · Alerta | Créditos |
 | `PapelAtuacao` | `Gestor` → "Gestor" · Primario; `Professor` → "Professor" · Info; `Responsavel` → "Responsável" · Neutro | vitrine |
-| `SinalTela` (estados sem enum de domínio, definido em `Apresentacao.cs`) | `ContaRecebimentoVinculada` → "Conta vinculada" · Sucesso; `ContaRecebimentoAusente` → "Sem conta" · Alerta; `SaldoCreditosBaixo` → "Saldo baixo" · Alerta | Plataforma › Escolinhas, Conta de recebimento (`texto="Vinculada"`), Créditos (`texto="abaixo de N"`) |
+| `SinalTela` (estados sem enum de domínio, definido em `Apresentacao.cs`) | `ContaRecebimentoVinculada` → "Conta vinculada" · Sucesso; `ContaRecebimentoAusente` → "Sem conta" · Alerta; `SaldoCreditosBaixo` → "Saldo baixo" · Alerta; `PacoteAVenda` → "À venda" · Sucesso; `PacoteForaDeVenda` → "Fora de venda" · Neutro | Plataforma › Escolinhas, Conta de recebimento (`texto="Vinculada"`), Créditos (`texto="abaixo de N"`), Pacotes de créditos |
+| `SituacaoCompraCreditos` | `AguardandoPagamento` → "Aguardando pagamento" · Info; `AguardandoConfirmacao` → "Boleto ou Pix emitido" · Alerta; `Paga` · Sucesso; `Expirada` · Neutro; `Falhou` · Perigo | Créditos (compras), Compra de créditos |
+| `SituacaoWebhook` | `Recebido` · Info; `Processado` · Sucesso; `Ignorado` · Neutro; `Falhou` · Perigo | Pacotes de créditos (últimos webhooks) |
 
 Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e sem cor. **Máquina nova entra inteira no mapa, na mesma entrega:**
 
@@ -816,6 +819,11 @@ Com esses cabeçalhos, o servidor responde **JSON em vez de redirect**: 401, 403
 
 > **Limitação:** modal, dropdown, drawer, abas, tooltip e mostrar/ocultar senha do KTUI **não** são reiniciados por ela. Nenhuma tela do S0 injeta HTML, então o problema ainda não apareceu. Até a função ser estendida (planejado, antes da primeira tela com AJAX), chame também o `init()` estático do componente injetado: `KTDropdown.init()`, `KTModal.init()`, `KTDrawer.init()`, `KTTabs.init()`, `KTTooltip.init()`, `KTTogglePassword.init()`. Cada um cria instância só para os elementos novos.
 
+**Página que acompanha sozinha** (primeiro uso: a volta do pagamento, `Views/Creditos/Compra.cshtml` + `js/compra-creditos.js`):
+- **Marcador:** a View põe um `<div hidden data-esc-compra-url="..." data-esc-compra-situacao="...">` só enquanto o processo não terminou.
+- **Consulta:** o script pergunta a situação por `esc.fetch` a cada 3 s, por até 2 min. Quando a situação muda, recarrega a página (o servidor monta o estado novo); ao fim do prazo, mostra o aviso de que pode fechar.
+- **Arquivo próprio:** o script da tela entra pela seção `Scripts` do layout, sempre declarada no nível de cima da View (Razor não aceita `@section` dentro de `@if`; o `if` vai dentro da seção).
+
 ### 6.14 Busca rápida (Ctrl+K)
 
 - Abre com **Ctrl+K** (ou Cmd+K) em qualquer lugar, com **`/`** fora de campo de texto, e pelos botões do header (`data-kt-modal-toggle="#modal_busca"`).
@@ -1065,6 +1073,7 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 | `Formatacao.Cnpj(digitos)` | 14 dígitos → "00.000.000/0000-00" |
 | `Formatacao.Cep(digitos)` | "86010000" → "86010-000" |
 | `Formatacao.Numero(int)` | separador de milhar: "1.234" |
+| `Formatacao.Moeda(decimal)` | "R$ 1.234,50" |
 | `Formatacao.Parametro(definicao, valor, seVazio)` | valor de parâmetro como o gestor lê (abaixo) |
 
 `Formatacao.Parametro` recebe o valor gravado em texto invariável e devolve:
@@ -1138,6 +1147,13 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 | conta de recebimento | `ki-bank` | menu, Conta de recebimento, Painel |
 | plataforma, escolinhas | `ki-grid` | menu, header, Escolher escolinha, Plataforma |
 | jobs (Hangfire) | `ki-timer` | menu (não aparece na vitrine) |
+| pacotes de créditos | `ki-package` | menu, Pacotes de créditos, vitrine vazia de pacotes |
+| comprar | `ki-basket` | botão "Comprar" dos pacotes |
+| pagar com cartão; simulador do Stripe | `ki-credit-cart` | simulador (`/dev/stripe`) |
+| boleto | `ki-bill` | simulador (`/dev/stripe`) |
+| editar item da lista | `ki-notepad-edit` | Pacotes de créditos |
+| pagamento confirmado | `ki-check-circle` | Compra de créditos |
+| aguardando confirmação | `ki-time` | Compra de créditos |
 
 ### 9.3 Interface
 

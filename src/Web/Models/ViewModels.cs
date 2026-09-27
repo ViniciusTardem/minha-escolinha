@@ -1,5 +1,6 @@
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
+using MinhaEscolinha.Application.Plataforma;
 using MinhaEscolinha.Domain.Auditoria;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
 using MinhaEscolinha.Web.Infraestrutura;
@@ -38,3 +39,12 @@ public record ParametrosViewModel(
     IReadOnlyCollection<string> ChavesComErro);
 
 public record HistoricoParametrosViewModel(string? Chave, IReadOnlyList<RegistroAlteracao> Registros);
+
+/// <summary>Tela de créditos: saldo e histórico, e a compra de pacotes pelo Stripe para quem pode gastar pela escolinha.</summary>
+public record CreditosViewModel(CreditosResposta Creditos, TelaCompraCreditos Compra, bool PodeComprar);
+
+/// <summary>Volta do pagamento: a compra e, se ela ainda não terminou, a página acompanha sozinha.</summary>
+public record CompraCreditosViewModel(CompraResposta Compra, bool Cancelada, int? Saldo);
+
+/// <summary>Pacotes de créditos (equipe da plataforma) e a situação da integração com o Stripe.</summary>
+public record PacotesViewModel(IReadOnlyList<PacoteResposta> Pacotes, IntegracaoStripeResposta Integracao);

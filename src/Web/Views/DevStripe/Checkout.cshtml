@@ -1,0 +1,47 @@
+@model MinhaEscolinha.Infrastructure.Integracao.Stripe.ArmazemSimuladorStripe.SessaoSimulada
+@{
+    ViewData["Title"] = "Pagamento (simulador do Stripe)";
+    Layout = "_LayoutAutenticacao";
+    var valor = Formatacao.Moeda(Model.ValorCentavos / 100m);
+    var aberta = Model.Status == "open";
+}
+
+<div class="kt-card max-w-[420px] w-full">
+    <div class="kt-card-content flex flex-col gap-5 p-8 sm:p-10">
+        <div class="flex flex-col gap-2 text-center">
+            <span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-warning self-center">Simulador do Stripe · nada é cobrado</span>
+            <h1 class="text-lg font-medium text-mono">@valor</h1>
+            <p class="text-sm text-secondary-foreground">@Model.Descricao</p>
+        </div>
+
+        @if (aberta)
+        {
+            <div class="flex flex-col gap-2.5">
+                <form method="post" asp-action="Pagar" asp-route-id="@Model.Id">
+                    <input type="hidden" name="meio" value="card" />
+                    <button class="kt-btn kt-btn-primary w-full justify-center" type="submit"><i class="ki-filled ki-credit-cart"></i> Pagar com cartão (aprovado)</button>
+                </form>
+                <form method="post" asp-action="Pagar" asp-route-id="@Model.Id">
+                    <input type="hidden" name="meio" value="boleto" />
+                    <button class="kt-btn kt-btn-outline w-full justify-center" type="submit"><i class="ki-filled ki-bill"></i> Gerar boleto</button>
+                </form>
+                <form method="post" asp-action="Pagar" asp-route-id="@Model.Id">
+                    <input type="hidden" name="meio" value="pix" />
+                    <button class="kt-btn kt-btn-outline w-full justify-center" type="submit"><i class="ki-filled ki-copy"></i> Gerar Pix</button>
+                </form>
+            </div>
+            <p class="text-xs text-muted-foreground text-center">Boleto e Pix ficam aguardando: confirme ou recuse o pagamento em /dev/stripe.</p>
+            <form method="post" asp-action="Desistir" asp-route-id="@Model.Id" class="flex justify-center">
+                <button class="kt-btn kt-btn-ghost kt-btn-sm text-secondary-foreground" type="submit"><i class="ki-filled ki-arrow-left"></i> Voltar sem pagar</button>
+            </form>
+        }
+        else
+        {
+            <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3" role="status">
+                <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                <span class="text-sm">Esta sessão já está @(Model.Status == "expired" ? "expirada" : "concluída").</span>
+            </div>
+            <a class="kt-btn kt-btn-outline w-full justify-center" href="@Model.UrlSucesso">Ver a compra</a>
+        }
+    </div>
+</div>

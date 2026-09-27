@@ -42,6 +42,7 @@ A tabela da §4.5 do plano, com o status de hoje.
 | S0 | Entrar, trocar senha, escolher escolinha | todos · Autenticação | `authentication/branded/sign-in` | **Pronto** |
 | S0 | Plataforma › Escolinhas: lista e **nova escolinha em etapas** (escolinha → modalidade → 1º gestor; a senha aparece uma vez); concessão de créditos | equipe LDNA · Painel | `network/user-table/*`, `account/home/settings-plain` | **Pronto**, sem a etapa "revisão" prevista no plano |
 | S0 | Escolinha › Dados, Modalidades (perfil + interruptores), **Parâmetros** (abas por domínio, com histórico), Conta de recebimento Asaas (vincular ou trocar pedindo senha; mostra só o final da chave), Créditos (saldo e histórico); painel inicial com as próximas fatias como "em breve" | gestor · Painel | `account/home/company-profile`, `account/home/settings-sidebar`, `account/integrations`, `account/billing/history` | **Pronto** |
+| Extra EX-01 | Pacotes de créditos e integração com o Stripe (equipe); vitrine de pacotes e compras na tela de créditos, volta do pagamento (gestor); simulador `/dev/stripe` | equipe LDNA e gestor · Painel | `account/billing/*` | **Pronto** (modo Simulado) |
 | S1 | Turmas (ocupação de vagas), ficha da turma (horários, composição, sessões), nova turma em etapas; Agenda (por turma, professor ou quadra); Locais | gestor; professor só leitura das suas · Painel | `network/user-table/*`, `account/activity` | Em breve (`/turmas`, `/agenda`); Locais planejado |
 | S1 | Alunos (por turma ou visão geral), **ficha do aluno** (drawer com responsáveis, matrículas, saúde restrita, consentimentos, histórico), novo aluno em etapas com detecção de duplicidade, desligar (data + motivo + efeitos); Professores com disponibilidade | gestor; professor P · Painel | `public-profile/profiles/crm`, `account/members/*` | Em breve (`/alunos`); Professores planejado |
 | S2 | Mensagens (log de entrega + linha do tempo), Templates (categoria, tom, aprovação), Convites em lote, fila de verificação de vínculos, sino; ativação do convite; `/dev/whatsapp` (caixa de entrada por número, com botões Sim/Não) | gestor · Painel; convidado · Autenticação | `account/notifications`, `account/members/import-members` | Em breve (`/mensagens`); o resto planejado |
@@ -78,6 +79,8 @@ Ações sem tela própria:
 | Nova escolinha | `GET` e `POST /Plataforma/Nova` | `[Plataforma]` | Painel | assistente em 3 etapas: escolinha → modalidade → 1º gestor. Grava tudo de uma vez; em erro, volta na etapa do campo (D19) | M02-01, M01-01 |
 | Escolinha criada | `GET /Plataforma/Criada` | `[Plataforma]` | Painel | a senha temporária aparece uma única vez (TempData); sem ela, volta para a lista | M02-01 |
 | Conceder créditos | `GET /Plataforma/Creditos/{id}` e `POST /Plataforma/Creditos` | `[Plataforma]` | Painel | quantidade negativa = ajuste; o saldo nunca fica negativo | M02-11 |
+| Pacotes de créditos | `GET /Pacotes` | `[Plataforma]` | Painel | pacotes à venda (preço, créditos, por crédito) e a integração com o Stripe: modo, URL do webhook para copiar, eventos a assinar, segredo configurado e os últimos 10 webhooks | EX-01 |
+| Novo / editar pacote | `GET /Pacotes/Novo`, `GET /Pacotes/Editar/{id}` e `POST /Pacotes/Salvar` | `[Plataforma]` | Painel | preço em pt-BR (`50,00`); fora de venda some da tela da escolinha; compra já feita guarda o preço dela | EX-01 |
 | Jobs | `/jobs` | política `Jobs`: equipe LDNA sem troca de senha pendente | o painel do próprio Hangfire (fora do MVC) | item de menu da seção Plataforma | — |
 
 Ação sem tela própria: `POST /Plataforma/EntrarComoEquipe/{id}` cria o vínculo de gestor (auditado, D06) e entra na escolinha.
@@ -96,7 +99,9 @@ Ação sem tela própria: `POST /Plataforma/EntrarComoEquipe/{id}` cria o víncu
 | Histórico dos parâmetros | `GET /Parametros/Historico` (opcional `?chave=`) | `[Permissao(ConfiguracaoEscolinha)]` | Painel | antes → depois, quem e quando | M02-06 a M02-09 |
 | Conta de recebimento | `GET /ContaRecebimento` | `[Permissao(FinanceiroEscolinha)]` | Painel | ambiente, final da chave e data do vínculo | M02-10 |
 | Vincular ou trocar a conta | `GET` e `POST /ContaRecebimento/Vincular` | `FinanceiroEscolinha`, `Alterar` | Painel | pede a senha de quem troca; conta de Produção só com o sistema em Production | M02-10 |
-| Créditos | `GET /Creditos` (opcional `?pagina=`) | `[Permissao(ConfiguracaoEscolinha)]` | Painel | saldo, plano, aviso de saldo baixo e o histórico paginado; só leitura (quem concede é a plataforma) | M02-11 |
+| Créditos | `GET /Creditos` (opcional `?pagina=`) | `[Permissao(ConfiguracaoEscolinha)]` | Painel | saldo, plano, aviso de saldo baixo, **vitrine de pacotes** (com o Stripe ligado), compras e o histórico paginado | M02-11, EX-01 |
+| Comprar pacote | `POST /Creditos/Comprar` (`pacoteId`) | `FinanceiroEscolinha`, `Alterar` (só o gestor) | — | abre a sessão no Stripe e leva ao Checkout (cartão, boleto ou Pix); em falha, volta com o erro | EX-01 |
+| Compra de créditos | `GET /Creditos/Compra/{id}` (opcional `?cancelada=true`) e `GET /Creditos/SituacaoCompra/{id}` (JSON) | `[Permissao(ConfiguracaoEscolinha)]` | Painel | volta do Stripe: pede a conferência na hora e acompanha sozinha (`js/compra-creditos.js`, a cada 3 s, por até 2 min) | EX-01 |
 
 ### 2.4 Transversais
 
@@ -106,6 +111,8 @@ Ação sem tela própria: `POST /Plataforma/EntrarComoEquipe/{id}` cria o víncu
 | Erro | `/Erro` e `/Erro/{codigo}` | `[AllowAnonymous]` † | Painel com login; Autenticação sem | 404 "Página não encontrada", 403 "Acesso negado" e 500 "Algo deu errado", com o código de rastreio. Fora de Development, exceção vai para `/Erro`, e status sem corpo, para `/Erro/{codigo}` (menos em `/api`). Em Development, exceção abre a página do desenvolvedor |
 | Saúde | `GET /health` | anônimo | JSON | status do banco e do Hangfire, sem detalhe de erro |
 | Vitrine do design system | `/dev/design`, `/dev/design/quadra`, `/dev/design/portal`, `/dev/design/autenticacao` | `[AllowAnonymous]` † | Vitrine, Quadra, Portal e Autenticação | só em Development; fora dele, 404 |
+| Simulador do Stripe | `/dev/stripe` (sessões: confirmar, recusar, expirar) e `/dev/stripe/checkout/{id}` (pagar com cartão, gerar boleto ou Pix, desistir) | `[SomenteAutenticado]` | Painel; o checkout usa a Autenticação | só em Development com `Stripe:Modo = Simulado`; cada ação manda o webhook assinado ao endpoint de verdade (EX-01) |
+| Webhook do Stripe | `POST /api/v1/webhooks/stripe` | `[AllowAnonymous]` (assinatura `Stripe-Signature`) | API | grava o corpo bruto e responde 200; o job interpreta. 400 com assinatura inválida, 503 com o Stripe desligado (EX-01) |
 
 ---
 

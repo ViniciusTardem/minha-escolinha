@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
+using MinhaEscolinha.Application.Plataforma;
 
 namespace MinhaEscolinha.Application;
 
@@ -33,6 +34,12 @@ public static class DependencyInjection
         services.AddScoped<ReconciliadorParametros>();
         services.AddScoped<ServicoContaAsaas>();
         services.AddScoped<ServicoCreditos>();
+
+        // Plataforma — a LDNA vende pacotes de créditos às escolinhas (Stripe da LDNA; mensalidade de aluno segue na Asaas)
+        services.AddScoped<ServicoPacotesCreditos>();
+        services.AddScoped<ServicoCompraCreditos>();
+        services.AddScoped<ProcessadorPagamentosStripe>();
+        services.AddScoped<ConferenciaCompraCreditos>();
         return services;
     }
 }

@@ -4,6 +4,8 @@ namespace MinhaEscolinha.Web.Middleware;
 /// Cabeçalhos de segurança + CSP. <c>script-src 'self'</c>: nenhum script inline — JS só em arquivo, eventos por
 /// delegação (CLAUDE.md §6). <c>style-src</c> aceita inline porque o KTUI posiciona dropdowns/drawers por atributo style.
 /// <c>worker-src</c>/<c>manifest-src</c> já preparam a chamada offline (service worker da quadra, S3).
+/// <c>form-action</c> aceita o Checkout do Stripe: o POST de compra de créditos redireciona para lá, e o navegador
+/// aplica o form-action também ao redirecionamento.
 /// Portado do AlternativaDepartamentoPessoal, sem as origens externas de mídia do CRM de lá.
 /// </summary>
 public class CabecalhosSegurancaMiddleware(RequestDelegate next)
@@ -20,7 +22,7 @@ public class CabecalhosSegurancaMiddleware(RequestDelegate next)
         "object-src 'none'; " +
         "base-uri 'self'; " +
         "frame-ancestors 'self'; " +
-        "form-action 'self'";
+        "form-action 'self' https://checkout.stripe.com";
 
     public Task InvokeAsync(HttpContext context)
     {

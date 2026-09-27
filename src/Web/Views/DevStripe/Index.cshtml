@@ -1,0 +1,70 @@
+@model IReadOnlyList<MinhaEscolinha.Infrastructure.Integracao.Stripe.ArmazemSimuladorStripe.SessaoSimulada>
+@{
+    ViewData["Title"] = "Simulador do Stripe";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Simulador do Stripe" voltar-href="/Pacotes" voltar-texto="Pacotes de créditos"
+                      descricao="Sessões de pagamento do modo Simulado (só em Development). Cada ação manda o webhook assinado ao sistema, como o Stripe faria."
+                      meta="@($"{Model.Count} sessão(ões)")"></cabecalho-pagina>
+
+    <div class="kt-card">
+        @if (Model.Count == 0)
+        {
+            <estado-vazio icone="ki-credit-cart" titulo="Nenhuma sessão ainda" texto="Compre um pacote na tela de créditos de uma escolinha: a sessão aparece aqui."></estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[140px]">Criada</th>
+                            <th class="min-w-[220px]">Descrição</th>
+                            <th class="min-w-[100px] text-end">Valor</th>
+                            <th class="min-w-[200px]">Situação no Stripe</th>
+                            <th class="w-[1%] text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model)
+                        {
+                            var aguardando = s is { Status: "complete", SituacaoPagamento: "unpaid" } && s.SituacaoIntencao == "requires_action";
+                            <tr>
+                                <td class="text-secondary-foreground">@Formatacao.DataHora(MinhaEscolinha.Domain.Comum.DataHoraBrasil.ConverterParaBrasilia(s.CriadaEmUtc))</td>
+                                <td>
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="text-mono">@s.Descricao</span>
+                                        <code class="text-xs text-secondary-foreground">@s.Id</code>
+                                    </div>
+                                </td>
+                                <td class="text-end text-mono">@Formatacao.Moeda(s.ValorCentavos / 100m)</td>
+                                <td><code class="text-xs">@s.Status · @s.SituacaoPagamento@(s.MeioPagamento is null ? "" : $" · {s.MeioPagamento}")@(s.SituacaoIntencao is null ? "" : $" · {s.SituacaoIntencao}")</code></td>
+                                <td class="text-end">
+                                    <div class="flex items-center justify-end gap-2">
+                                        @if (s.Status == "open")
+                                        {
+                                            <a class="kt-btn kt-btn-sm kt-btn-outline" asp-action="Checkout" asp-route-id="@s.Id">Abrir pagamento</a>
+                                            <form method="post" asp-action="Expirar" asp-route-id="@s.Id">
+                                                <button class="kt-btn kt-btn-sm kt-btn-ghost" type="submit">Expirar</button>
+                                            </form>
+                                        }
+                                        @if (aguardando)
+                                        {
+                                            <form method="post" asp-action="Confirmar" asp-route-id="@s.Id">
+                                                <button class="kt-btn kt-btn-sm kt-btn-primary" type="submit">Confirmar pagamento</button>
+                                            </form>
+                                            <form method="post" asp-action="Recusar" asp-route-id="@s.Id">
+                                                <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit">Recusar</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
