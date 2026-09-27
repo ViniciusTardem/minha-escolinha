@@ -1,0 +1,119 @@
+@inject IAutorizacao Autorizacao
+@{
+    var nome = User.Identity?.Name ?? "Pessoa";
+    var inicial = nome.Length > 0 ? nome[..1].ToUpperInvariant() : "P";
+    var escolinha = User.FindFirst(ClaimsEscolinha.EscolinhaNome)?.Value;
+    var papeis = Autorizacao.EscolinhaId is null ? null : RotulosAcesso.Papeis(Autorizacao.Papeis);
+    var plataforma = Autorizacao.AdministradorPlataforma;
+}
+<header class="kt-header fixed top-0 z-10 start-0 end-0 flex items-stretch shrink-0 bg-background"
+        data-kt-sticky="true"
+        data-kt-sticky-class="border-b border-border"
+        data-kt-sticky-name="header"
+        id="header">
+    <div class="kt-container-fixed flex justify-between items-stretch lg:gap-4" id="headerContainer">
+
+        @* Logo + menu (só no celular; no desktop a sidebar mostra o logo) *@
+        <div class="flex gap-2.5 lg:hidden items-center -ms-1">
+            <a class="shrink-0 size-8 rounded-lg bg-primary flex items-center justify-center" asp-controller="Painel" asp-action="Index" aria-label="Início">
+                <i class="ki-filled ki-cup text-base text-primary-foreground"></i>
+            </a>
+            <button class="kt-btn kt-btn-icon kt-btn-ghost" data-kt-drawer-toggle="#sidebar" type="button" aria-label="Abrir menu">
+                <i class="ki-filled ki-menu"></i>
+            </button>
+        </div>
+
+        @* Escolinha da sessão (trocar: tela de escolha) e a busca rápida. *@
+        <div class="flex items-center gap-3 grow min-w-0">
+            @if (escolinha is not null)
+            {
+                <a class="hidden md:flex items-center gap-2 min-w-0 rounded-md px-2 py-1 hover:bg-accent" asp-controller="Conta" asp-action="EscolherEscolinha"
+                   title="Trocar de escolinha">
+                    <i class="ki-filled ki-home-3 text-primary"></i>
+                    <span class="flex flex-col leading-tight min-w-0">
+                        <span class="text-sm font-medium text-mono truncate">@escolinha</span>
+                        <span class="text-xs text-secondary-foreground truncate">@papeis</span>
+                    </span>
+                </a>
+            }
+            else if (plataforma)
+            {
+                <span class="hidden md:flex items-center gap-2 px-2">
+                    <i class="ki-filled ki-grid text-primary"></i>
+                    <span class="text-sm font-medium text-mono">Área da plataforma</span>
+                </span>
+            }
+            <button class="kt-input hidden lg:flex w-full max-w-[360px] justify-between text-muted-foreground cursor-pointer ms-auto" type="button"
+                    data-kt-modal-toggle="#modal_busca" aria-label="Buscar no sistema">
+                <span class="flex items-center gap-2">
+                    <i class="ki-filled ki-magnifier"></i>
+                    <span class="text-sm">Buscar telas…</span>
+                </span>
+                <span class="kt-kbd kt-kbd-xs">Ctrl K</span>
+            </button>
+        </div>
+
+        <div class="flex items-center gap-2 ms-auto">
+            <button class="kt-btn kt-btn-ghost kt-btn-icon size-9 rounded-full lg:hidden" type="button"
+                    data-kt-modal-toggle="#modal_busca" aria-label="Buscar">
+                <i class="ki-filled ki-magnifier text-lg"></i>
+            </button>
+
+            <div class="shrink-0 ms-1"
+                 data-kt-dropdown="true"
+                 data-kt-dropdown-offset="10px, 10px"
+                 data-kt-dropdown-placement="bottom-end"
+                 data-kt-dropdown-trigger="click">
+                <button class="flex items-center gap-2.5 cursor-pointer" data-kt-dropdown-toggle="true" type="button" aria-label="Menu da pessoa">
+                    <span class="hidden md:flex flex-col items-end gap-0.5">
+                        <span class="text-sm font-medium text-foreground leading-none">@nome</span>
+                        <span class="text-xs text-secondary-foreground leading-none">@(papeis ?? (plataforma ? "Equipe da plataforma" : ""))</span>
+                    </span>
+                    <span class="kt-avatar">
+                        <span class="kt-avatar-fallback border-2 border-primary text-sm font-semibold">@inicial</span>
+                    </span>
+                </button>
+
+                <div class="kt-dropdown-menu w-[270px]" data-kt-dropdown-menu="true">
+                    <div class="flex items-center gap-3 px-4 py-3 border-b border-border">
+                        <span class="kt-avatar">
+                            <span class="kt-avatar-fallback border-2 border-primary text-sm font-semibold">@inicial</span>
+                        </span>
+                        <div class="flex flex-col gap-1 min-w-0">
+                            <span class="text-sm text-foreground font-semibold leading-none truncate">@nome</span>
+                            <span class="text-xs text-secondary-foreground leading-none truncate">@User.FindFirst(ClaimsEscolinha.Login)?.Value</span>
+                        </div>
+                    </div>
+                    <div class="px-4 py-3 flex items-center justify-between border-b border-border">
+                        <span class="flex items-center gap-2 text-sm text-foreground">
+                            <i class="ki-filled ki-moon text-muted-foreground"></i> Modo escuro
+                        </span>
+                        <input class="kt-switch kt-switch-sm" data-kt-theme-switch-state="dark" data-kt-theme-switch-toggle="true"
+                               type="checkbox" aria-label="Modo escuro" />
+                    </div>
+                    <div class="px-3 py-3 flex flex-col gap-2">
+                        <a class="kt-btn kt-btn-outline kt-btn-sm justify-center w-full" asp-controller="Conta" asp-action="EscolherEscolinha">
+                            <i class="ki-filled ki-home-3"></i> Trocar de escolinha
+                        </a>
+                        @if (plataforma)
+                        {
+                            <form asp-controller="Conta" asp-action="UsarPlataforma" method="post">
+                                <button class="kt-btn kt-btn-outline kt-btn-sm justify-center w-full" type="submit">
+                                    <i class="ki-filled ki-grid"></i> Área da plataforma
+                                </button>
+                            </form>
+                        }
+                        <a class="kt-btn kt-btn-outline kt-btn-sm justify-center w-full" asp-controller="Conta" asp-action="TrocarSenha">
+                            <i class="ki-filled ki-key"></i> Trocar senha
+                        </a>
+                        <form asp-controller="Conta" asp-action="Sair" method="post">
+                            <button class="kt-btn kt-btn-outline kt-btn-sm justify-center w-full text-destructive" type="submit">
+                                <i class="ki-filled ki-exit-right"></i> Sair
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

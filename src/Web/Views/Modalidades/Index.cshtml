@@ -1,0 +1,66 @@
+@inject IAutorizacao Autorizacao
+@model IReadOnlyList<ModalidadeResposta>
+@{
+    ViewData["Title"] = "Modalidades";
+    var podeAlterar = Autorizacao.Pode(Recurso.ConfiguracaoEscolinha, Operacao.Alterar);
+
+    IEnumerable<string> Ligados(RecursosModalidade r)
+    {
+        if (r.Adversario) yield return "Adversário";
+        if (r.PlacarSumula) yield return "Placar/súmula";
+        if (r.Classificacao) yield return "Classificação";
+        if (r.Convocacao) yield return "Convocação";
+        if (r.Graduacao) yield return "Graduação";
+        if (r.Apresentacao) yield return "Apresentação";
+    }
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Modalidades" descricao="Cada modalidade tem um perfil e interruptores que decidem o que os eventos dela têm — o núcleo não assume esporte coletivo.">
+        @if (podeAlterar)
+        {
+            <a class="kt-btn kt-btn-primary" asp-action="Nova"><i class="ki-filled ki-plus"></i> Nova modalidade</a>
+        }
+    </cabecalho-pagina>
+
+    @if (Model.Count == 0)
+    {
+        <div class="kt-card">
+            <estado-vazio icone="ki-medal-star" titulo="Nenhuma modalidade" texto="Cadastre a modalidade que a escolinha oferece (ex.: Futsal)."></estado-vazio>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            @foreach (var m in Model)
+            {
+                <div class="kt-card">
+                    <div class="kt-card-header">
+                        <h3 class="kt-card-title flex items-center gap-2">
+                            <i class="ki-filled ki-medal-star text-primary"></i> @m.Nome
+                        </h3>
+                        <span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-primary">@ModelosPerfil.Rotulo(m.Perfil)</span>
+                    </div>
+                    <div class="kt-card-content flex flex-col gap-3">
+                        <div class="flex flex-wrap gap-1.5">
+                            @foreach (var recurso in Ligados(m.Recursos))
+                            {
+                                <span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-success">@recurso</span>
+                            }
+                        </div>
+                        <p class="text-sm text-secondary-foreground">
+                            Eventos: @string.Join(", ", MinhaEscolinha.Domain.Eventos.PoliticaPerfil.TiposDisponiveis(m.Perfil).Select(MinhaEscolinha.Domain.Eventos.PoliticaPerfil.Rotulo))
+                            · duração padrão @m.DuracaoPadraoEventoMinutos min
+                        </p>
+                    </div>
+                    @if (podeAlterar)
+                    {
+                        <div class="kt-card-footer justify-end">
+                            <a class="kt-btn kt-btn-sm kt-btn-outline" asp-action="Editar" asp-route-id="@m.Id"><i class="ki-filled ki-pencil"></i> Editar</a>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>

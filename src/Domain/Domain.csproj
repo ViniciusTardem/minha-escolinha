@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    TargetFramework, Nullable, ImplicitUsings, RootNamespace e AssemblyName vêm do
+    Directory.Build.props da raiz (MinhaEscolinha.Domain).
+
+    Domain nao referencia NENHUM pacote de proposito.
+    Se algo aqui precisar de EF Core, HttpClient ou ASP.NET, esta na camada errada.
+  -->
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(ProdutoPrefixo).Testes" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,42 @@
+@* Portal do responsável (S6): celular, sem instalar nada. No topo a escolinha e os chips dos filhos (uma conta só);
+   abas inferiores Início · Jogos · Pagamentos · Avisos; cartões grandes e linguagem simples.
+   docs/design/GUIA-DESIGN-SYSTEM.md §5. *@
+@{
+    var aba = ViewData["AbaPortal"] as string ?? "inicio";
+    string Atual(string chave) => aba == chave ? "page" : "false";
+}
+<!DOCTYPE html>
+<html class="h-full" data-kt-theme="true" data-kt-theme-mode="light" dir="ltr" lang="pt-BR">
+<head>
+    <partial name="_Cabeca" />
+</head>
+<body class="antialiased text-base text-foreground esc-portal esc-toque">
+    <header class="esc-portal-topo">
+        <div class="flex items-center justify-between gap-3">
+            <span class="flex flex-col leading-tight min-w-0">
+                <span class="text-xs text-secondary-foreground">Minha Escolinha</span>
+                <span class="text-base font-semibold text-mono truncate">@(ViewData["Escolinha"] ?? "Escolinha")</span>
+            </span>
+            <span class="kt-avatar">
+                <span class="kt-avatar-fallback border-2 border-primary text-sm font-semibold">@(ViewData["Inicial"] ?? "R")</span>
+            </span>
+        </div>
+        @await RenderSectionAsync("Filhos", required: false)
+    </header>
+
+    <main class="esc-portal-conteudo" role="main">
+        @RenderBody()
+    </main>
+
+    <nav class="esc-portal-abas" aria-label="Portal">
+        <a class="esc-portal-aba" href="#" aria-current="@Atual("inicio")"><i class="ki-filled ki-home-2"></i>Início</a>
+        <a class="esc-portal-aba" href="#" aria-current="@Atual("jogos")"><i class="ki-filled ki-cup"></i>Jogos</a>
+        <a class="esc-portal-aba" href="#" aria-current="@Atual("pagamentos")"><i class="ki-filled ki-dollar"></i>Pagamentos</a>
+        <a class="esc-portal-aba" href="#" aria-current="@Atual("avisos")"><i class="ki-filled ki-notification-status"></i>Avisos</a>
+    </nav>
+
+    <partial name="_Mensagens" />
+    <partial name="_Scripts" />
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

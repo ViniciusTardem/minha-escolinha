@@ -1,0 +1,93 @@
+@model ParametroResposta
+@* Editor de um parâmetro conforme o tipo do catálogo, com padrão, faixa, unidade, origem e a última alteração. *@
+@{
+    var d = Model.Definicao;
+    var id = "p_" + d.Chave.Replace('.', '_');
+    var nome = $"valores[{d.Chave}]";
+    var somenteLeitura = !(ViewData["PodeAlterar"] as bool? ?? false);
+    var invalido = (ViewData["ChavesComErro"] as IReadOnlyCollection<string>)?.Contains(d.Chave) == true ? "true" : null;
+    string? Faixa() => d.Minimo is null && d.Maximo is null ? null
+        : $"de {d.Minimo?.ToString("0.##")} a {d.Maximo?.ToString("0.##")}{(d.Unidade is null ? "" : " " + d.Unidade)}";
+    JanelaHorario.TentarLer(Model.Valor, out var janela);
+}
+<div class="grid grid-cols-1 md:grid-cols-[1fr_minmax(0,17rem)] gap-3 md:gap-6 items-start">
+    <div class="flex flex-col gap-1 min-w-0">
+        <label class="text-sm font-semibold text-mono flex flex-wrap items-center gap-2" for="@id">
+            @d.Rotulo
+            @if (d.Escopo == EscopoParametro.Turma)
+            {
+                <span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-info">valor inicial das turmas</span>
+            }
+            @if (d.Provisorio && Model.EhPadrao)
+            {
+                <span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-warning">provisório</span>
+            }
+        </label>
+        <span class="text-sm text-secondary-foreground">@d.Descricao</span>
+        <span class="text-xs text-muted-foreground">
+            Padrão: @Formatacao.Parametro(d, d.ValorPadrao, "sem padrão")@(Faixa() is { } faixa ? $" · faixa {faixa}" : "") · @d.Origem
+            @if (Model.UltimaAlteracao is { } ultima)
+            {
+                <text> · alterado por @ultima.AutorNome em @Formatacao.DataHora(ultima.Em)</text>
+            }
+        </span>
+    </div>
+
+    <div class="flex flex-col gap-1">
+        @switch (d.Tipo)
+        {
+            case TipoParametro.Booleano:
+                <label class="kt-label justify-start md:justify-end">
+                    <input class="kt-switch" type="checkbox" id="@id" name="@nome" value="true" checked="@(Model.Valor == "true")" disabled="@somenteLeitura" />
+                    <input type="hidden" name="@nome" value="false" disabled="@somenteLeitura" />
+                    <span class="text-sm text-foreground">@(Model.Valor == "true" ? "Ligado" : "Desligado")</span>
+                </label>
+                break;
+            case TipoParametro.Escolha:
+                <select class="kt-select" id="@id" name="@nome" aria-invalid="@invalido" disabled="@somenteLeitura">
+                    @foreach (var opcao in d.Opcoes ?? [])
+                    {
+                        <option value="@opcao.Valor" selected="@(opcao.Valor == Model.Valor)">@opcao.Rotulo</option>
+                    }
+                </select>
+                break;
+            case TipoParametro.Janela:
+                <div class="grid grid-cols-2 gap-2">
+                    <input class="kt-input" type="time" id="@id" name="janelaInicio[@d.Chave]" value="@janela.Inicio.ToString("HH\\:mm")" aria-label="@($"{d.Rotulo}: início")" aria-invalid="@invalido" disabled="@somenteLeitura" />
+                    <input class="kt-input" type="time" name="janelaFim[@d.Chave]" value="@janela.Fim.ToString("HH\\:mm")" aria-label="@($"{d.Rotulo}: fim")" aria-invalid="@invalido" disabled="@somenteLeitura" />
+                </div>
+                break;
+            case TipoParametro.ListaDias:
+                <input class="kt-input" type="text" id="@id" name="@nome" value="@Model.Valor?.Replace(",", ", ")" inputmode="numeric" aria-invalid="@invalido" disabled="@somenteLeitura" />
+                <span class="text-xs text-muted-foreground">Separe os dias por vírgula.</span>
+                break;
+            case TipoParametro.Percentual:
+            case TipoParametro.Moeda:
+                <div class="kt-input-group">
+                    @if (d.Tipo == TipoParametro.Moeda)
+                    {
+                        <span class="kt-input-addon">R$</span>
+                    }
+                    <input class="kt-input" type="text" id="@id" name="@nome" value="@Model.Valor?.Replace('.', ',')" inputmode="decimal" aria-invalid="@invalido" disabled="@somenteLeitura" />
+                    @if (d.Tipo == TipoParametro.Percentual)
+                    {
+                        <span class="kt-input-addon">%</span>
+                    }
+                </div>
+                break;
+            default:
+                <div class="kt-input-group">
+                    <input class="kt-input" type="number" id="@id" name="@nome" value="@Model.Valor" min="@d.Minimo" max="@d.Maximo" step="1" aria-invalid="@invalido" disabled="@somenteLeitura" />
+                    @if (d.Unidade is not null)
+                    {
+                        <span class="kt-input-addon">@d.Unidade</span>
+                    }
+                </div>
+                break;
+        }
+        @if (Model.UltimaAlteracao is not null)
+        {
+            <a class="kt-link text-xs md:self-end" asp-action="Historico" asp-route-chave="@d.Chave">Ver histórico</a>
+        }
+    </div>
+</div>

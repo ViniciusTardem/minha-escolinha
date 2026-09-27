@@ -1,0 +1,35 @@
+@* Painel (demo1 do Metronic): gestor, professor no computador e equipe da plataforma. Sidebar do CatalogoModulos filtrada
+   pelo motor de permissões; abaixo de lg a sidebar vira drawer. docs/design/GUIA-DESIGN-SYSTEM.md §5. *@
+<!DOCTYPE html>
+<html class="h-full" data-kt-theme="true" data-kt-theme-mode="light" dir="ltr" lang="pt-BR">
+<head>
+    <partial name="_Cabeca" />
+    @await RenderSectionAsync("Estilos", required: false)
+</head>
+<body class="antialiased flex h-full text-base text-foreground bg-background demo1 kt-sidebar-fixed kt-header-fixed esc-tela">
+    @* min-w-0: conteúdo largo (tabelas) rola dentro do próprio contêiner em vez de esticar a página. *@
+    <div class="flex grow min-w-0">
+        <partial name="_Sidebar" />
+
+        <div class="kt-wrapper flex grow flex-col min-w-0">
+            <partial name="_Header" />
+
+            <main class="grow pt-5 pb-8" id="content" role="main">
+                @RenderBody()
+            </main>
+
+            <partial name="_Footer" />
+        </div>
+    </div>
+
+    <partial name="_Mensagens" />
+    <partial name="_Modais" />
+    @await RenderSectionAsync("Modais", required: false)
+
+    <partial name="_Scripts" />
+    <script src="~/assets/js/layouts/demo1.js" asp-append-version="true"></script>
+    <script src="~/js/selecao-busca.js" asp-append-version="true"></script>
+    <script src="~/js/assistente.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

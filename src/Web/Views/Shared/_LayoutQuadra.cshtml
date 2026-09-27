@@ -1,0 +1,39 @@
+@* Quadra: o professor no celular, em pé, com uma mão e sinal ruim (chamada S3, convocação S5).
+   Sem sidebar; barra superior compacta com o selo de conexão; ação principal na barra inferior fixa (seção "BarraAcao").
+   Alvos de toque de 48 px e texto de input de 16 px (esc-toque). docs/design/GUIA-DESIGN-SYSTEM.md §5. *@
+@{
+    var voltar = ViewData["Voltar"] as string ?? "/";
+}
+<!DOCTYPE html>
+<html class="h-full" data-kt-theme="true" data-kt-theme-mode="light" dir="ltr" lang="pt-BR">
+<head>
+    <partial name="_Cabeca" />
+</head>
+<body class="antialiased text-base text-foreground bg-background esc-quadra esc-toque">
+    <header class="esc-quadra-topo">
+        <a class="kt-btn kt-btn-ghost kt-btn-icon" href="@voltar" aria-label="Voltar">
+            <i class="ki-filled ki-arrow-left text-lg"></i>
+        </a>
+        <span class="esc-quadra-titulo">@ViewData["Title"]</span>
+        <span class="esc-conexao" data-esc-conexao data-pendentes="@(ViewData["Pendentes"] ?? 0)" role="status" aria-live="polite">
+            <i class="ki-filled ki-wifi"></i>
+            <span data-esc-conexao-texto>Online</span>
+        </span>
+    </header>
+
+    <main class="esc-quadra-conteudo" role="main">
+        @RenderBody()
+    </main>
+
+    @if (IsSectionDefined("BarraAcao"))
+    {
+        <div class="esc-barra-acao">
+            @await RenderSectionAsync("BarraAcao")
+        </div>
+    }
+
+    <partial name="_Mensagens" />
+    <partial name="_Scripts" />
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

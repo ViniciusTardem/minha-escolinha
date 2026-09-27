@@ -1,0 +1,59 @@
+@model IReadOnlyList<EscolinhaDaPessoa>
+@{
+    ViewData["Title"] = "Escolher escolinha";
+    Layout = "_LayoutAutenticacao";
+    var atual = User.EscolinhaId();
+    var plataforma = User.EhPlataforma();
+}
+
+<div class="kt-card max-w-[460px] w-full">
+    <div class="kt-card-content flex flex-col gap-5 p-8 sm:p-10">
+        <div class="text-center">
+            <h1 class="text-lg font-medium text-mono leading-none mb-2.5">Em qual escolinha?</h1>
+            <p class="text-sm text-secondary-foreground">Você atua em mais de um lugar. Os dados de uma escolinha nunca aparecem na outra.</p>
+        </div>
+
+        @if (Model.Count == 0)
+        {
+            <estado-vazio icone="ki-home-3" titulo="Nenhuma escolinha" texto="Você ainda não atua em nenhuma escolinha."></estado-vazio>
+        }
+        else
+        {
+            <ul class="flex flex-col gap-2.5">
+                @foreach (var e in Model)
+                {
+                    <li>
+                        <form asp-action="EscolherEscolinha" method="post">
+                            <input type="hidden" name="escolinhaId" value="@e.EscolinhaId" />
+                            <button type="submit"
+                                    class="w-full flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-start hover:bg-accent @(e.EscolinhaId == atual ? "border-primary" : null)">
+                                <span class="size-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <i class="ki-filled ki-home-3 text-lg text-primary"></i>
+                                </span>
+                                <span class="flex flex-col min-w-0 grow">
+                                    <span class="text-sm font-semibold text-mono truncate">@e.Nome</span>
+                                    <span class="text-xs text-secondary-foreground">@RotulosAcesso.Papeis(e.Papeis)</span>
+                                </span>
+                                <i class="ki-filled ki-right text-muted-foreground"></i>
+                            </button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        }
+
+        @if (plataforma)
+        {
+            <form asp-action="UsarPlataforma" method="post">
+                <button class="kt-btn kt-btn-outline w-full justify-center" type="submit">
+                    <i class="ki-filled ki-grid"></i> Ir para a área da plataforma
+                </button>
+            </form>
+        }
+    </div>
+    <form asp-action="Sair" method="post" class="flex justify-center pb-6 -mt-3">
+        <button class="kt-btn kt-btn-ghost kt-btn-sm text-secondary-foreground" type="submit">
+            <i class="ki-filled ki-exit-right"></i> Sair
+        </button>
+    </form>
+</div>

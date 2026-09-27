@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = "Sub-11 · Ter 18:00";
+    ViewData["Voltar"] = "/dev/design";
+    ViewData["Pendentes"] = 3;
+    Layout = "_LayoutQuadra";
+    string[] alunos = ["Ana Beatriz Souza", "Bruno Henrique Lima", "Caio Ferreira", "Davi Martins Rocha", "Enzo Gabriel Alves", "Felipe Nunes", "Gustavo Oliveira Prado"];
+}
+
+@* Exemplo da chamada (S3) com dados fictícios: presença e falta em um toque, sem sinal, "Concluir" no polegar. *@
+<div class="flex items-center justify-between gap-3 mb-2">
+    <span class="text-sm text-secondary-foreground">@alunos.Length alunos · Quadra 2</span>
+    <span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-info">prevista</span>
+</div>
+
+<ul class="esc-linhas">
+    @for (var i = 0; i < alunos.Length; i++)
+    {
+        <li class="esc-linha-chamada">
+            <span class="esc-linha-chamada-nome">@alunos[i]</span>
+            <div class="esc-segmento" data-esc-escolha role="group" aria-label="@($"Presença de {alunos[i]}")">
+                <button class="esc-segmento-opcao esc-presente" type="button" aria-pressed="@(i % 3 == 0 ? "true" : "false")" data-valor="P">P</button>
+                <button class="esc-segmento-opcao esc-falta" type="button" aria-pressed="@(i == 4 ? "true" : "false")" data-valor="F">F</button>
+            </div>
+        </li>
+    }
+</ul>
+
+@section BarraAcao {
+    <button class="kt-btn kt-btn-outline" type="button"><i class="ki-filled ki-check-squared"></i> Todos presentes</button>
+    <button class="kt-btn kt-btn-primary" type="button"><i class="ki-filled ki-check"></i> Concluir chamada</button>
+}

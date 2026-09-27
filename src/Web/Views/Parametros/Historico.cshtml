@@ -1,0 +1,46 @@
+@model HistoricoParametrosViewModel
+@{
+    ViewData["Title"] = "Histórico dos parâmetros";
+    var definicao = Model.Chave is null ? null : CatalogoParametros.Obter(Model.Chave);
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@(definicao is null ? "Histórico dos parâmetros" : $"Histórico: {definicao.Rotulo}")" voltar-href="/Parametros" voltar-texto="Parâmetros"
+                      descricao="Quem mudou cada regra, quando, e o valor anterior (trilha de auditoria da escolinha)."></cabecalho-pagina>
+
+    <div class="kt-card">
+        @if (Model.Registros.Count == 0)
+        {
+            <estado-vazio icone="ki-time" titulo="Nenhuma alteração" texto="Todos os parâmetros ainda estão com o valor padrão."></estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[140px]">Quando</th>
+                            <th class="min-w-[200px]">Parâmetro</th>
+                            <th class="min-w-[120px]">Antes</th>
+                            <th class="min-w-[120px]">Depois</th>
+                            <th class="min-w-[160px] hidden md:table-cell">Quem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.Registros)
+                        {
+                            var d = CatalogoParametros.Obter(r.Campo);
+                            <tr>
+                                <td class="text-secondary-foreground">@Formatacao.DataHora(r.Em)</td>
+                                <td class="font-medium text-mono">@(d?.Rotulo ?? r.Campo)</td>
+                                <td class="text-secondary-foreground">@(d is null ? r.ValorAnterior ?? "—" : Formatacao.Parametro(d, r.ValorAnterior))</td>
+                                <td class="text-mono">@(d is null ? r.ValorNovo ?? "—" : Formatacao.Parametro(d, r.ValorNovo))</td>
+                                <td class="hidden md:table-cell text-secondary-foreground">@r.AutorNome</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

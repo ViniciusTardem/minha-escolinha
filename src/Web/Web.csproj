@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Versões centralizadas em Directory.Packages.props. Namespace/assembly: MinhaEscolinha.Web -->
+
+  <PropertyGroup>
+    <!-- Próprio da Minha Escolinha: reaproveitar o id de outro projeto faria o app ler os segredos (e o banco) de lá. -->
+    <UserSecretsId>minha-escolinha-web</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hangfire.AspNetCore" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <!-- Sobrepoe a Newtonsoft.Json 11.0.1 vulneravel trazida pelo Hangfire. Ver Infrastructure.csproj. -->
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\Application.csproj" />
+    <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!-- Build do CSS (npm) fica fora do publish: o servidor recebe só o resultado em wwwroot/. -->
+  <ItemGroup>
+    <Content Remove="package.json;package-lock.json" />
+    <None Include="package.json;package-lock.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="$(ProdutoPrefixo).Testes" />
+  </ItemGroup>
+
+</Project>

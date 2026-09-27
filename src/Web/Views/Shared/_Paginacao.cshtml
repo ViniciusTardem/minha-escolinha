@@ -1,0 +1,37 @@
+@model PaginacaoViewModel
+@{
+    string Link(int numero)
+    {
+        var valores = new RouteValueDictionary();
+        foreach (var (chave, valor) in Model.Parametros)
+            if (!string.IsNullOrEmpty(valor)) valores[chave] = valor;
+        if (numero > 1) valores["pagina"] = numero;
+        return Url.Action(null, valores) ?? "#";
+    }
+}
+<div class="kt-card-footer flex flex-wrap items-center justify-between gap-3 text-sm text-secondary-foreground">
+    <span>
+        @if (Model.Total == 0)
+        {
+            <text>Nenhum(a) @Model.Rotulo</text>
+        }
+        else
+        {
+            <text>@Model.PrimeiroItem–@Model.UltimoItem de @Model.Total @Model.Rotulo</text>
+        }
+    </span>
+    @if (Model.TotalPaginas > 1)
+    {
+        <nav class="flex items-center gap-1.5" aria-label="Paginação">
+            @if (Model.Numero > 1)
+            {
+                <a class="kt-btn kt-btn-sm kt-btn-outline" href="@Link(Model.Numero - 1)"><i class="ki-filled ki-left"></i> Anterior</a>
+            }
+            <span class="px-2">Página @Model.Numero de @Model.TotalPaginas</span>
+            @if (Model.Numero < Model.TotalPaginas)
+            {
+                <a class="kt-btn kt-btn-sm kt-btn-outline" href="@Link(Model.Numero + 1)">Próxima <i class="ki-filled ki-right"></i></a>
+            }
+        </nav>
+    }
+</div>

@@ -1,0 +1,64 @@
+@model ParametrosViewModel
+@{
+    ViewData["Title"] = "Parâmetros de regra";
+    var alterados = Model.Parametros.Count(p => !p.EhPadrao);
+    var provisorios = Model.Parametros.Count(p => p.Definicao.Provisorio && p.EhPadrao);
+    ViewData["PodeAlterar"] = Model.PodeAlterar;
+    ViewData["ChavesComErro"] = Model.ChavesComErro;
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Parâmetros de regra" descricao="As regras sensíveis do negócio, por escolinha: mudar aqui vale na próxima ação do sistema, sem nova versão do software.">
+        <a class="kt-btn kt-btn-outline" asp-action="Historico"><i class="ki-filled ki-time"></i> Histórico</a>
+    </cabecalho-pagina>
+
+    <nav class="esc-abas mb-5" aria-label="Domínios">
+        @foreach (var dominio in Model.Dominios)
+        {
+            <a class="esc-aba" asp-action="Index" asp-route-dominio="@dominio" aria-current="@(dominio == Model.Dominio ? "page" : null)">
+                @CatalogoParametros.RotuloDominio(dominio)
+            </a>
+        }
+    </nav>
+
+    @if (provisorios > 0)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3 mb-5 max-w-[900px]" role="status">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <span class="text-sm">
+                @provisorios valor(es) desta aba são provisórios: a especificação não define o padrão e eles foram escolhidos para o piloto
+                (marcados com <span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-warning">provisório</span>). Confirme com a escolinha.
+            </span>
+        </div>
+    }
+
+    <div class="kt-card max-w-[900px]">
+        <form asp-action="Salvar" method="post" novalidate>
+            <input type="hidden" name="dominio" value="@Model.Dominio" />
+            <div class="kt-card-header">
+                <h3 class="kt-card-title">@CatalogoParametros.RotuloDominio(Model.Dominio)</h3>
+                <span class="text-sm text-secondary-foreground">@alterados ajustado(s) para a escolinha</span>
+            </div>
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="px-5 pt-5">
+                    <partial name="_ErrosFormulario" />
+                </div>
+            }
+            <ul class="esc-linhas">
+                @foreach (var parametro in Model.Parametros)
+                {
+                    <li class="px-5 py-4">
+                        <partial name="_CampoParametro" model="parametro" />
+                    </li>
+                }
+            </ul>
+            @if (Model.PodeAlterar)
+            {
+                <div class="kt-card-footer justify-end">
+                    <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Salvar @CatalogoParametros.RotuloDominio(Model.Dominio)</button>
+                </div>
+            }
+        </form>
+    </div>
+</div>

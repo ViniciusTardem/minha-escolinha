@@ -1,0 +1,49 @@
+@model VincularContaAsaasRequisicao
+@{
+    ViewData["Title"] = "Vincular conta de recebimento";
+    var ambiente = ViewData["Ambiente"] as MinhaEscolinha.Application.Comum.IAmbienteExecucao;
+    var producaoPermitida = ambiente?.EhProducao == true;
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Vincular conta de recebimento" voltar-href="/ContaRecebimento" voltar-texto="Conta de recebimento"
+                      descricao="Trocar a conta muda para onde vai o dinheiro das mensalidades: por isso pede a sua senha e fica registrado."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[640px]">
+        <form asp-action="Vincular" method="post" novalidate autocomplete="off">
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+
+                <div class="flex flex-col gap-1">
+                    <label class="kt-form-label" asp-for="Ambiente">Ambiente da conta</label>
+                    <select class="kt-select" asp-for="Ambiente">
+                        <option value="@AmbienteAsaas.Sandbox">Sandbox (testes, sem dinheiro de verdade)</option>
+                        @if (producaoPermitida)
+                        {
+                            <option value="@AmbienteAsaas.Producao">Produção</option>
+                        }
+                    </select>
+                    @if (!producaoPermitida)
+                    {
+                        <span class="text-xs text-muted-foreground">Fora do sistema em produção, só conta Sandbox é aceita.</span>
+                    }
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="kt-form-label" asp-for="ChaveApi">Chave de API da conta Asaas</label>
+                    <input class="kt-input font-mono" asp-for="ChaveApi" type="password" autocomplete="off" spellcheck="false" />
+                    <span class="text-xs text-muted-foreground">No Asaas: Integrações → Chave de API. Ela é gravada cifrada; só os 4 últimos caracteres aparecem depois.</span>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                    <label class="kt-form-label" asp-for="SenhaAtual">A sua senha</label>
+                    <input class="kt-input" asp-for="SenhaAtual" type="password" autocomplete="current-password" />
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" asp-action="Index">Cancelar</a>
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Vincular</button>
+            </div>
+        </form>
+    </div>
+</div>

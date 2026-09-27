@@ -1,0 +1,9 @@
+@* Mensagens de TempData → toast KTUI (wwwroot/js/app.js). Sem script inline por causa da CSP. *@
+@{
+    var sucesso = TempData[ChavesTempData.Sucesso] as string;
+    var erro = TempData[ChavesTempData.Erro] as string;
+}
+@if (!string.IsNullOrEmpty(sucesso) || !string.IsNullOrEmpty(erro))
+{
+    <div hidden data-esc-mensagens data-sucesso="@sucesso" data-erro="@erro"></div>
+}

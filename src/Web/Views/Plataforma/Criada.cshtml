@@ -1,0 +1,51 @@
+@model EscolinhaCriada
+@{
+    ViewData["Title"] = "Escolinha criada";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@($"{Model.Nome} criada")" descricao="A escolinha, a modalidade, os parâmetros com os valores padrão e o acesso do gestor foram gravados juntos."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[600px]">
+        <div class="kt-card-content flex flex-col gap-5">
+            @if (Model.SenhaTemporaria is not null)
+            {
+                <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="alert">
+                    <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                    <span class="text-sm">
+                        Copie e entregue a senha a <strong>@Model.GestorNome</strong> por um canal seguro.
+                        Esta senha aparece só agora — ao sair desta página não será possível vê-la de novo.
+                    </span>
+                </div>
+
+                <dl class="esc-dados">
+                    <dt>Gestor</dt>
+                    <dd>@Model.GestorNome</dd>
+                    <dt>Login</dt>
+                    <dd>@Model.Login</dd>
+                    <dt>Senha temporária</dt>
+                    <dd class="flex items-center gap-2">
+                        <span class="esc-senha-temporaria text-lg font-semibold text-mono" id="senha-temporaria">@Model.SenhaTemporaria</span>
+                        <button class="kt-btn kt-btn-sm kt-btn-outline" type="button" data-esc-copiar="#senha-temporaria">
+                            <i class="ki-filled ki-copy"></i> Copiar
+                        </button>
+                    </dd>
+                </dl>
+                <p class="text-xs text-muted-foreground">No primeiro acesso, o sistema obriga a troca por uma senha pessoal.</p>
+            }
+            else
+            {
+                <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3" role="status">
+                    <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                    <span class="text-sm">
+                        <strong>@Model.GestorNome</strong> (@Model.Login) já tinha acesso: agora atua também nesta escolinha, com a mesma senha.
+                    </span>
+                </div>
+            }
+        </div>
+        <div class="kt-card-footer justify-end gap-2.5">
+            <a class="kt-btn kt-btn-outline" asp-action="Creditos" asp-route-id="@Model.EscolinhaId"><i class="ki-filled ki-wallet"></i> Conceder créditos</a>
+            <a class="kt-btn kt-btn-primary" asp-action="Index">Concluir</a>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,47 @@
+@inject IAutorizacao Autorizacao
+@model ContaAsaasResposta
+@{
+    ViewData["Title"] = "Conta de recebimento";
+    var ambiente = ViewData["Ambiente"] as MinhaEscolinha.Application.Comum.IAmbienteExecucao;
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Conta de recebimento" descricao="A conta Asaas da escolinha: as mensalidades caem direto nela. Sem conta vinculada, nenhuma cobrança é emitida.">
+        @if (Autorizacao.Pode(Recurso.FinanceiroEscolinha, Operacao.Alterar))
+        {
+            <a class="kt-btn kt-btn-primary" asp-action="Vincular">
+                <i class="ki-filled ki-bank"></i> @(Model.Vinculada ? "Trocar conta" : "Vincular conta")
+            </a>
+        }
+    </cabecalho-pagina>
+
+    <div class="kt-card max-w-[720px]">
+        @if (!Model.Vinculada)
+        {
+            <estado-vazio icone="ki-bank" titulo="Nenhuma conta vinculada"
+                          texto="Cole a chave de API da conta Asaas da escolinha. Enquanto isso, as mensalidades não são emitidas."></estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-content">
+                <dl class="esc-dados">
+                    <dt>Situação</dt>
+                    <dd><selo-status valor="SinalTela.ContaRecebimentoVinculada" texto="Vinculada"></selo-status></dd>
+                    <dt>Ambiente</dt>
+                    <dd><selo-status valor="Model.Ambiente"></selo-status></dd>
+                    <dt>Chave de API</dt>
+                    <dd class="font-mono">••••@Model.FinalChave</dd>
+                    <dt>Vinculada em</dt>
+                    <dd>@Formatacao.DataHora(Model.VinculadaEm)</dd>
+                </dl>
+            </div>
+        }
+        <div class="kt-card-footer text-xs text-muted-foreground">
+            A chave fica cifrada e nunca volta para a tela. A emissão das cobranças e a conciliação chegam na fatia S4.
+            @if (ambiente is { EhProducao: false })
+            {
+                <text>Este ambiente (@ambiente.Nome) só aceita conta Sandbox.</text>
+            }
+        </div>
+    </div>
+</div>

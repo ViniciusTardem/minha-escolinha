@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Portal";
+    ViewData["Escolinha"] = "Escolinha Bola na Rede";
+    ViewData["Inicial"] = "M";
+    ViewData["AbaPortal"] = "inicio";
+    Layout = "_LayoutPortal";
+}
+
+@* Exemplo do portal do responsável (S6) com dados fictícios: dois filhos numa conta só, convocação com Sim/Não e
+   o total do mês. *@
+@section Filhos {
+    <div class="esc-chips" data-esc-escolha role="group" aria-label="Filhos">
+        <button class="esc-chip" type="button" aria-pressed="true" data-valor="todos">Todos</button>
+        <button class="esc-chip" type="button" aria-pressed="false" data-valor="pedro">Pedro · Sub-11</button>
+        <button class="esc-chip" type="button" aria-pressed="false" data-valor="lara">Lara · Sub-9</button>
+    </div>
+}
+
+<div class="kt-card">
+    <div class="kt-card-content flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-2">
+            <span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-info">convocação · Pedro</span>
+            <span class="text-xs text-secondary-foreground">responda até sex 20:00</span>
+        </div>
+        <div class="flex flex-col gap-1">
+            <span class="text-lg font-semibold text-mono">Jogo contra Leões FC</span>
+            <span class="text-sm text-secondary-foreground flex items-center gap-1.5"><i class="ki-filled ki-calendar"></i> Sáb 28/09 · 09:30</span>
+            <span class="text-sm text-secondary-foreground flex items-center gap-1.5"><i class="ki-filled ki-geolocation"></i> Ginásio Moringão — <a class="kt-link" href="#">ver no mapa</a></span>
+        </div>
+        <div class="esc-resposta">
+            <button class="kt-btn kt-btn-primary" type="button"><i class="ki-filled ki-check"></i> Vai</button>
+            <button class="kt-btn kt-btn-outline" type="button"><i class="ki-filled ki-cross"></i> Não vai</button>
+        </div>
+    </div>
+</div>
+
+<div class="kt-card">
+    <div class="kt-card-content flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-semibold text-mono">Mensalidades de setembro</span>
+            <span class="text-lg font-semibold text-mono">R$ 300,00</span>
+        </div>
+        <ul class="esc-linhas text-sm">
+            <li class="flex items-center justify-between gap-2 py-2"><span>Pedro · Sub-11</span><span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-success">paga</span></li>
+            <li class="flex items-center justify-between gap-2 py-2"><span>Lara · Sub-9 · vence 10/10</span><span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-info">emitida</span></li>
+        </ul>
+        <button class="kt-btn kt-btn-primary justify-center" type="button"><i class="ki-filled ki-copy"></i> Copiar Pix · R$ 150,00</button>
+    </div>
+</div>

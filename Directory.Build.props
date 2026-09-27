@@ -1,0 +1,27 @@
+<Project>
+
+  <!--
+    Configuração comum a TODOS os projetos da solução.
+
+    Os projetos têm nomes curtos (Domain, Application, Infrastructure, Web, Testes),
+    mas namespace e assembly carregam o prefixo do produto:
+      src/Domain/Domain.csproj  →  MinhaEscolinha.Domain(.dll)
+    Assim a pasta fica enxuta e a DLL continua identificável no servidor.
+  -->
+  <PropertyGroup>
+    <ProdutoPrefixo>MinhaEscolinha</ProdutoPrefixo>
+    <RootNamespace>$(ProdutoPrefixo).$(MSBuildProjectName)</RootNamespace>
+    <AssemblyName>$(ProdutoPrefixo).$(MSBuildProjectName)</AssemblyName>
+
+    <!-- .NET 9: o servidor de produção só tem o runtime 9 por enquanto (DECISOES D02). -->
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <Company>LDNA S/A</Company>
+    <Product>Minha Escolinha</Product>
+    <NeutralLanguage>pt-BR</NeutralLanguage>
+  </PropertyGroup>
+
+</Project>

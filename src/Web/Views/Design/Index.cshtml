@@ -1,0 +1,130 @@
+@{
+    ViewData["Title"] = "Design system";
+    Layout = "_LayoutVitrine";
+
+    (string Token, string Classe)[] cores =
+    [
+        ("--primary", "bg-primary"), ("--foreground", "bg-foreground"), ("--mono", "bg-mono"), ("--secondary-foreground", "bg-secondary-foreground"),
+        ("--muted", "bg-muted"), ("--accent", "bg-accent"), ("--border", "bg-border"), ("--destructive", "bg-destructive")
+    ];
+    Enum[] selos =
+    [
+        SituacaoVinculo.Ativo, SituacaoVinculo.Revogado, AmbienteAsaas.Sandbox, AmbienteAsaas.Producao,
+        TipoMovimentoCredito.Concessao, TipoMovimentoCredito.Consumo, TipoMovimentoCredito.Estorno, TipoMovimentoCredito.Ajuste,
+        PapelAtuacao.Gestor, PapelAtuacao.Professor, PapelAtuacao.Responsavel
+    ];
+    (string Icone, string Conceito)[] icones =
+    [
+        ("ki-element-11", "painel"), ("ki-people", "alunos"), ("ki-users", "responsáveis"), ("ki-teacher", "professores"),
+        ("ki-category", "turmas"), ("ki-calendar", "agenda"), ("ki-check-squared", "chamada"), ("ki-cup", "jogos"),
+        ("ki-flag", "convocação"), ("ki-double-check", "confirmações"), ("ki-message-text-2", "mensagens"), ("ki-whatsapp", "WhatsApp"),
+        ("ki-notification-status", "avisos"), ("ki-dollar", "financeiro"), ("ki-bill", "cobrança"), ("ki-credit-cart", "cartão"),
+        ("ki-wallet", "créditos"), ("ki-setting-2", "configuração"), ("ki-setting-3", "parâmetros"), ("ki-geolocation", "locais"),
+        ("ki-map", "mapa"), ("ki-heart", "saúde"), ("ki-shield-tick", "consentimento"), ("ki-key", "acesso"),
+        ("ki-security-user", "permissões"), ("ki-user-tick", "vínculo verificado"), ("ki-file-up", "importação"), ("ki-file-down", "modelo"),
+        ("ki-wifi", "online"), ("ki-cloud-change", "sincronizar"), ("ki-time", "horário"), ("ki-home-2", "início (portal)"),
+        ("ki-copy", "copiar Pix"), ("ki-chart-line-down", "risco"), ("ki-home-3", "escolinha"), ("ki-medal-star", "modalidades"),
+        ("ki-bank", "conta de recebimento"), ("ki-grid", "plataforma")
+    ];
+}
+
+<div class="kt-container-fixed flex flex-col gap-7.5">
+    <cabecalho-pagina titulo="Design system — Minha Escolinha" descricao="Vitrine viva de docs/design/GUIA-DESIGN-SYSTEM.md: tokens, selos, componentes e as quatro superfícies. Só em Development."
+                      meta="Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons (filled) · marca provisória: azul padrão do Metronic">
+        <a class="kt-btn kt-btn-outline" href="/dev/design/quadra"><i class="ki-filled ki-check-squared"></i> Quadra</a>
+        <a class="kt-btn kt-btn-outline" href="/dev/design/portal"><i class="ki-filled ki-home-2"></i> Portal</a>
+        <a class="kt-btn kt-btn-outline" href="/dev/design/autenticacao"><i class="ki-filled ki-key"></i> Autenticação</a>
+    </cabecalho-pagina>
+
+    @* ── Tokens ── *@
+    <div class="kt-card">
+        <div class="kt-card-header"><h3 class="kt-card-title">Tokens de cor</h3><span class="text-sm text-secondary-foreground">Nunca cor literal — só estes tokens</span></div>
+        <div class="kt-card-content grid grid-cols-2 sm:grid-cols-4 gap-4">
+            @foreach (var (token, classe) in cores)
+            {
+                <div class="flex flex-col gap-1.5">
+                    <div class="esc-amostra-cor @classe"></div>
+                    <span class="text-xs font-mono text-secondary-foreground">@token</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ── Selos ── *@
+    <div class="kt-card">
+        <div class="kt-card-header"><h3 class="kt-card-title">Selos de status</h3><span class="text-sm text-secondary-foreground">A cor vem do mapa central, nunca da View</span></div>
+        <div class="kt-card-content flex flex-wrap gap-2">
+            @foreach (var selo in selos)
+            {
+                <selo-status valor="selo"></selo-status>
+            }
+        </div>
+    </div>
+
+    @* ── Botões e formulário ── *@
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="kt-card">
+            <div class="kt-card-header"><h3 class="kt-card-title">Botões</h3></div>
+            <div class="kt-card-content flex flex-wrap gap-2.5">
+                <button class="kt-btn kt-btn-primary" type="button"><i class="ki-filled ki-check"></i> Primário</button>
+                <button class="kt-btn kt-btn-outline" type="button">Contorno</button>
+                <button class="kt-btn kt-btn-ghost" type="button">Discreto</button>
+                <button class="kt-btn kt-btn-mono" type="button">Mono</button>
+                <button class="kt-btn kt-btn-destructive" type="button"><i class="ki-filled ki-trash"></i> Destrutivo</button>
+                <button class="kt-btn kt-btn-outline kt-btn-icon" type="button" aria-label="Mais ações"><i class="ki-filled ki-dots-vertical"></i></button>
+            </div>
+        </div>
+        <div class="kt-card">
+            <div class="kt-card-header"><h3 class="kt-card-title">Abas, controle segmentado e alerta</h3></div>
+            <div class="kt-card-content flex flex-col gap-4">
+                <div class="esc-abas" role="tablist">
+                    <button class="esc-aba" type="button" role="tab" aria-selected="true" data-esc-aba="#vitrine_aba_1">Presença</button>
+                    <button class="esc-aba" type="button" role="tab" aria-selected="false" data-esc-aba="#vitrine_aba_2">Financeiro <span class="esc-aba-contador">3</span></button>
+                </div>
+                <p class="text-sm text-secondary-foreground" id="vitrine_aba_1">Conteúdo da aba Presença.</p>
+                <p class="text-sm text-secondary-foreground" id="vitrine_aba_2" hidden>Conteúdo da aba Financeiro.</p>
+                <div class="esc-segmento" data-esc-escolha>
+                    <button class="esc-segmento-opcao" type="button" aria-pressed="true" data-valor="meus">Minhas turmas</button>
+                    <button class="esc-segmento-opcao" type="button" aria-pressed="false" data-valor="todos">Todas</button>
+                </div>
+                <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="status">
+                    <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                    <span class="text-sm">Valor provisório: a especificação não define o padrão.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Estado vazio ── *@
+    <div class="kt-card">
+        <estado-vazio icone="ki-people" titulo="Nenhum aluno nesta turma" texto="Toda tela trata vazio, carregando, erro e sem sinal. Este é o estado vazio padrão.">
+            <button class="kt-btn kt-btn-primary" type="button"><i class="ki-filled ki-plus"></i> Matricular aluno</button>
+        </estado-vazio>
+    </div>
+
+    @* ── Ícones ── *@
+    <div class="kt-card">
+        <div class="kt-card-header"><h3 class="kt-card-title">Ícones do domínio</h3><span class="text-sm text-secondary-foreground">Só ki-filled, desta lista</span></div>
+        <div class="kt-card-content grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+            @foreach (var (icone, conceito) in icones)
+            {
+                <div class="flex items-center gap-2 rounded-md border border-border px-3 py-2">
+                    <i class="ki-filled @icone text-lg text-primary"></i>
+                    <span class="flex flex-col min-w-0">
+                        <span class="text-xs font-medium text-mono truncate">@conceito</span>
+                        <span class="text-2xs font-mono text-muted-foreground truncate">@icone</span>
+                    </span>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ── Superfícies de celular ── *@
+    <div class="kt-card">
+        <div class="kt-card-header"><h3 class="kt-card-title">Superfícies de celular (375 px)</h3><span class="text-sm text-secondary-foreground">Quadra do professor e portal do responsável</span></div>
+        <div class="kt-card-content grid grid-cols-1 lg:grid-cols-2 gap-6 justify-items-center">
+            <iframe class="esc-moldura-celular" src="/dev/design/quadra" title="Quadra — chamada"></iframe>
+            <iframe class="esc-moldura-celular" src="/dev/design/portal" title="Portal do responsável"></iframe>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,18 @@
+@* Resumo de erros do formulário (ModelState) no padrão kt-alert. *@
+@if (!ViewData.ModelState.IsValid)
+{
+    var mensagens = ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+        .Where(m => !string.IsNullOrWhiteSpace(m)).Distinct().ToList();
+    if (mensagens.Count > 0)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-destructive flex items-start gap-3" role="alert">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <div class="flex flex-col gap-1 text-sm">
+                @foreach (var mensagem in mensagens)
+                {
+                    <span>@mensagem</span>
+                }
+            </div>
+        </div>
+    }
+}

@@ -1,0 +1,21 @@
+@* Vitrine do design system (/dev/design, só Development): o miolo do painel sem sidebar nem header, para funcionar
+   sem login. As telas reais usam o _Layout. *@
+<!DOCTYPE html>
+<html class="h-full" data-kt-theme="true" data-kt-theme-mode="light" dir="ltr" lang="pt-BR">
+<head>
+    <partial name="_Cabeca" />
+</head>
+<body class="antialiased text-base text-foreground esc-tela">
+    <main class="py-8" role="main">
+        <div class="kt-container-fixed flex justify-end mb-2">
+            <label class="kt-label">
+                <span class="text-sm text-secondary-foreground">Modo escuro</span>
+                <input class="kt-switch kt-switch-sm" data-kt-theme-switch-state="dark" data-kt-theme-switch-toggle="true" type="checkbox" aria-label="Modo escuro" />
+            </label>
+        </div>
+        @RenderBody()
+    </main>
+    <partial name="_Mensagens" />
+    <partial name="_Scripts" />
+</body>
+</html>

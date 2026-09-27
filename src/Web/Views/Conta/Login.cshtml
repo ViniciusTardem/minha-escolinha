@@ -1,0 +1,43 @@
+@model LoginRequisicao
+@{
+    ViewData["Title"] = "Entrar";
+    Layout = "_LayoutAutenticacao";
+}
+
+<div class="kt-card max-w-[380px] w-full">
+    <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" class="kt-card-content flex flex-col gap-5 p-8 sm:p-10" novalidate>
+        <div class="text-center mb-2.5">
+            <h1 class="text-lg font-medium text-mono leading-none mb-2.5">Entrar</h1>
+            <p class="text-sm text-secondary-foreground">Use o seu e-mail e a sua senha.</p>
+        </div>
+
+        <partial name="_ErrosFormulario" />
+
+        <div class="flex flex-col gap-1">
+            <label class="kt-form-label font-normal text-mono" asp-for="Login">E-mail</label>
+            <input class="kt-input" asp-for="Login" type="email" inputmode="email" autocomplete="username" autofocus placeholder="voce@escolinha.com.br" />
+        </div>
+
+        <div class="flex flex-col gap-1">
+            <label class="kt-form-label font-normal text-mono" asp-for="Senha">Senha</label>
+            <div class="kt-input" data-kt-toggle-password="true">
+                <input asp-for="Senha" type="password" autocomplete="current-password" placeholder="Sua senha" />
+                <button class="kt-btn kt-btn-sm kt-btn-ghost kt-btn-icon bg-transparent! -me-1.5" data-kt-toggle-password-trigger="true" type="button" aria-label="Mostrar ou ocultar a senha">
+                    <span class="kt-toggle-password-active:hidden">
+                        <i class="ki-filled ki-eye text-muted-foreground"></i>
+                    </span>
+                    <span class="hidden kt-toggle-password-active:block">
+                        <i class="ki-filled ki-eye-slash text-muted-foreground"></i>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <label class="kt-label">
+            <input class="kt-checkbox kt-checkbox-sm" asp-for="Lembrarme" type="checkbox" />
+            <span class="text-sm text-foreground">Manter conectado neste aparelho</span>
+        </label>
+
+        <button class="kt-btn kt-btn-primary flex justify-center grow" type="submit">Entrar</button>
+    </form>
+</div>

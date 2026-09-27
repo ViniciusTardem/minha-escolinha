@@ -1,0 +1,30 @@
+@* Modais globais — fora do layout principal, no fim do body (guia do design system). *@
+
+@* ── Busca rápida (Ctrl+K ou /) — lógica em wwwroot/js/app.js ── *@
+<div class="kt-modal" data-kt-modal="true" id="modal_busca" data-kt-modal-input-focus="#busca_termo">
+    <div class="kt-modal-content max-w-[600px] top-[12%]">
+        <div class="kt-modal-header py-4 px-5 gap-2">
+            <i class="ki-filled ki-magnifier text-muted-foreground text-xl"></i>
+            <input class="kt-input kt-input-ghost" id="busca_termo" type="text" autocomplete="off"
+                   placeholder="O que você procura? Ex.: parâmetros, modalidades…"
+                   aria-label="Buscar" aria-controls="busca_resultados" />
+            <button class="kt-btn kt-btn-sm kt-btn-icon kt-btn-dim shrink-0" data-kt-modal-dismiss="true" type="button" aria-label="Fechar">
+                <i class="ki-filled ki-cross"></i>
+            </button>
+        </div>
+        <div class="kt-modal-body p-0 pb-3">
+            <div class="px-5 pt-3 pb-1 text-xs font-medium uppercase text-muted-foreground">Ir para</div>
+            <ul class="flex flex-col px-2" id="busca_resultados" role="listbox" aria-label="Resultados"></ul>
+
+            <div class="hidden flex-col items-center gap-2 py-8 text-center" id="busca_vazio">
+                <i class="ki-filled ki-search-list text-3xl text-muted-foreground"></i>
+                <span class="text-sm text-secondary-foreground">Nada encontrado nas telas que você acessa.</span>
+            </div>
+        </div>
+        <div class="kt-modal-footer py-3 px-5 justify-start gap-4 text-xs text-muted-foreground">
+            <span class="flex items-center gap-1.5"><span class="kt-kbd kt-kbd-xs">↑</span><span class="kt-kbd kt-kbd-xs">↓</span> navegar</span>
+            <span class="flex items-center gap-1.5"><span class="kt-kbd kt-kbd-xs">Enter</span> abrir</span>
+            <span class="flex items-center gap-1.5"><span class="kt-kbd kt-kbd-xs">Esc</span> fechar</span>
+        </div>
+    </div>
+</div>

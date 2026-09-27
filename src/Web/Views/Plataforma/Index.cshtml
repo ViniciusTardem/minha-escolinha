@@ -1,0 +1,69 @@
+@model IReadOnlyList<EscolinhaNaPlataforma>
+@{
+    ViewData["Title"] = "Escolinhas";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Escolinhas" descricao="Área da equipe da plataforma: cria a escolinha com o 1º gestor, concede créditos e dá acesso da equipe (fica registrado)."
+                      meta="@($"{Model.Count} escolinha(s)")">
+        <a class="kt-btn kt-btn-primary" asp-action="Nova"><i class="ki-filled ki-plus"></i> Nova escolinha</a>
+    </cabecalho-pagina>
+
+    <div class="kt-card">
+        @if (Model.Count == 0)
+        {
+            <estado-vazio icone="ki-grid" titulo="Nenhuma escolinha ainda" texto="Crie a escolinha piloto junto com o gestor dela.">
+                <a class="kt-btn kt-btn-primary" asp-action="Nova"><i class="ki-filled ki-plus"></i> Nova escolinha</a>
+            </estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[220px]">Escolinha</th>
+                            <th class="min-w-[180px] hidden md:table-cell">Gestores</th>
+                            <th class="min-w-[110px]">Créditos</th>
+                            <th class="min-w-[140px] hidden md:table-cell">Recebimento</th>
+                            <th class="w-[1%] text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var e in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="font-medium text-mono">@e.Nome</span>
+                                        <span class="text-xs text-secondary-foreground">
+                                            @(string.IsNullOrEmpty(e.Cidade) ? "Cidade não informada" : $"{e.Cidade}/{e.Uf}") · desde @Formatacao.Data(e.DataCadastro)
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="hidden md:table-cell text-secondary-foreground">@(e.Gestores.Count == 0 ? "—" : string.Join(", ", e.Gestores))</td>
+                                <td class="text-mono font-medium">@Formatacao.Numero(e.SaldoCreditos)</td>
+                                <td class="hidden md:table-cell">
+                                    <selo-status valor="e.ContaAsaasVinculada ? SinalTela.ContaRecebimentoVinculada : SinalTela.ContaRecebimentoAusente"></selo-status>
+                                </td>
+                                <td class="text-end">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <a class="kt-btn kt-btn-sm kt-btn-outline" asp-action="Creditos" asp-route-id="@e.Id">
+                                            <i class="ki-filled ki-wallet"></i> Créditos
+                                        </a>
+                                        <form asp-action="EntrarComoEquipe" asp-route-id="@e.Id" method="post"
+                                              data-esc-confirmar="@(e.SouGestor ? null : "Você passa a atuar como gestor desta escolinha (fica registrado na auditoria dela). Continuar?")">
+                                            <button class="kt-btn kt-btn-sm kt-btn-primary" type="submit">
+                                                <i class="ki-filled ki-entrance-left"></i> @(e.SouGestor ? "Entrar" : "Entrar como equipe")
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

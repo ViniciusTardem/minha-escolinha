@@ -1,0 +1,66 @@
+@model ModalidadeRequisicao
+@{
+    var nova = Model.Id is null;
+    ViewData["Title"] = nova ? "Nova modalidade" : $"Editar {Model.Nome}";
+
+    void Interruptor(string nome, bool ligado, string rotulo, string explicacao)
+    {
+        <label class="flex items-start justify-between gap-4 py-3">
+            <span class="flex flex-col gap-0.5">
+                <span class="text-sm font-medium text-mono">@rotulo</span>
+                <span class="text-xs text-secondary-foreground">@explicacao</span>
+            </span>
+            <input class="kt-switch shrink-0" type="checkbox" name="@nome" value="true" checked="@ligado" />
+            <input type="hidden" name="@nome" value="false" />
+        </label>
+    }
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@(nova ? "Nova modalidade" : Model.Nome)" voltar-href="/Modalidades" voltar-texto="Modalidades"
+                      descricao="O perfil sugere os recursos; os interruptores decidem o que os eventos desta modalidade têm."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[720px]">
+        <form method="post" asp-action="@(nova ? "Nova" : "Editar")" asp-route-id="@Model.Id" novalidate>
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Nome">Nome</label>
+                        <input class="kt-input" asp-for="Nome" required maxlength="80" placeholder="Ex.: Futsal" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Perfil">Perfil</label>
+                        <select class="kt-select" asp-for="Perfil">
+                            <option value="@PerfilModalidade.Coletiva">Coletiva (futsal, futebol)</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="DuracaoPadraoEventoMinutos">Duração padrão do evento</label>
+                        <div class="kt-input-group">
+                            <input class="kt-input" asp-for="DuracaoPadraoEventoMinutos" type="number" min="10" max="600" step="5" />
+                            <span class="kt-input-addon">min</span>
+                        </div>
+                        <span class="text-xs text-muted-foreground">Usada nos alertas de conflito de agenda. Valor provisório (pendência da spec).</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col">
+                    <span class="text-sm font-semibold text-mono">Recursos dos eventos</span>
+                    <div class="esc-linhas flex flex-col">
+                        @{ Interruptor(nameof(Model.TemAdversario), Model.TemAdversario, "Adversário", "O evento pode ter um adversário (sempre opcional)."); }
+                        @{ Interruptor(nameof(Model.TemPlacarSumula), Model.TemPlacarSumula, "Placar e súmula", "Resultado do evento (o registro chega depois do piloto)."); }
+                        @{ Interruptor(nameof(Model.TemClassificacao), Model.TemClassificacao, "Classificação", "Tabela de classificação (fase das ligas)."); }
+                        @{ Interruptor(nameof(Model.TemConvocacao), Model.TemConvocacao, "Convocação", "O professor escolhe e convoca quem vai, com confirmação pelo WhatsApp."); }
+                        @{ Interruptor(nameof(Model.TemGraduacao), Model.TemGraduacao, "Graduação", "Exames de faixa/nível (lutas)."); }
+                        @{ Interruptor(nameof(Model.TemApresentacao), Model.TemApresentacao, "Apresentação", "Apresentações e festivais (dança, ginástica)."); }
+                    </div>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" asp-action="Index">Cancelar</a>
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>

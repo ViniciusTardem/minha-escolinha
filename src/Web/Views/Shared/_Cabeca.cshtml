@@ -1,0 +1,12 @@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@* <head> comum aos quatro layouts: metas, CSS na ordem do design system e o tema aplicado antes de pintar. *@
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport" />
+<meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
+<title>@(ViewData["Title"] ?? "Minha Escolinha") - Minha Escolinha</title>
+<link href="~/favicon.svg" rel="icon" type="image/svg+xml" />
+<link href="~/assets/vendors/keenicons/keenicons-filled.css" rel="stylesheet" asp-append-version="true" />
+<link href="~/assets/css/styles.css" rel="stylesheet" asp-append-version="true" />
+<link href="~/css/esc.css" rel="stylesheet" asp-append-version="true" />
+<link href="~/assets/css/custom.css" rel="stylesheet" asp-append-version="true" />
+<script src="~/js/tema.js" asp-append-version="true"></script>

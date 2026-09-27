@@ -1,0 +1,74 @@
+@model CreditosResposta
+@{
+    ViewData["Title"] = "Créditos de mensagem";
+    var baixo = Model.Saldo < Model.AvisoSaldoAbaixoDe;
+    var paginacao = PaginacaoViewModel.De(Model.Movimentos, "movimento(s)", new Dictionary<string, string?>());
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Créditos de mensagem" descricao="Cada mensagem de WhatsApp consome um crédito. A recarga é feita pela equipe da plataforma."></cabecalho-pagina>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+        <div class="kt-card">
+            <div class="kt-card-content flex flex-col gap-1">
+                <span class="text-xs text-secondary-foreground">Saldo</span>
+                <span class="text-3xl font-semibold text-mono">@Formatacao.Numero(Model.Saldo)</span>
+                @if (baixo)
+                {
+                    <selo-status class="self-start" valor="SinalTela.SaldoCreditosBaixo" texto="@($"abaixo de {Model.AvisoSaldoAbaixoDe}")"></selo-status>
+                }
+            </div>
+        </div>
+        <div class="kt-card">
+            <div class="kt-card-content flex flex-col gap-1">
+                <span class="text-xs text-secondary-foreground">Plano</span>
+                <span class="text-xl font-semibold text-mono">@Model.Plano</span>
+                <span class="text-xs text-muted-foreground">@(Model.Pacote ?? "Sem pacote definido")</span>
+            </div>
+        </div>
+        <div class="kt-card">
+            <div class="kt-card-content flex flex-col gap-1">
+                <span class="text-xs text-secondary-foreground">Aviso de saldo baixo</span>
+                <span class="text-xl font-semibold text-mono">@Model.AvisoSaldoAbaixoDe créditos</span>
+                <a class="kt-link text-xs" href="/Parametros?dominio=Mensagem">Ajustar nos parâmetros</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="kt-card">
+        <div class="kt-card-header"><h3 class="kt-card-title">Histórico</h3></div>
+        @if (Model.Movimentos.Total == 0)
+        {
+            <estado-vazio icone="ki-wallet" titulo="Nenhum movimento" texto="Quando a equipe conceder créditos e as mensagens começarem a sair (fatia S2), cada lançamento aparece aqui."></estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[140px]">Quando</th>
+                            <th class="min-w-[110px]">Tipo</th>
+                            <th class="min-w-[90px] text-end">Quantidade</th>
+                            <th class="min-w-[90px] text-end">Saldo</th>
+                            <th class="min-w-[220px] hidden md:table-cell">Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model.Movimentos.Itens)
+                        {
+                            <tr>
+                                <td class="text-secondary-foreground">@Formatacao.DataHora(m.Em)</td>
+                                <td><selo-status valor="m.Tipo"></selo-status></td>
+                                <td class="text-end font-medium text-mono">@(m.Quantidade > 0 ? "+" : "")@Formatacao.Numero(m.Quantidade)</td>
+                                <td class="text-end text-mono">@Formatacao.Numero(m.SaldoApos)</td>
+                                <td class="hidden md:table-cell text-secondary-foreground">@m.Motivo · @m.AutorNome</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <partial name="_Paginacao" model="paginacao" />
+        }
+    </div>
+</div>

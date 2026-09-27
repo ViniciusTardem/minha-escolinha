@@ -1,0 +1,27 @@
+@* Telas fora do sistema (entrar, trocar senha obrigatória, escolher escolinha, erro sem login).
+   Base: authentication/branded/sign-in do demo1, sem imagens (cor + formas). *@
+<!DOCTYPE html>
+<html class="h-full" data-kt-theme="true" data-kt-theme-mode="light" dir="ltr" lang="pt-BR">
+<head>
+    <partial name="_Cabeca" />
+</head>
+<body class="antialiased flex h-full text-base text-foreground bg-background">
+    <div class="flex flex-col items-center justify-center grow gap-6 px-4 py-10 bg-muted/40">
+        <a class="flex items-center gap-2.5" href="/">
+            <span class="size-10 rounded-xl bg-primary flex items-center justify-center">
+                <i class="ki-filled ki-cup text-xl text-primary-foreground"></i>
+            </span>
+            <span class="flex flex-col leading-tight">
+                <span class="text-lg font-semibold text-mono">Minha Escolinha</span>
+                <span class="text-xs text-secondary-foreground">Gestão de escolinhas esportivas</span>
+            </span>
+        </a>
+        @RenderBody()
+        <p class="text-xs text-muted-foreground">LDNA S/A · Minha Escolinha</p>
+    </div>
+
+    <partial name="_Mensagens" />
+    <partial name="_Scripts" />
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

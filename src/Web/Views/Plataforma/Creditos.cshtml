@@ -1,0 +1,39 @@
+@model ConcederCreditosRequisicao
+@{
+    var escolinha = ViewData["Escolinha"] as EscolinhaNaPlataforma;
+    ViewData["Title"] = "Créditos de mensagem";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Créditos de mensagem" voltar-href="/Plataforma" voltar-texto="Escolinhas"
+                      descricao="@($"{escolinha?.Nome}: cada mensagem de WhatsApp consome um crédito. Concessão soma ao saldo; quantidade negativa corrige (ajuste). O saldo nunca fica negativo.")"
+                      meta="@($"Saldo atual: {Formatacao.Numero(escolinha?.SaldoCreditos ?? 0)} crédito(s)")"></cabecalho-pagina>
+
+    <div class="kt-card max-w-[600px]">
+        <form asp-action="Creditos" method="post" novalidate>
+            <input type="hidden" asp-for="EscolinhaId" />
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Quantidade">Quantidade</label>
+                        <input class="kt-input" asp-for="Quantidade" type="number" step="1" required />
+                        <span class="text-xs text-muted-foreground">Negativo para retirar (ajuste).</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Plano">Plano <span class="text-muted-foreground">(opcional)</span></label>
+                        <input class="kt-input" asp-for="Plano" placeholder="Piloto" maxlength="80" />
+                    </div>
+                    <div class="flex flex-col gap-1 md:col-span-2">
+                        <label class="kt-form-label" asp-for="Motivo">Motivo</label>
+                        <input class="kt-input" asp-for="Motivo" required maxlength="300" placeholder="Ex.: pacote do piloto, recarga de outubro" />
+                    </div>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" asp-action="Index">Cancelar</a>
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Lançar</button>
+            </div>
+        </form>
+    </div>
+</div>

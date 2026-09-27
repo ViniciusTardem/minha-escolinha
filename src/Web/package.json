@@ -1,0 +1,20 @@
+{
+  "name": "minha-escolinha-web",
+  "private": true,
+  "description": "Recorte do Metronic (docs/metronic → wwwroot/assets), CSS complementar (Tailwind 4, só utilities), fonte Inter local e bibliotecas de navegador (SignalR). O resultado em wwwroot é versionado: o servidor não roda npm.",
+  "scripts": {
+    "metronic": "node ./scripts/copiar-metronic.mjs",
+    "fontes": "node ./scripts/copiar-fontes.mjs",
+    "bibliotecas": "node ./scripts/copiar-bibliotecas.mjs",
+    "css": "tailwindcss -i ./Estilos/esc.src.css -o ./wwwroot/css/esc.css --minify",
+    "css:watch": "tailwindcss -i ./Estilos/esc.src.css -o ./wwwroot/css/esc.css --watch",
+    "verificar-classes": "node ./scripts/verificar-classes.mjs",
+    "build": "npm run metronic && npm run fontes && npm run bibliotecas && npm run css && npm run verificar-classes"
+  },
+  "devDependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "@microsoft/signalr": "10.0.11",
+    "@tailwindcss/cli": "4.1.8",
+    "tailwindcss": "4.1.8"
+  }
+}

@@ -1,0 +1,113 @@
+@model NovaEscolinhaRequisicao
+@{
+    ViewData["Title"] = "Nova escolinha";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Nova escolinha" voltar-href="/Plataforma" voltar-texto="Escolinhas"
+                      descricao="A escolinha e o 1º gestor nascem juntos: se algo falhar, nada é gravado. A senha temporária do gestor aparece uma única vez no fim."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[820px]">
+        @* Cadastro em etapas (js/assistente.js); sem JS, as etapas aparecem todas. *@
+        <form asp-action="Nova" method="post" novalidate data-esc-assistente>
+            <div class="kt-card-header flex-wrap gap-3 py-4">
+                <h3 class="kt-card-title">Cadastro</h3>
+                <ol class="esc-passos" data-esc-passos></ol>
+            </div>
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+
+                <section class="flex flex-col gap-5" data-esc-passo data-esc-passo-titulo="Escolinha">
+                    <p class="text-sm text-secondary-foreground">Como a escolinha se apresenta. O nome aparece nas mensagens às famílias.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="flex flex-col gap-1 md:col-span-2">
+                            <label class="kt-form-label" asp-for="Nome">Nome da escolinha</label>
+                            <input class="kt-input" asp-for="Nome" required maxlength="150" autofocus placeholder="Ex.: Escolinha Bola na Rede" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="RazaoSocial">Razão social <span class="text-muted-foreground">(opcional)</span></label>
+                            <input class="kt-input" asp-for="RazaoSocial" maxlength="200" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Cnpj">CNPJ <span class="text-muted-foreground">(opcional)</span></label>
+                            <input class="kt-input" asp-for="Cnpj" inputmode="numeric" placeholder="00.000.000/0000-00" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Telefone">Telefone</label>
+                            <input class="kt-input" asp-for="Telefone" type="tel" inputmode="tel" placeholder="(43) 99999-9999" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Email">E-mail de contato</label>
+                            <input class="kt-input" asp-for="Email" type="email" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Cidade">Cidade</label>
+                            <input class="kt-input" asp-for="Cidade" placeholder="Londrina" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Uf">UF</label>
+                            <input class="kt-input" asp-for="Uf" maxlength="2" placeholder="PR" />
+                        </div>
+                    </div>
+                </section>
+
+                <section class="flex flex-col gap-5" data-esc-passo data-esc-passo-titulo="Modalidade">
+                    <p class="text-sm text-secondary-foreground">
+                        A primeira modalidade da escolinha. O perfil decide o que existe nos eventos (adversário, convocação...);
+                        dá para ajustar os recursos e cadastrar outras depois, em Modalidades.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="NomeModalidade">Modalidade</label>
+                            <input class="kt-input" asp-for="NomeModalidade" required maxlength="80" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="PerfilModalidade">Perfil</label>
+                            <select class="kt-select" asp-for="PerfilModalidade">
+                                <option value="@PerfilModalidade.Coletiva">Coletiva (futsal, futebol)</option>
+                            </select>
+                            <span class="text-xs text-muted-foreground">Nesta versão do piloto só existe o perfil coletiva.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="flex flex-col gap-5" data-esc-passo data-esc-passo-titulo="1º gestor">
+                    <p class="text-sm text-secondary-foreground">
+                        Quem administra a escolinha. O e-mail é o login; a senha temporária aparece no fim e é trocada no primeiro acesso.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="flex flex-col gap-1 md:col-span-2">
+                            <label class="kt-form-label" asp-for="GestorNome">Nome do gestor</label>
+                            <input class="kt-input" asp-for="GestorNome" required maxlength="150" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="GestorEmail">E-mail (login)</label>
+                            <input class="kt-input" asp-for="GestorEmail" type="email" required autocomplete="off" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="GestorCpf">CPF <span class="text-muted-foreground">(opcional)</span></label>
+                            <input class="kt-input" asp-for="GestorCpf" inputmode="numeric" placeholder="000.000.000-00" />
+                        </div>
+                    </div>
+                    <label class="flex items-start gap-3 rounded-lg border border-border p-3">
+                        <input class="kt-checkbox kt-checkbox-sm mt-0.5" type="checkbox" asp-for="ReaproveitarAcessoExistente" />
+                        <span class="flex flex-col gap-0.5">
+                            <span class="text-sm font-medium text-mono">Usar o acesso que já existe</span>
+                            <span class="text-xs text-secondary-foreground">
+                                Se este e-mail já entra no sistema (gestor de outra escolinha), ele passa a atuar também nesta, com a mesma senha.
+                            </span>
+                        </span>
+                    </label>
+                </section>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" asp-action="Index">Cancelar</a>
+                <button class="kt-btn kt-btn-outline" type="button" data-esc-passo-anterior><i class="ki-filled ki-arrow-left"></i> Voltar</button>
+                <button class="kt-btn kt-btn-primary" type="button" data-esc-passo-proximo>Continuar <i class="ki-filled ki-arrow-right"></i></button>
+                <button class="kt-btn kt-btn-primary" type="submit" data-esc-passo-final>
+                    <i class="ki-filled ki-check"></i> Criar escolinha
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

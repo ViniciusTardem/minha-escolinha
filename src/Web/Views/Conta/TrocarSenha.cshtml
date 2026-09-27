@@ -1,0 +1,63 @@
+@model TrocarSenhaRequisicao
+@{
+    ViewData["Title"] = "Trocar senha";
+    Layout = "_LayoutAutenticacao";
+    var obrigatoria = User.PrecisaTrocarSenha();
+
+    void CampoSenha(string nome, string rotulo, string autocomplete)
+    {
+        // Sem asp-for (o campo é montado aqui): marca o erro do próprio campo, como o CampoInvalidoTagHelper faz.
+        var invalido = ViewData.ModelState[nome]?.Errors.Count > 0 ? "true" : null;
+        <div class="flex flex-col gap-1">
+            <label class="kt-form-label font-normal text-mono" for="@nome">@rotulo</label>
+            <div class="kt-input" data-kt-toggle-password="true">
+                <input id="@nome" name="@nome" type="password" autocomplete="@autocomplete" aria-invalid="@invalido" />
+                <button class="kt-btn kt-btn-sm kt-btn-ghost kt-btn-icon bg-transparent! -me-1.5" data-kt-toggle-password-trigger="true" type="button" aria-label="Mostrar ou ocultar a senha">
+                    <span class="kt-toggle-password-active:hidden"><i class="ki-filled ki-eye text-muted-foreground"></i></span>
+                    <span class="hidden kt-toggle-password-active:block"><i class="ki-filled ki-eye-slash text-muted-foreground"></i></span>
+                </button>
+            </div>
+        </div>
+    }
+}
+
+<div class="kt-card max-w-[400px] w-full">
+    <form asp-action="TrocarSenha" method="post" class="kt-card-content flex flex-col gap-5 p-8 sm:p-10" novalidate>
+        <div class="text-center mb-2.5">
+            <h1 class="text-lg font-medium text-mono leading-none mb-2.5">Trocar senha</h1>
+            @if (obrigatoria)
+            {
+                <p class="text-sm text-secondary-foreground">Primeiro acesso ou senha redefinida: escolha uma senha nova para continuar.</p>
+            }
+            else
+            {
+                <p class="text-sm text-secondary-foreground">Informe a senha atual e escolha a nova.</p>
+            }
+        </div>
+
+        <partial name="_ErrosFormulario" />
+
+        @* Para gerenciadores de senha e leitores de tela saberem de qual conta é a senha. *@
+        <input type="text" autocomplete="username" value="@User.FindFirst(ClaimsEscolinha.Login)?.Value" hidden readonly aria-hidden="true" />
+
+        @{ CampoSenha(nameof(TrocarSenhaRequisicao.SenhaAtual), obrigatoria ? "Senha atual (a temporária)" : "Senha atual", "current-password"); }
+        @{ CampoSenha(nameof(TrocarSenhaRequisicao.NovaSenha), "Nova senha", "new-password"); }
+        @{ CampoSenha(nameof(TrocarSenhaRequisicao.ConfirmacaoSenha), "Confirme a nova senha", "new-password"); }
+
+        <p class="text-xs text-muted-foreground">Mínimo de 8 caracteres, com letras e números.</p>
+
+        <button class="kt-btn kt-btn-primary flex justify-center grow" type="submit">Salvar nova senha</button>
+
+        @if (!obrigatoria)
+        {
+            <div class="flex items-center justify-center text-sm">
+                <a class="kt-link" asp-controller="Painel" asp-action="Index">Voltar</a>
+            </div>
+        }
+    </form>
+    <form asp-action="Sair" method="post" class="flex justify-center pb-6 -mt-3">
+        <button class="kt-btn kt-btn-ghost kt-btn-sm text-secondary-foreground" type="submit">
+            <i class="ki-filled ki-exit-right"></i> Sair
+        </button>
+    </form>
+</div>

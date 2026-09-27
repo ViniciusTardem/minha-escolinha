@@ -1,0 +1,54 @@
+## Build
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userprefs
+.vs/
+.vscode/
+*.dll
+*.pdb
+
+## Publish
+publish/
+[Pp]ublish[Pp]rofiles/*.pubxml.user
+*.[Pp]ublish.xml
+
+## Node / Tailwind
+node_modules/
+npm-debug.log*
+
+# ATENCAO: o package-lock.json E versionado (build do CSS reproduzivel).
+# ATENCAO: o CSS compilado, as fontes, as bibliotecas e o recorte do Metronic em wwwroot SAO versionados de proposito
+# (o servidor nao roda npm no deploy). Nao adicione src/Web/wwwroot/css/esc.css nem src/Web/wwwroot/assets aqui.
+
+## Referencia local do Metronic (61 MB, licenca comercial) — o app serve so o recorte em src/Web/wwwroot/assets.
+## Como obter: copiar de Projetos\SaaS\Adama\docs\metronic (ver docs/design/GUIA-DESIGN-SYSTEM.md).
+docs/metronic/
+
+## Logs e artefatos de runtime
+logs/
+src/Web/logs/
+src/Web/arquivos/
+
+## Segredos — NUNCA versionar
+appsettings.Development.json
+appsettings.Homologacao.json
+appsettings.Production.json
+appsettings.*.Local.json
+*.env
+secrets.json
+
+## Banco local
+*.mdf
+*.ldf
+
+## SO
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Capturas e logs do Playwright (validação no navegador)
+.playwright-mcp/

@@ -1,0 +1,648 @@
+/**
+ * Minha Escolinha — Custom CSS (docs/design/GUIA-DESIGN-SYSTEM.md).
+ * Complementa Metronic 9 / KTUI / Tailwind 4. Carregado por ÚLTIMO (keenicons → styles.css → esc.css → custom.css).
+ * Base portada do custom.css do AlternativaDepartamentoPessoal (prefixo dp- → esc-), sem as telas de lá, mais as
+ * superfícies de celular (quadra e portal) que o DP não tem.
+ *
+ * Regras: só tokens do tema (--primary, --foreground, --muted...), nunca cor literal em --color-*; prefixo esc- em toda
+ * classe própria (me- não: é o margin-end do Tailwind).
+ */
+
+/* ============================================
+   MARCA (provisória)
+   A identidade visual da Minha Escolinha ainda não chegou (decisão de 26/09/2026): vale o azul padrão do Metronic
+   (--primary #1379F0), sem sobrescrita. Quando a marca chegar, sobrescreva os tokens CRUS aqui, em :root e .dark
+   (ex.: --primary), e revise o contraste AA do texto branco sobre o primário.
+   ============================================ */
+:root {
+    --esc-foco: color-mix(in srgb, var(--primary) 18%, transparent);
+    --esc-toque: 3rem;          /* alvo mínimo de toque na quadra e no portal (48 px) */
+    --esc-barra-acao: 4.75rem;  /* altura reservada para a barra de ação inferior */
+}
+
+/* ============================================
+   FOCO / DISABLED
+   ============================================ */
+.kt-input:focus-within,
+.kt-select:focus,
+.kt-textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--esc-foco);
+    outline: none;
+}
+/* Campo em grupo (senha com o botão de mostrar): a borda é do div.kt-input e o aria-invalid fica no input de
+   dentro, que o KTUI não enxerga. Mesma cor do erro do KTUI. */
+.kt-input:has(> input[aria-invalid="true"]) {
+    border-color: color-mix(in oklab, var(--destructive) 60%, transparent);
+}
+
+.kt-btn[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+a.kt-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ============================================
+   SIDEBAR - item ativo com fundo suave da marca, sem borda lateral
+   ============================================ */
+.kt-sidebar .kt-menu-item.active > .kt-menu-link,
+.kt-sidebar .kt-menu-item[aria-current="page"] > .kt-menu-link {
+    background-color: color-mix(in srgb, var(--primary) 8%, transparent);
+    border-radius: 0.375rem;
+}
+.kt-sidebar .kt-menu-link {
+    border-radius: 0.375rem;
+    transition: background-color 0.15s ease;
+}
+.kt-sidebar .kt-menu-link:hover {
+    background-color: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+
+/* ============================================
+   ALERTS / TABLE / SCROLLBAR
+   ============================================ */
+.kt-alert {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+}
+
+.kt-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+.kt-table tbody tr:hover {
+    background-color: var(--accent);
+}
+
+.kt-scrollable-y-hover::-webkit-scrollbar { width: 4px; }
+.kt-scrollable-y-hover::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.12);
+    border-radius: 9999px;
+}
+.kt-scrollable-y-hover::-webkit-scrollbar-track { background: transparent; }
+
+/* ============================================
+   :visited dos botões que são <a>
+   Botão renderizado como link herda o :visited do navegador e o rótulo some sobre o fundo.
+   ============================================ */
+a.kt-btn:link,
+a.kt-btn:visited { color: inherit; }
+
+a.kt-btn-primary:not(.kt-btn-outline):link,
+a.kt-btn-primary:not(.kt-btn-outline):visited { color: var(--primary-foreground, #fff); }
+
+a.kt-btn-mono:link,
+a.kt-btn-mono:visited,
+a.kt-btn-destructive:link,
+a.kt-btn-destructive:visited { color: #fff; }
+
+a.kt-menu-link:link,
+a.kt-menu-link:visited { color: inherit; }
+
+/* ============================================
+   TELA DO PAINEL — fundo suave, blocos brancos com fio leve, selos suaves (linguagem herdada do DP)
+   ============================================ */
+.esc-tela {
+    background-color: color-mix(in srgb, var(--muted) 45%, var(--background));
+}
+.esc-tela .kt-card {
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+.esc-tela .kt-card-header {
+    border-bottom-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+.esc-tela .kt-card-footer {
+    border-top-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+.esc-tela .kt-card-title {
+    font-weight: 600;
+    color: var(--mono, var(--foreground));
+}
+.esc-tela .kt-table thead th {
+    background-color: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+.esc-tela .kt-table-border {
+    border-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+/* Selos contornados viram selos suaves: fundo tingido, sem contorno. */
+.esc-tela .kt-badge.kt-badge-outline {
+    border-color: transparent;
+    font-weight: 500;
+}
+.esc-tela .kt-alert {
+    border-color: color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+/* Linhas de dados (rótulo · valor) dentro de um bloco. */
+.esc-dados {
+    display: grid;
+    grid-template-columns: minmax(8rem, 12rem) 1fr;
+    gap: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+}
+.esc-dados > dt { color: var(--secondary-foreground); }
+.esc-dados > dd { color: var(--mono, var(--foreground)); font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 639px) {
+    .esc-dados { grid-template-columns: 1fr; gap: 0.125rem; }
+    .esc-dados > dd { margin-bottom: 0.625rem; }
+}
+
+/* Lista com fio entre as linhas. */
+.esc-linhas > li + li {
+    border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+/* ============================================
+   ABAS EM PÍLULA (links com aria-current ou botões com aria-selected + data-esc-aba/data-esc-painel)
+   ============================================ */
+.esc-abas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 0.625rem;
+    background-color: color-mix(in srgb, var(--muted) 80%, transparent);
+    align-self: flex-start;
+    width: fit-content;
+    max-width: 100%;
+}
+.esc-aba {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--secondary-foreground);
+}
+.esc-aba:hover { color: var(--foreground); }
+.esc-aba[aria-selected="true"],
+.esc-aba[aria-current="page"] {
+    background-color: var(--card);
+    color: var(--foreground);
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+.esc-aba-contador {
+    font-size: 0.6875rem;
+    padding: 0 0.375rem;
+    border-radius: 9999px;
+    background-color: color-mix(in srgb, var(--muted-foreground) 14%, transparent);
+    color: var(--secondary-foreground);
+}
+@media (max-width: 639px) {
+    /* No celular as abas rolam na horizontal em vez de quebrar em várias linhas. */
+    .esc-abas { flex-wrap: nowrap; overflow-x: auto; width: 100%; }
+    .esc-aba { white-space: nowrap; }
+}
+
+/* ============================================
+   CONTROLE SEGMENTADO (opções com aria-pressed) — vira o P/F da chamada
+   ============================================ */
+.esc-segmento {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 0.5rem;
+    background-color: var(--muted);
+}
+.esc-segmento-opcao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    height: 1.875rem;
+    padding: 0 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--secondary-foreground);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.esc-segmento-opcao > i { font-size: 0.875rem; }
+.esc-segmento-opcao:hover { color: var(--foreground); }
+.esc-segmento-opcao[aria-pressed="true"] {
+    background-color: var(--card);
+    color: var(--mono, var(--foreground));
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+/* ============================================
+   SELECT COM BUSCA (js/selecao-busca.js) — o "select2" do sistema, sem jQuery
+   ============================================ */
+.esc-selecao { position: relative; }
+.esc-selecao-original {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.esc-selecao-botao {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.5rem;
+    text-align: start;
+    cursor: pointer;
+}
+.esc-selecao-texto {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.esc-selecao-painel {
+    position: absolute;
+    z-index: 60;
+    inset-inline: 0;
+    top: calc(100% + 0.25rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.5rem;
+    background-color: var(--popover, var(--card));
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.25);
+}
+.esc-selecao-lista {
+    max-height: 16rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.esc-selecao-opcao {
+    padding: 0.4rem 0.625rem;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    cursor: pointer;
+}
+.esc-selecao-opcao:hover,
+.esc-selecao-opcao.esc-selecao-ativa { background-color: var(--accent); }
+.esc-selecao-opcao[aria-selected="true"] { color: var(--primary); font-weight: 500; }
+.esc-selecao-vazio {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+    color: var(--muted-foreground);
+}
+@media (max-width: 639px) {
+    /* No celular: painel maior e opções com altura de toque. */
+    .esc-selecao-lista { max-height: 60vh; }
+    .esc-selecao-opcao { padding: 0.75rem; font-size: 1rem; }
+}
+
+/* ============================================
+   ASSISTENTE — formulário em etapas (js/assistente.js)
+   ============================================ */
+.esc-passos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.esc-passo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem 0.375rem 0.375rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    color: var(--secondary-foreground);
+    background-color: color-mix(in srgb, var(--muted) 60%, transparent);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.esc-passo:hover { color: var(--foreground); }
+.esc-passo-numero {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    background-color: var(--card);
+}
+.esc-passo-atual {
+    color: var(--primary);
+    background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+    font-weight: 500;
+}
+.esc-passo-atual .esc-passo-numero {
+    color: var(--primary-foreground, #fff);
+    background-color: var(--primary);
+}
+.esc-passo-feito .esc-passo-numero { color: var(--color-green-600, #16a34a); }
+.esc-passo-titulo { white-space: nowrap; }
+/* Sem JS a lista de etapas não aparece (todas as seções ficam visíveis). */
+form:not(.esc-assistente-ativo) .esc-passos,
+form:not(.esc-assistente-ativo) [data-esc-passo-anterior],
+form:not(.esc-assistente-ativo) [data-esc-passo-proximo] {
+    display: none;
+}
+[data-esc-passo][hidden],
+[data-esc-passo-anterior][hidden],
+[data-esc-passo-proximo][hidden],
+[data-esc-passo-final][hidden] {
+    display: none !important;
+}
+
+/* ============================================
+   SENHA TEMPORÁRIA (mostrada uma única vez)
+   ============================================ */
+.esc-senha-temporaria {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: 0.08em;
+    user-select: all;
+}
+
+/* ============================================
+   PASSOS DA CONFIGURAÇÃO (painel inicial)
+   ============================================ */
+.esc-passo-config {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.875rem;
+    padding: 0.875rem 1rem;
+}
+.esc-passo-config-icone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 9999px;
+    background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+    color: var(--primary);
+    font-size: 1.125rem;
+}
+.esc-passo-config-texto {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    flex: 1 1 0;
+    min-width: 0;
+}
+.esc-passo-config-acao { flex-shrink: 0; }
+/* No celular, o botão desce para baixo do texto, alinhado a ele; ao lado, o texto virava uma coluna estreita. */
+@media (max-width: 639.98px) {
+    .esc-passo-config { flex-wrap: wrap; }
+    .esc-passo-config-texto { flex-basis: calc(100% - 3.125rem); }
+    .esc-passo-config-acao { margin-inline-start: 3.125rem; }
+}
+.esc-passo-config-feito .esc-passo-config-icone {
+    background-color: color-mix(in srgb, var(--color-green-500, #22c55e) 14%, transparent);
+    color: var(--color-green-600, #16a34a);
+}
+
+/* ============================================
+   TOQUE — só nas superfícies de celular (quadra e portal). O KTUI é pequeno para uma mão:
+   botão e input de 34 px e texto de 13 px (o iOS dá zoom em input com menos de 16 px).
+   ============================================ */
+.esc-toque .kt-btn {
+    min-height: var(--esc-toque);
+    padding-inline: 1rem;
+    font-size: 1rem;
+}
+.esc-toque .kt-btn-icon {
+    min-width: var(--esc-toque);
+    padding-inline: 0;
+}
+.esc-toque .kt-input,
+.esc-toque .kt-select,
+.esc-toque .kt-textarea {
+    min-height: var(--esc-toque);
+    font-size: 1rem;
+}
+.esc-toque .kt-input input { font-size: 1rem; }
+.esc-toque .esc-segmento-opcao {
+    height: var(--esc-toque);
+    min-width: var(--esc-toque);
+    padding: 0 1rem;
+    font-size: 1rem;
+}
+
+/* ============================================
+   LAYOUT DA QUADRA (_LayoutQuadra) — professor em pé, uma mão, sinal ruim
+   ============================================ */
+.esc-quadra {
+    min-height: 100dvh;
+    background-color: var(--background);
+}
+.esc-quadra-topo {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 3.5rem;
+    padding: max(0.5rem, env(safe-area-inset-top)) 0.75rem 0.5rem;
+    background-color: var(--background);
+    border-bottom: 1px solid var(--border);
+}
+.esc-quadra-titulo {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--mono, var(--foreground));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.esc-quadra-conteudo {
+    padding: 0.75rem 0.75rem calc(var(--esc-barra-acao) + env(safe-area-inset-bottom) + 1rem);
+    max-width: 40rem;
+    margin-inline: auto;
+}
+
+/* Barra de ação inferior fixa: a ação principal ao alcance do polegar. */
+.esc-barra-acao {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 0.75rem max(0.75rem, env(safe-area-inset-bottom));
+    background-color: var(--background);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -6px 18px -12px rgba(15, 23, 42, 0.25);
+}
+/* min-width: 0 deixa o botão encolher abaixo do texto: sem isso a barra (fixed) vaza da tela em 375 px e a rolagem
+   da página não denuncia. O rótulo quebra em duas linhas dentro dos 48 px; a ação principal fica com mais espaço. */
+.esc-barra-acao > .kt-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    padding-inline: 0.75rem;
+    white-space: normal;
+    line-height: 1.2;
+    text-align: center;
+}
+.esc-barra-acao > .kt-btn-primary { flex-grow: 1.4; }
+
+/* Selo de conexão: online (sem destaque) e sem sinal (âmbar, com os pendentes). */
+.esc-conexao {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--secondary-foreground);
+    background-color: var(--muted);
+}
+.esc-conexao-offline {
+    color: var(--color-amber-800, #92400e);
+    background-color: var(--color-amber-100, #fef3c7);
+}
+.dark .esc-conexao-offline {
+    color: var(--color-amber-200, #fde68a);
+    background-color: color-mix(in srgb, var(--color-amber-500, #f59e0b) 22%, transparent);
+}
+
+/* Linha da chamada: nome do aluno + P/F grandes. */
+.esc-linha-chamada {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0;
+}
+.esc-linha-chamada-nome {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--mono, var(--foreground));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.esc-presente[aria-pressed="true"] {
+    background-color: var(--color-green-600, #16a34a);
+    color: #fff;
+}
+.esc-falta[aria-pressed="true"] {
+    background-color: var(--destructive);
+    color: #fff;
+}
+
+/* ============================================
+   PORTAL DO RESPONSÁVEL (_LayoutPortal) — celular, sem instalar nada
+   ============================================ */
+.esc-portal {
+    min-height: 100dvh;
+    background-color: color-mix(in srgb, var(--muted) 45%, var(--background));
+}
+.esc-portal-topo {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding: max(0.75rem, env(safe-area-inset-top)) 1rem 0.75rem;
+    background-color: var(--background);
+    border-bottom: 1px solid var(--border);
+}
+.esc-portal-conteudo {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 1rem calc(4.5rem + env(safe-area-inset-bottom) + 1rem);
+    max-width: 40rem;
+    margin-inline: auto;
+}
+.esc-chips {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.esc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    flex-shrink: 0;
+    min-height: 2.25rem;
+    padding: 0 0.875rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--secondary-foreground);
+    background-color: var(--card);
+}
+.esc-chip[aria-pressed="true"] {
+    border-color: var(--primary);
+    color: var(--primary);
+    background-color: color-mix(in srgb, var(--primary) 8%, var(--card));
+}
+.esc-portal-abas {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding-bottom: env(safe-area-inset-bottom);
+    background-color: var(--background);
+    border-top: 1px solid var(--border);
+}
+.esc-portal-aba {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    min-height: 4rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--secondary-foreground);
+}
+.esc-portal-aba > i { font-size: 1.375rem; }
+.esc-portal-aba[aria-current="page"] { color: var(--primary); }
+
+/* Botões grandes de resposta (Sim / Não) na convocação. */
+.esc-resposta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.625rem;
+}
+.esc-resposta > .kt-btn {
+    min-height: var(--esc-toque);
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* ============================================
+   VITRINE DO DESIGN SYSTEM (/dev/design)
+   ============================================ */
+.esc-amostra-cor {
+    height: 3.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+}
+.esc-moldura-celular {
+    width: 100%;
+    max-width: 24rem;
+    height: 44rem;
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
+    overflow: hidden;
+    background-color: var(--background);
+}

@@ -1,0 +1,49 @@
+@inject IAutorizacao Autorizacao
+@model DadosEscolinhaResposta
+@{
+    ViewData["Title"] = "Dados da escolinha";
+    string Ou(string? valor) => string.IsNullOrWhiteSpace(valor) ? "—" : valor;
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Dados da escolinha" descricao="Identificação, endereço e contato. O nome aparece nas mensagens às famílias."
+                      meta="@($"Cadastrada em {Formatacao.Data(Model.DataCadastro)}")">
+        @if (Autorizacao.Pode(Recurso.ConfiguracaoEscolinha, Operacao.Alterar))
+        {
+            <a class="kt-btn kt-btn-primary" asp-action="Editar"><i class="ki-filled ki-pencil"></i> Editar</a>
+        }
+    </cabecalho-pagina>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-7.5">
+        <div class="kt-card">
+            <div class="kt-card-header"><h3 class="kt-card-title">Identificação</h3></div>
+            <div class="kt-card-content">
+                <dl class="esc-dados">
+                    <dt>Nome</dt>
+                    <dd>@Model.Nome</dd>
+                    <dt>Razão social</dt>
+                    <dd>@Ou(Model.RazaoSocial)</dd>
+                    <dt>CNPJ</dt>
+                    <dd>@Ou(Formatacao.Cnpj(Model.Cnpj))</dd>
+                    <dt>Telefone</dt>
+                    <dd>@Ou(Formatacao.Telefone(Model.Telefone))</dd>
+                    <dt>E-mail</dt>
+                    <dd>@Ou(Model.Email)</dd>
+                </dl>
+            </div>
+        </div>
+        <div class="kt-card">
+            <div class="kt-card-header"><h3 class="kt-card-title">Endereço</h3></div>
+            <div class="kt-card-content">
+                <dl class="esc-dados">
+                    <dt>Endereço</dt>
+                    <dd>@Ou(Model.Endereco.Resumo())</dd>
+                    <dt>Complemento</dt>
+                    <dd>@Ou(Model.Endereco.Complemento)</dd>
+                    <dt>CEP</dt>
+                    <dd>@Ou(Formatacao.Cep(Model.Endereco.Cep))</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

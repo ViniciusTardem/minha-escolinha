@@ -1,0 +1,41 @@
+@model Modulo
+@{
+    ViewData["Title"] = Model.Titulo;
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@Model.Titulo" descricao="@Model.Resumo" meta="@($"{CatalogoModulos.RotuloSituacao(Model.Situacao)} · chega na fatia {Model.Fatia}")"></cabecalho-pagina>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-7.5">
+        <div class="kt-card lg:col-span-2">
+            <div class="kt-card-content flex flex-col items-center justify-center gap-4 py-14 text-center px-6">
+                <div class="size-20 rounded-full bg-primary/10 flex items-center justify-center">
+                    <i class="ki-filled @Model.Icone text-4xl text-primary"></i>
+                </div>
+                <h2 class="text-lg font-semibold text-mono">@Model.Titulo chega em breve</h2>
+                <p class="text-sm text-secondary-foreground max-w-lg">@Model.Descricao</p>
+                <span class="kt-badge kt-badge-outline kt-badge-primary">Fatia @Model.Fatia do piloto</span>
+                <a class="kt-btn kt-btn-outline mt-2" asp-controller="Painel" asp-action="Index">
+                    <i class="ki-filled ki-arrow-left"></i> Voltar ao painel
+                </a>
+            </div>
+        </div>
+
+        <div class="kt-card">
+            <div class="kt-card-header">
+                <h3 class="kt-card-title">O que você vai poder fazer</h3>
+            </div>
+            <div class="kt-card-content">
+                <ul class="flex flex-col gap-3">
+                    @foreach (var recurso in Model.Recursos)
+                    {
+                        <li class="flex items-start gap-2.5 text-sm text-foreground">
+                            <i class="ki-filled ki-check-circle text-primary text-base shrink-0 mt-0.5"></i>
+                            <span>@recurso</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

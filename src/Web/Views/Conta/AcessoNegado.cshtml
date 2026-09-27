@@ -1,0 +1,21 @@
+@{
+    ViewData["Title"] = "Acesso negado";
+    Layout = User.Identity?.IsAuthenticated == true ? "_Layout" : "_LayoutAutenticacao";
+}
+
+<div class="kt-container-fixed w-full max-w-[640px]">
+    <div class="kt-card">
+        <div class="kt-card-content flex flex-col items-center justify-center gap-3 py-16 text-center px-5">
+            <div class="size-20 rounded-full bg-muted/70 flex items-center justify-center">
+                <i class="ki-filled ki-lock-2 text-4xl text-muted-foreground"></i>
+            </div>
+            <h1 class="text-base font-semibold text-mono">Acesso negado</h1>
+            <p class="text-sm text-secondary-foreground max-w-sm">
+                O seu papel nesta escolinha não dá acesso a esta área. Se precisar dela, fale com o gestor da escolinha.
+            </p>
+            <a class="kt-btn kt-btn-primary" asp-controller="Painel" asp-action="Index">
+                <i class="ki-filled ki-arrow-left"></i> Voltar para o painel
+            </a>
+        </div>
+    </div>
+</div>

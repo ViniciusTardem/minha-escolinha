@@ -1,0 +1,101 @@
+/*
+ * CSS complementar da Minha Escolinha — build: `npm run css` (saída wwwroot/css/esc.css, VERSIONADA).
+ *
+ * O styles.css do Metronic é pré-compilado: classe Tailwind que não estiver nele não funciona.
+ * Este build gera SÓ as utilities usadas nas Views, no JS e nos textos de classe do C# (TagHelpers), sem preflight
+ * e sem base, com os tokens do KTUI. Ordem no layout: keenicons → styles.css → esc.css → custom.css.
+ * Mesma versão do Tailwind do bundle do Metronic (4.1.8). Portado do dp.src.css do AlternativaDepartamentoPessoal.
+ */
+@layer theme, base, components, utilities;
+
+/* theme.css: escala (spacing, containers, breakpoints) que as utilities usam; o Tailwind 4 só emite as variáveis usadas. */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+
+@source "../Views/**/*.cshtml";
+@source "../Areas/**/*.cshtml";
+@source "../wwwroot/js/**/*.js";
+@source "../Infraestrutura/**/*.cs";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Variantes de estado do KTUI com os mesmos seletores do styles.css: qualquer combinação usada nas Views passa a existir
+   (sem isto, só as combinações que o demo do Metronic usa estariam no CSS pré-compilado). */
+@custom-variant kt-toggle-password-active {
+  &[data-kt-toggle-password-initialized].active { @slot; }
+  [data-kt-toggle-password-initialized].active & { @slot; }
+}
+@custom-variant kt-dropdown-open {
+  [data-kt-dropdown-initialized].open > [data-kt-dropdown-toggle]& { @slot; }
+  [data-kt-dropdown-initialized].open > [data-kt-dropdown-toggle] & { @slot; }
+}
+@custom-variant kt-toggle-active {
+  &[data-kt-toggle].active { @slot; }
+  [data-kt-toggle].active & { @slot; }
+}
+@custom-variant kt-menu-item-active {
+  &.kt-menu-item.active { @slot; }
+  .kt-menu-item.active & { @slot; }
+  .kt-menu-item.active > .kt-menu-link & { @slot; }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-mono: var(--mono);
+  --color-mono-foreground: var(--mono-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Cores de status (mesma paleta dos kt-badge-*) */
+  --color-success: var(--color-green-500);
+  --color-warning: var(--color-yellow-500);
+  --color-info: var(--color-violet-500);
+
+  --text-2sm: 0.8125rem;
+  --text-2sm--line-height: 1.125rem;
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 0.75rem;
+}
+
+/* Fonte Inter servida localmente (CSP: sem Google Fonts). Arquivos copiados por `npm run fontes`. */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../fonts/inter/inter-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../fonts/inter/inter-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Fora de camada de propósito: vence o --font-sans (camada theme) do styles.css. */
+:root {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+}

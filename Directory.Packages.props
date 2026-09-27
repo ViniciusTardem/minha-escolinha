@@ -1,0 +1,48 @@
+<Project>
+
+  <!--
+    Gerenciamento central de pacotes (CPM): TODA versão de pacote mora aqui, fixa.
+    Nos .csproj, <PackageReference Include="..." /> sem Version.
+    Nunca wildcard (9.0.*, 1.*). Versões alinhadas às do AlternativaDepartamentoPessoal em 26/09/2026.
+    Linha 9.0.x: só patches (o projeto é net9.0). Pacotes de terceiros: sem troca de versão maior sem registrar a decisão.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup Label="Application">
+    <PackageVersion Include="FluentValidation" Version="12.1.1" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.20" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.20" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.20" />
+  </ItemGroup>
+
+  <ItemGroup Label="Infrastructure">
+    <PackageVersion Include="BCrypt.Net-Next" Version="4.2.1" />
+    <PackageVersion Include="Hangfire.Core" Version="1.8.25" />
+    <PackageVersion Include="Hangfire.NetCore" Version="1.8.25" />
+    <PackageVersion Include="Hangfire.SqlServer" Version="1.8.25" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="9.0.20" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.20" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.20" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.20" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Web">
+    <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.25" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.20" />
+    <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testes">
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.10.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+</Project>

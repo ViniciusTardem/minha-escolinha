@@ -1,0 +1,20 @@
+@{
+    ViewData["Title"] = "Autenticação";
+    Layout = "_LayoutAutenticacao";
+}
+
+@* Exemplo das telas fora do sistema: o cartão central sobre fundo suave, sem imagens. *@
+<div class="kt-card max-w-[380px] w-full">
+    <div class="kt-card-content flex flex-col gap-5 p-8 sm:p-10">
+        <div class="text-center">
+            <h1 class="text-lg font-medium text-mono leading-none mb-2.5">Ativar acesso</h1>
+            <p class="text-sm text-secondary-foreground">Exemplo da ativação do convite (fatia S2): link de uso único + CPF conferido.</p>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="kt-form-label font-normal text-mono" for="vitrine_cpf">Seu CPF</label>
+            <input class="kt-input" id="vitrine_cpf" inputmode="numeric" placeholder="000.000.000-00" />
+        </div>
+        <button class="kt-btn kt-btn-primary flex justify-center grow" type="button">Continuar</button>
+        <a class="kt-link text-sm text-center" href="/dev/design">Voltar à vitrine</a>
+    </div>
+</div>
