@@ -70,6 +70,12 @@ public sealed class BancoDeTestes : IAsyncLifetime
         GarantirBancoDeTeste();
         await using var contexto = NovoContextoSemEscolinha();
         await contexto.Database.ExecuteSqlRawAsync("""
+            DELETE FROM RespostaMensagem;
+            DELETE FROM EventoMensagem;
+            DELETE FROM Mensagem;
+            DELETE FROM RastreioWhatsApp;
+            DELETE FROM ConviteAcesso;
+            DELETE FROM TemplateMensagem;
             DELETE FROM ConsentimentoAluno;
             DELETE FROM VinculoAlunoResponsavel;
             DELETE FROM Matricula;
@@ -163,6 +169,12 @@ public sealed class AmbienteAplicacao : IDisposable
     public GatewayStripeFalso GatewayStripe { get; } = new();
     public AgendadorPlataformaDeTeste Agendador { get; } = new();
 
+    /// <summary>WhatsApp no modo Simulado (sem a exigência de template aprovado); o teste muda para Api quando precisa.</summary>
+    public MinhaEscolinha.Application.Mensageria.OpcoesWhatsApp WhatsApp { get; } = new() { UrlPublica = "https://localhost:7186" };
+
+    public GatewayWhatsAppFalso GatewayWhatsApp { get; } = new();
+    public AgendadorMensageriaDeTeste Mensageria { get; } = new();
+
     private readonly ServiceProvider _servicos;
 
     public AmbienteAplicacao()
@@ -182,9 +194,11 @@ public sealed class AmbienteAplicacao : IDisposable
 
         services.AddScoped<AuditoriaInterceptor>();
         services.AddScoped<EscolinhaInterceptor>();
+        services.AddScoped<MinhaEscolinha.Infrastructure.Mensageria.DespachoMensagensInterceptor>();
         services.AddDbContext<EscolinhaDbContext>((sp, o) => MinhaEscolinha.Infrastructure.DependencyInjection
             .ConfigurarBanco(o, BancoDeTestes.ConnectionString)
-            .AddInterceptors(sp.GetRequiredService<AuditoriaInterceptor>(), sp.GetRequiredService<EscolinhaInterceptor>()));
+            .AddInterceptors(sp.GetRequiredService<AuditoriaInterceptor>(), sp.GetRequiredService<EscolinhaInterceptor>(),
+                sp.GetRequiredService<MinhaEscolinha.Infrastructure.Mensageria.DespachoMensagensInterceptor>()));
         services.AddScoped<IExecutorEscolinha, ExecutorEscolinha>();
         services.AddScoped<IAcessoRepositorio, AcessoRepositorio>();
         services.AddScoped<MinhaEscolinha.Application.Configuracao.IConfiguracaoRepositorio, ConfiguracaoRepositorio>();
@@ -197,6 +211,11 @@ public sealed class AmbienteAplicacao : IDisposable
         services.AddSingleton(Stripe);
         services.AddSingleton<IGatewayStripe>(GatewayStripe);
         services.AddSingleton<IAgendadorPlataforma>(Agendador);
+        services.AddScoped<MinhaEscolinha.Application.Mensageria.IMensageriaRepositorio, MinhaEscolinha.Infrastructure.Mensageria.MensageriaRepositorio>();
+        services.AddScoped<MinhaEscolinha.Application.Acesso.IConvitesRepositorio, MinhaEscolinha.Infrastructure.Mensageria.ConvitesRepositorio>();
+        services.AddSingleton(WhatsApp);
+        services.AddSingleton<MinhaEscolinha.Application.Mensageria.IGatewayWhatsApp>(GatewayWhatsApp);
+        services.AddSingleton<MinhaEscolinha.Application.Mensageria.IAgendadorMensageria>(Mensageria);
         _servicos = services.BuildServiceProvider();
     }
 

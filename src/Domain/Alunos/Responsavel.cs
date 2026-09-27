@@ -64,8 +64,25 @@ public enum Parentesco
 /// </list>
 /// A verificação do vínculo para o portal (BL-M01-06) entra no S2, com o convite.
 /// </summary>
+/// <summary>
+/// Verificação do vínculo (BL-M01-06): só vale para quem ativou o acesso. Enquanto pendente, o portal não mostra nada do
+/// aluno (bloqueio total); o gestor confirma ou recusa. A comunicação pelo WhatsApp não depende dela: vai para o número
+/// que a escolinha cadastrou.
+/// </summary>
+public enum VerificacaoVinculo
+{
+    /// <summary>O responsável ainda não tem acesso: não há o que verificar.</summary>
+    NaoSolicitada = 0,
+
+    Pendente = 10,
+    Verificado = 20,
+    Recusado = 30
+}
+
 public class VinculoAlunoResponsavel : IEntidadeAuditavel, IEntidadeDaEscolinha
 {
+    public const int TamanhoMotivoRecusa = 300;
+
     public Guid VinculoAlunoResponsavel_ID { get; set; }
     public Guid Escolinha_ID { get; set; }
     public Guid Aluno_ID { get; set; }
@@ -78,10 +95,62 @@ public class VinculoAlunoResponsavel : IEntidadeAuditavel, IEntidadeDaEscolinha
     public bool RecebeCobranca { get; private set; }
     public bool RecebeNotificacao { get; set; }
 
+    public VerificacaoVinculo Verificacao { get; private set; } = VerificacaoVinculo.NaoSolicitada;
+    public DateTime? VerificacaoSolicitadaEm { get; private set; }
+    public DateTime? VerificadoEm { get; private set; }
+    public Guid? VerificadoPor_ID { get; private set; }
+    public string? VerificadoPorNome { get; private set; }
+    public string? MotivoRecusa { get; private set; }
+
     public DateTime DataCadastro { get; set; }
     public Guid? UsuarioCadastro_ID { get; set; }
     public DateTime? DataAtualizacao { get; set; }
     public Guid? UsuarioAtualizacao_ID { get; set; }
+
+    /// <summary>O responsável ativou o acesso (ou já tinha, e o vínculo é novo): o gestor precisa confirmar.</summary>
+    public void SolicitarVerificacao(DateTime agora)
+    {
+        if (Verificacao is VerificacaoVinculo.Pendente or VerificacaoVinculo.Verificado) return;
+        Verificacao = VerificacaoVinculo.Pendente;
+        VerificacaoSolicitadaEm = agora;
+        MotivoRecusa = null;
+    }
+
+    public void Confirmar(DateTime agora, Guid? autorId, string autorNome)
+    {
+        if (Verificacao != VerificacaoVinculo.Pendente) throw new InvalidOperationException("Só o vínculo pendente é confirmado.");
+        Verificacao = VerificacaoVinculo.Verificado;
+        VerificadoEm = agora;
+        VerificadoPor_ID = autorId;
+        VerificadoPorNome = autorNome;
+    }
+
+    public void Recusar(DateTime agora, Guid? autorId, string autorNome, string motivo)
+    {
+        if (Verificacao != VerificacaoVinculo.Pendente) throw new InvalidOperationException("Só o vínculo pendente é recusado.");
+        if (string.IsNullOrWhiteSpace(motivo)) throw new ArgumentException("A recusa exige motivo.", nameof(motivo));
+        Verificacao = VerificacaoVinculo.Recusado;
+        VerificadoEm = agora;
+        VerificadoPor_ID = autorId;
+        VerificadoPorNome = autorNome;
+        MotivoRecusa = TextoHelper.Truncar(motivo, TamanhoMotivoRecusa);
+    }
+
+    /// <summary>
+    /// Vínculo criado pelo gestor para quem já tem acesso: quem cria confirma (a verificação é sobre a pessoa que ativou
+    /// o acesso, e o gestor está vinculando essa pessoa de propósito).
+    /// </summary>
+    public void ConfirmarNaCriacao(DateTime agora, Guid? autorId, string autorNome)
+    {
+        Verificacao = VerificacaoVinculo.Verificado;
+        VerificacaoSolicitadaEm = agora;
+        VerificadoEm = agora;
+        VerificadoPor_ID = autorId;
+        VerificadoPorNome = autorNome;
+    }
+
+    /// <summary>O portal mostra o aluno: vínculo confirmado pelo gestor.</summary>
+    public bool Verificado => Verificacao == VerificacaoVinculo.Verificado;
 
     /// <summary>O pagador sempre recebe a cobrança; quem não recebe cobrança não pode ser o pagador.</summary>
     public void DefinirFinanceiro(bool pagador, bool recebeCobranca)
@@ -89,6 +158,15 @@ public class VinculoAlunoResponsavel : IEntidadeAuditavel, IEntidadeDaEscolinha
         Pagador = pagador;
         RecebeCobranca = recebeCobranca || pagador;
     }
+
+    public static string Rotulo(VerificacaoVinculo verificacao) => verificacao switch
+    {
+        VerificacaoVinculo.NaoSolicitada => "Sem acesso",
+        VerificacaoVinculo.Pendente => "A confirmar",
+        VerificacaoVinculo.Verificado => "Confirmado",
+        VerificacaoVinculo.Recusado => "Recusado",
+        _ => verificacao.ToString()
+    };
 
     public static string Rotulo(Parentesco parentesco) => parentesco switch
     {

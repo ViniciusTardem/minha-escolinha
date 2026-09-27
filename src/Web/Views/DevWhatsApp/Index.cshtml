@@ -1,0 +1,101 @@
+@using MinhaEscolinha.Infrastructure.Integracao.WhatsApp
+@model IReadOnlyList<ArmazemSimuladorWhatsApp.MensagemSimulada>
+@{
+    ViewData["Title"] = "Simulador do WhatsApp";
+    var conversas = Model.GroupBy(m => m.Telefone).OrderByDescending(g => g.Max(m => m.EnviadaEmUtc)).ToList();
+    string Status(string s) => s switch { "delivered" => "entregue", "read" => "lida", "failed" => "falhou", _ => "enviada" };
+    // Como no celular: o link da mensagem é clicável (o do convite abre a ativação).
+    string[] Partes(string texto) => System.Text.RegularExpressions.Regex.Split(texto, @"(https?://\S+)");
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Simulador do WhatsApp" meta="Só em Development"
+                      descricao="O celular das famílias, sem conta na Meta: cada mensagem que o motor manda chega aqui. Entregar, ler, falhar, tocar num botão ou responder manda o webhook assinado pelo endpoint de verdade, e o log de mensagens atualiza em instantes. Abra o link do convite numa janela anônima: a ativação entra com a conta nova.">
+        <a class="kt-btn kt-btn-outline" href="/Mensagens"><i class="ki-filled ki-message-text-2"></i> Log de mensagens</a>
+        @if (Model.Count > 0)
+        {
+            <form method="post" asp-action="Limpar" data-esc-confirmar="Apagar as conversas do simulador? O log do sistema continua.">
+                <button class="kt-btn kt-btn-ghost" type="submit"><i class="ki-filled ki-trash"></i> Limpar</button>
+            </form>
+        }
+    </cabecalho-pagina>
+
+    @if (conversas.Count == 0)
+    {
+        <div class="kt-card">
+            <estado-vazio icone="ki-whatsapp" titulo="Nenhuma mensagem ainda" texto="Mande um convite de acesso ou cancele um treino: a mensagem chega aqui assim que o motor enviar."></estado-vazio>
+        </div>
+    }
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        @foreach (var conversa in conversas)
+        {
+            <div class="kt-card">
+                <div class="kt-card-header">
+                    <h3 class="kt-card-title flex items-center gap-2"><i class="ki-filled ki-whatsapp text-success"></i> @Formatacao.Telefone("+" + conversa.Key)</h3>
+                    <span class="text-xs text-secondary-foreground">@conversa.Count() mensagem(ns)</span>
+                </div>
+                <ul class="esc-linhas">
+                    @foreach (var m in conversa.OrderByDescending(m => m.EnviadaEmUtc))
+                    {
+                        <li class="flex flex-col gap-3 px-5 py-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="font-mono text-xs text-secondary-foreground">@m.Template</span>
+                                <span class="text-xs text-secondary-foreground">@Formatacao.DataHora(DataHoraBrasil.ConverterParaBrasilia(m.EnviadaEmUtc)) · @Status(m.Status)</span>
+                            </div>
+                            <p class="text-sm text-foreground wrap-anywhere">
+                                @foreach (var parte in Partes(m.Texto))
+                                {
+                                    if (parte.StartsWith("http", StringComparison.Ordinal))
+                                    {
+                                        <a class="text-primary underline" href="@parte" target="_blank" rel="noopener">@parte</a>
+                                    }
+                                    else
+                                    {
+                                        @parte
+                                    }
+                                }
+                            </p>
+                            <div class="flex flex-wrap gap-2">
+                                @for (var i = 0; i < m.Botoes.Count; i++)
+                                {
+                                    <form method="post" asp-action="Botao" asp-route-id="@m.Id" asp-route-indice="@i">
+                                        <button class="kt-btn kt-btn-sm kt-btn-primary" type="submit">@m.Botoes[i]</button>
+                                    </form>
+                                }
+                                @if (m.Status is "sent")
+                                {
+                                    <form method="post" asp-action="Entregar" asp-route-id="@m.Id">
+                                        <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit"><i class="ki-filled ki-check"></i> Entregar</button>
+                                    </form>
+                                }
+                                @if (m.Status is "sent" or "delivered")
+                                {
+                                    <form method="post" asp-action="Ler" asp-route-id="@m.Id">
+                                        <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit"><i class="ki-filled ki-double-check"></i> Ler</button>
+                                    </form>
+                                    <form method="post" asp-action="Falhar" asp-route-id="@m.Id">
+                                        <button class="kt-btn kt-btn-sm kt-btn-ghost" type="submit"><i class="ki-filled ki-cross-circle"></i> Falhar</button>
+                                    </form>
+                                }
+                            </div>
+                            @foreach (var r in m.Respostas)
+                            {
+                                <span class="self-end rounded-lg bg-muted px-3 py-2 text-sm text-foreground">@(r.Payload is null ? r.Texto : $"Botão: {r.Texto}")</span>
+                            }
+                            <form method="post" asp-action="Responder" asp-route-id="@m.Id" class="flex flex-wrap items-center gap-2">
+                                <label class="sr-only" for="texto_@m.Id">Resposta em texto</label>
+                                <input class="kt-input kt-input-sm flex-1 min-w-40" id="texto_@m.Id" name="texto" maxlength="500" placeholder="Responder com texto" />
+                                <label class="kt-label">
+                                    <input class="kt-checkbox kt-checkbox-sm" type="checkbox" name="citar" value="true" checked />
+                                    <span class="text-xs text-secondary-foreground">citar esta mensagem</span>
+                                </label>
+                                <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit">Responder</button>
+                            </form>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</div>

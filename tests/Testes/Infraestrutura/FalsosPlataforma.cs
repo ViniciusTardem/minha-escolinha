@@ -65,3 +65,34 @@ public sealed class AgendadorPlataformaDeTeste : IAgendadorPlataforma
     public void ProcessarWebhookStripe(Guid webhookId) => Webhooks.Add(webhookId);
     public void ConferirCompraCreditos(Guid escolinhaId, Guid compraId) => Conferencias.Add((escolinhaId, compraId));
 }
+
+/// <summary>
+/// WhatsApp controlado pelo teste: guarda o que "saiu", devolve um wamid por envio e deixa o teste simular a falha
+/// (retentável ou definitiva) da próxima chamada.
+/// </summary>
+public sealed class GatewayWhatsAppFalso : MinhaEscolinha.Application.Mensageria.IGatewayWhatsApp
+{
+    public List<MinhaEscolinha.Application.Mensageria.PedidoEnvioWhatsApp> Enviados { get; } = [];
+    public FalhaIntegracaoException? Falha { get; set; }
+
+    public Task<MinhaEscolinha.Application.Mensageria.EnvioWhatsApp> EnviarTemplateAsync(
+        MinhaEscolinha.Application.Mensageria.PedidoEnvioWhatsApp pedido, CancellationToken ct = default)
+    {
+        if (Falha is { } falha) throw falha;
+        Enviados.Add(pedido);
+        return Task.FromResult(new MinhaEscolinha.Application.Mensageria.EnvioWhatsApp($"wamid.TESTE{Enviados.Count:D4}{pedido.MensagemId:N}",
+            MinhaEscolinha.Domain.Comum.Telefone.ChaveWhatsApp(pedido.Telefone)));
+    }
+
+    public string IdDe(Guid mensagemId) => $"wamid.TESTE{Enviados.FindIndex(p => p.MensagemId == mensagemId) + 1:D4}{mensagemId:N}";
+}
+
+/// <summary>A fila do motor em memória: o teste vê o que foi despachado (e para quando) e decide quando rodar.</summary>
+public sealed class AgendadorMensageriaDeTeste : MinhaEscolinha.Application.Mensageria.IAgendadorMensageria
+{
+    public List<(Guid EscolinhaId, Guid MensagemId, DateTime? Quando)> Envios { get; } = [];
+    public List<Guid> Webhooks { get; } = [];
+
+    public void Enviar(Guid escolinhaId, Guid mensagemId, DateTime? quando = null) => Envios.Add((escolinhaId, mensagemId, quando));
+    public void ProcessarWebhookWhatsApp(Guid webhookId) => Webhooks.Add(webhookId);
+}

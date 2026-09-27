@@ -51,11 +51,11 @@ A tabela da §4.5 do plano, com o status de hoje.
 | Extra EX-01 | Pacotes de créditos e integração com o Stripe (equipe); vitrine de pacotes e compras na tela de créditos, volta do pagamento (gestor); simulador `/dev/stripe` | equipe LDNA e gestor · Painel | `account/billing/*` | **Pronto** (modo Simulado) |
 | S1 | Turmas (ocupação de vagas), ficha da turma (horários, composição, sessões), nova turma em etapas; Agenda (por turma, professor ou quadra); Locais | gestor; professor só leitura das suas · Painel | `network/user-table/*`, `account/activity` | **Pronto** (27/09/2026) |
 | S1 | Alunos (por turma ou visão geral), **ficha do aluno** (página com abas: responsáveis, matrículas, saúde restrita, consentimentos, histórico; D37), novo aluno em etapas com detecção de duplicidade, desligar (data + motivo + efeitos); Responsáveis; Professores com disponibilidade | gestor; professor P · Painel | `public-profile/profiles/crm`, `account/members/*` | **Pronto** (27/09/2026) |
-| S2 | Mensagens (log de entrega + linha do tempo), Templates (categoria, tom, aprovação), Convites em lote, fila de verificação de vínculos, sino; ativação do convite; `/dev/whatsapp` (caixa de entrada por número, com botões Sim/Não) | gestor · Painel; convidado · Autenticação | `account/notifications`, `account/members/import-members` | Em breve (`/mensagens`); o resto planejado |
+| S2 | Mensagens (log de entrega + linha do tempo), Templates (categoria, tom, aprovação), Convites em lote, fila de verificação de vínculos; ativação do convite; portal inicial (filhos confirmados e avisos); `/dev/whatsapp` (caixa de entrada por número, com os botões do template) | gestor · Painel; equipe LDNA · Painel (Templates); convidado · Autenticação; responsável · Portal | `account/notifications`, `account/members/import-members` | **Pronto** (27/09/2026), no simulador. O sino não foi construído: as pendências ficam no Painel (D55) |
 | S3 | **Hoje → Chamada** (P/F num toque, offline, "Concluir chamada" na barra inferior); selo de risco nas listas; aba de alertas na ficha (CA-6) | professor · **Quadra**; gestor · Painel | — (tela própria) | Em breve (`/chamada`) |
 | S4 | Financeiro › Pagamentos (agrupado por situação, com as ações isentar, cancelar e reenviar); Divergências (resolução manual com autoria); aba Financeiro na ficha; `/dev/asaas` | gestor · Painel | `account/billing/*` | Em breve (`/mensalidades`) |
 | S5 | **Montar fim de semana** (jogos → convocados por jogo, com alertas → revisar → disparar tudo); **Painel de confirmações** em tempo real (registrar resposta por fora; cancelar, adiar ou alterar em um toque) | professor · **Quadra** (e Painel) | `network/user-cards/*` | Em breve (`/jogos`) |
-| S6 | Portal: Início (filhos, pendências, próximos jogos), Jogos (Sim/Não por filho), Pagamentos (total do mês + detalhamento por filho, pagar pela fatura Asaas ou pelo Pix copia-e-cola), Presenças (só leitura), Avisos | responsável · **Portal** | `store-client/checkout/*` (só a forma) | Planejado; o layout está pronto |
+| S6 | Portal: Início (filhos, pendências, próximos jogos), Jogos (Sim/Não por filho), Pagamentos (total do mês + detalhamento por filho, pagar pela fatura Asaas ou pelo Pix copia-e-cola), Presenças (só leitura), Avisos | responsável · **Portal** | `store-client/checkout/*` (só a forma) | Começado no S2: Início (filhos confirmados) e Avisos prontos; Jogos e Pagamentos "em breve" |
 | S7 | Importação: enviar planilha → mapear → validar e classificar → **conferência** (novos, reaproveitados, vínculos, bloqueados; saúde mascarada) → confirmar; modelo `.xlsx` para baixar | gestor ou equipe · Painel | `account/members/import-members` | Em breve (`/importacao`) |
 
 As referências ficam em `docs/metronic/html/demo1/` (cópia local, fora do git).
@@ -136,7 +136,7 @@ Todas no Painel. "Professor: escopo" = o professor abre, mas só com o que é da
 | Editar turma | `GET` e `POST /Turmas/Editar/{id}` | idem | a mesma view, inteira (sem etapas, D42); ajusta as sessões previstas; versão de linha | M04-01, M04-04 |
 | Encerrar turma | `GET` e `POST /Turmas/Encerrar/{id}` | idem | só sem matrícula ativa; motivo obrigatório; tira da agenda as previstas futuras (D39) | M04-01 |
 | Agenda | `GET /Agenda` (`recorte`, `id`, `de`, `ate`, `modalidadeId`, `situacao`) | `[Permissao(RegistroPresenca)]`; professor: escopo | por turma, professor ou local; o mês com setas; filtros secundários recolhidos em `<details>`; alertas por sessão (professor e quadra ocupada) | M04-08, M04-11, M04-09, EX-02 |
-| Cancelar sessão | `GET` e `POST /Sessoes/Cancelar/{id}` | `RegistroPresenca`, `Alterar`; professor: só as próprias | motivo obrigatório; o aviso às famílias chega com o S2 | M04-06 |
+| Cancelar sessão | `GET` e `POST /Sessoes/Cancelar/{id}` | `RegistroPresenca`, `Alterar`; professor: só as próprias | motivo obrigatório; desde o S2, o aviso vai a cada família da turma pelo WhatsApp (e no portal de quem ativou) | M04-06 |
 | Locais de treino | `GET /Locais` | `[Permissao(ConfiguracaoEscolinha)]` | endereço, capacidade e as turmas ativas (link para a agenda do local) | M04-08 |
 | Novo e editar local | `GET /Locais/Novo`, `GET /Locais/Editar/{id}`, `POST /Locais/Salvar` | `ConfiguracaoEscolinha`, `Alterar` | view `Formulario`, com `_CamposEndereco` | M04-08 |
 
@@ -175,6 +175,35 @@ O **Painel** ganhou, no S1, os passos do cadastro (local, professor, turma, alun
 
 ---
 
+## 3A. S2: telas prontas (27/09/2026)
+
+### 3A.1 Gestão (Painel)
+
+| Tela | Rota | Acesso | Observações | BL |
+|---|---|---|---|---|
+| Mensagens | `GET /Mensagens` (`busca`, `gatilho`, `situacao`, `canal`, `de`, `ate`, `alunoId`, `pagina`) | `[Permissao(ConfiguracaoEscolinha)]` | resumo de 30 dias (saldo, enviadas, entregues ou lidas, na fila ou retidas, falharam ou suprimidas) e o log paginado; na fila, "Sai em"; retida, suprimida e falhou com o motivo. No celular, a data e o canal descem para baixo do nome | M09-08 |
+| Detalhe da mensagem | `GET /Mensagens/Detalhe/{id}` | idem | conteúdo (o link do convite mascarado), destinatário, aluno, template, prioridade, créditos, respostas e a linha do tempo; id de outra escolinha → 404 | M09-07, M09-08 |
+| Convites de acesso | `GET /Convites` (`tipo`, `situacao`, `busca`) | `[Permissao(ConfiguracaoEscolinha)]` | responsáveis e professores com celular, com o selo de acesso; convidar um a um ou marcar e "Convidar marcados" (até 100); reenviar (confirmação) e cancelar | M01-04, M12-07 |
+| Convidar, em lote, reenviar, cancelar | `POST /Convites/Convidar/{id}?tipo=`, `POST /Convites/Lote` (`selecionados`), `POST /Convites/Reenviar/{id}`, `POST /Convites/Cancelar/{id}` | `ConfiguracaoEscolinha`, `Alterar` | voltam para a tela de origem (`voltar`), com o toast | M01-04, M12-07 |
+| Vínculos a confirmar | `GET /Vinculos`; `POST /Vinculos/Confirmar/{id}` e `/Vinculos/Recusar/{id}` | `CadastroAlunosResponsaveis`, `Alterar`, nível Total | quem ativou, o CPF conferido e o aluno; recusar exige motivo | M01-06 |
+| Acesso nas fichas | fichas do responsável e do professor | quem convida | bloco `_AcessoDaFicha` (selo, validade, convidar ou reenviar); na ficha do responsável, o selo "portal: ..." de cada vínculo | M01-04, M01-06 |
+
+O **Painel** ganhou, no S2, o passo "Convites de acesso" e as pendências da gestão no topo: vínculos a confirmar, mensagens retidas e saldo abaixo do aviso (D55). Quem é só responsável vai para o portal (D54).
+
+### 3A.2 Plataforma, famílias e ferramentas
+
+| Tela | Rota | Acesso | Layout | Observações | BL |
+|---|---|---|---|---|---|
+| Templates de WhatsApp | `GET /Templates`; `GET` e `POST /Templates/Editar/{id}` | `[Plataforma]` | Painel | um por gatilho e tom: nome na Meta, categoria, situação na Meta, botões e texto com `{{1}}`...; texto de template aprovado só muda com nome novo | M09-03 |
+| Ativação do convite | `GET /Convite/{token}`; `POST /Convite/{token}/Identificar` e `/Convite/{token}/Ativar` | `[AllowAnonymous]`, com o limite de tentativas do login | Autenticação | 1º o CPF (nada aparece antes); depois o e-mail opcional e a senha, ou a senha da conta que já existe. Convite usado, vencido ou cancelado mostra "Convite indisponível" | M01-05 |
+| Portal: Início | `GET /Portal` | `[SomenteAutenticado]`, escopo do responsável | Portal | os filhos com vínculo confirmado; enquanto houver vínculo pendente, só o aviso, sem nomes; avisos novos | M01-06, M12-11 |
+| Portal: Avisos | `GET /Portal/Avisos` | idem | Portal | os avisos do motor (os mesmos do WhatsApp); abrir marca como lido | M09-02, M09-07 |
+| Portal: em breve | `GET /Portal/EmBreve?aba=jogos` e `?aba=pagamentos` | idem | Portal | até o S5 e o S6 | — |
+| Simulador do WhatsApp | `GET /dev/whatsapp`; `POST /dev/whatsapp/{id}/entregar`, `/ler`, `/falhar`, `/botao/{indice}`, `/responder`; `POST /dev/whatsapp/limpar` | `[SomenteAutenticado]` | Painel | só em Development com `WhatsApp:Modo = Simulado`; cada ação manda o webhook assinado ao endpoint de verdade | M09-02, M09-07 |
+| Webhook do WhatsApp | `GET` (verificação da Meta) e `POST /api/v1/webhooks/whatsapp` | `[AllowAnonymous]` (assinatura `X-Hub-Signature-256`) | API | grava o corpo bruto e responde 200; o job interpreta. 400 com assinatura inválida, 503 com o WhatsApp desligado | M09-07 |
+
+---
+
 ## 4. Páginas "em breve" (catálogo de módulos)
 
 A rota `{chave}` (registrada antes da rota padrão) só aceita as chaves dos módulos com situação `Planejado` no `CatalogoModulos`. A página mostra o que o módulo vai fazer, a fatia e a lista de recursos.
@@ -184,12 +213,11 @@ A rota `{chave}` (registrada antes da rota padrão) só aceita as chaves dos mó
 | `/chamada` | Chamada | Operação | S3 | `RegistroPresenca`: gestor, professor e responsável | `ki-check-squared` |
 | `/jogos` | Jogos e convocações | Operação | S5 | `EventosConvocacao`: gestor e professor | `ki-cup` |
 | `/mensalidades` | Mensalidades | Financeiro | S4 | `FinanceiroEscolinha`: gestor | `ki-dollar` |
-| `/mensagens` | Mensagens | Comunicação | S2 | `ConfiguracaoEscolinha`: gestor | `ki-message-text-2` |
 | `/importacao` | Importação | Escolinha | S7 | `ConfiguracaoEscolinha`: gestor | `ki-file-up` |
 
 - **A página não confere o recurso** (não mostra dado nenhum): qualquer pessoa logada a abre pela URL. Quem filtra é o menu.
-- **Desde o S1**, Turmas, Alunos, Responsáveis e Agenda (Operação) e Professores e Locais de treino (Escolinha) são módulos prontos no `CatalogoModulos` e saíram desta lista.
-- **Pela matriz atual, uma pessoa só com o papel Responsável veria no menu do painel** Turmas, Alunos, Responsáveis, Agenda e Chamada. O responsável usa o portal (S6): decidir lá se o painel o redireciona.
+- **Desde o S1**, Turmas, Alunos, Responsáveis e Agenda (Operação) e Professores e Locais de treino (Escolinha) são módulos prontos no `CatalogoModulos` e saíram desta lista. **Desde o S2**, também Mensagens e Convites de acesso (Comunicação), e Templates (Plataforma).
+- **Quem é só Responsável não vê o painel:** desde o S2, o painel o leva ao portal (D54).
 - **Quando o módulo ficar pronto:** no `CatalogoModulos`, troque a `Situacao` para `Disponivel` e aponte a `Url` para o controller real. A chave sai da rota `{chave}` sozinha, e o menu, a busca rápida e o Painel acompanham.
 
 ---
@@ -208,13 +236,12 @@ O que cada fatia encontra pronto no design system e o que ainda precisa ser cons
   - o menu de ações ⋮: as ações ficam no cabeçalho da ficha.
 - **Dado de saúde:** sai do view model de quem não pode vê-lo (R5), nunca escondido por CSS. O professor vê só o necessário ao treino.
 
-### S2 — Mensageria e acesso (gestor · Painel; convidado · Autenticação)
+### S2 — Mensageria e acesso (gestor · Painel; convidado · Autenticação; responsável · Portal) — **pronto em 27/09/2026** (§3A)
 
-- **Onde entra:** `/mensagens` deixa de ser "em breve". Templates, Convites e Verificação de vínculos entram como itens novos da seção Comunicação do catálogo.
-- **Ativação do convite:** no `_LayoutAutenticacao`; a forma já está na vitrine (`/dev/design/autenticacao`). Se tiver etapas, carregue o `assistente.js` pela seção `Scripts` (§2.2).
-- **Sino:** no header do `_Layout` (§5.2), a construir.
-- **`/dev/whatsapp`:** o simulador, no padrão `/dev/<parceiro>` do DP, fora de Production.
-- **A construir:** o selo da máquina Mensagem (§4.3). Antes de pôr texto de terceiros em toast, escapar no `esc.toast` (§6.4).
+- **Construído com o que já existia:** tabela padrão (§6.17), `_Paginacao`, `esc-linhas`, `<selo-status>` com as cinco máquinas novas (§4.2), `_LayoutAutenticacao` na ativação e `_LayoutPortal` no portal.
+- **Construído no S2** (guia §6.25 a §6.28): `_AcessoDaFicha`, as pendências do painel, a linha do tempo da mensagem e o simulador `/dev/whatsapp`. Novo padrão: a tabela cabe em 320 px sem rolar (§6.17).
+- **Não construído:** o sino no header (D55). A ativação não usa o assistente: são duas páginas, CPF e depois senha.
+- **Toast com texto de terceiros:** o `esc.toast` já escapa (D23), então os nomes das famílias vão seguros.
 
 ### S3 — Presença e evasão (professor · Quadra; gestor · Painel)
 
@@ -236,7 +263,7 @@ O que cada fatia encontra pronto no design system e o que ainda precisa ser cons
 
 ### S6 — Portal do responsável (responsável · Portal)
 
-- **Onde entra:** a `Areas/Portal`, com o `_LayoutPortal` (pronto e validado em `/dev/design/portal`). As quatro abas do layout (Início, Jogos, Pagamentos, Avisos) ganham rotas no lugar de `#`.
+- **Onde entra:** o `PortalController` do S2 (`Views/Portal`, sem área), com o `_LayoutPortal`. Início e Avisos já existem; Jogos e Pagamentos trocam o "em breve" pelas telas de verdade.
 - **Presenças (só leitura)** não tem aba própria no layout: decidir onde entra.
 - **A construir** (plano, 4.4): `_CartaoFilho`, `_CartaoConvocacao` (Sim/Não com o nome do filho) e `_CartaoCobranca`; chips dos filhos com 48 px (hoje têm 36).
 - **Pronto para usar:** os chips (`data-esc-escolha`), a resposta Sim/Não (`esc-resposta`) e o copiar (`data-esc-copiar`) para o Pix copia-e-cola.

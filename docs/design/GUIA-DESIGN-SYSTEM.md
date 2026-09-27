@@ -329,6 +329,11 @@ A utility que falta nasce no `npm run css` quando uma View passa a usá-la; o ve
 | `SituacaoTurma` | `Ativa` · Sucesso; `Encerrada` · Neutro | Turmas, ficha do professor |
 | `SituacaoSessao` | `Prevista` · Info; `Realizada` · Sucesso; `Cancelada` · Perigo; `Remarcada` · Alerta (sem uso, P11) | Agenda, ficha da turma, Painel (próximos treinos) |
 | `EstadoConsentimento` | `Pendente` · Alerta; `Concedido` → "Autorizado" · Sucesso; `Recusado` · Neutro; `Revogado` · Neutro | ficha do aluno (Consentimentos) |
+| `SituacaoMensagem` | `Pendente` → "Na fila" · Neutro; `Retida` · Alerta; `Enviada` · Info; `Entregue` · Sucesso; `Lida` · Sucesso; `Falhou` · Perigo; `Suprimida` · Neutro | Mensagens (lista e detalhe) |
+| `SituacaoAcesso` | `SemAcesso` → "Sem acesso" · Neutro; `Convidado` · Info; `ConviteExpirado` → "Convite vencido" · Alerta; `Ativo` → "Com acesso" · Sucesso | Convites; fichas do responsável e do professor (`_AcessoDaFicha`) |
+| `VerificacaoVinculo` | `NaoSolicitada` → "Sem acesso" · Neutro; `Pendente` → "A confirmar" · Alerta; `Verificado` → "Confirmado" · Sucesso; `Recusado` · Perigo | ficha do responsável (alunos), com o texto "portal: ..." |
+| `SituacaoAprovacaoTemplate` | `Rascunho` · Neutro; `EmAnalise` → "Em análise na Meta" · Info; `Aprovado` · Sucesso; `Rejeitado` · Perigo | Templates |
+| `SituacaoConvite` | `Pendente` → "Enviado" · Info; `Aceito` · Sucesso; `Cancelado` · Neutro; `Substituido` → "Substituído" · Neutro | só a vitrine, por enquanto (as telas mostram o `SituacaoAcesso`, que junta convite e acesso) |
 | `SinalTela`, valores do S1 | `TrialVencendo` → "Trial vencendo" · Alerta; `TrialVencido` → "Trial vencido" · Alerta; `TurmaLotada` → "Lotada" · Alerta; `SemMatricula` → "Sem turma" · Alerta; `ComAcesso` → "Com acesso" · Sucesso; `SemAcesso` → "Sem acesso ainda" · Neutro; `Pagador` → "Pagador" · Primario | Painel, Alunos, fichas do aluno e da turma, Turmas, Professores e Responsáveis |
 
 Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e sem cor. **Máquina nova entra inteira no mapa, na mesma entrega:**
@@ -337,9 +342,9 @@ Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e
 2. os valores no array `selos` da vitrine (`Views/Design/Index.cshtml`);
 3. na View, só `<selo-status>`.
 
-### 4.3 A tabela do plano (Aluno e Sessão prontos; as demais planejadas)
+### 4.3 A tabela do plano (Aluno, Sessão e Mensagem prontos; as demais planejadas)
 
-A tabela da §4.2 do plano. **Aluno e Sessão entraram no mapa no S1, como planejados**; o "trial vencido" é o `SinalTela.TrialVencido`, porque o trial vencido continua em trial (§6 da spec). As outras máquinas valem quando cada uma nascer:
+A tabela da §4.2 do plano. **Aluno e Sessão entraram no mapa no S1, e Mensagem no S2, como planejados** (a "pendente" do plano aparece como "Na fila"); o "trial vencido" é o `SinalTela.TrialVencido`, porque o trial vencido continua em trial (§6 da spec). As outras máquinas valem quando cada uma nascer:
 
 | Máquina | Sucesso | Info | Alerta | Perigo | Neutro |
 |---|---|---|---|---|---|
@@ -368,6 +373,8 @@ A tabela da §4.2 do plano. **Aluno e Sessão entraram no mapa no S1, como plane
 | recurso ligado | `kt-badge kt-badge-sm kt-badge-outline kt-badge-success` | Modalidades |
 | "provisório" | `kt-badge kt-badge-sm kt-badge-outline kt-badge-warning` | Parâmetros |
 | "valor inicial das turmas" | `kt-badge kt-badge-sm kt-badge-outline kt-badge-info` | Parâmetros |
+| "novo" (aviso ainda não aberto) | `kt-badge kt-badge-sm kt-badge-outline kt-badge-primary` | Portal › Avisos |
+| categoria do template (utilidade, autenticação, marketing) | `kt-badge kt-badge-sm kt-badge-outline` | Templates |
 
 Estado que não tem enum de domínio por trás (a conta existe ou não, o saldo passou do aviso) **também** passa pelo mapa: entra como um valor de `SinalTela`, e a View usa `<selo-status valor="SinalTela...">`. O `texto` troca o rótulo; `class` só acrescenta classe de layout (`self-start`), nunca cor:
 
@@ -522,10 +529,10 @@ Renomear qualquer um quebra o recolhimento, a rolagem do menu ou a busca.
     </main>
 
     <nav class="esc-portal-abas" aria-label="Portal">
-        <a class="esc-portal-aba" href="#" aria-current="@Atual("inicio")"><i class="ki-filled ki-home-2"></i>Início</a>
-        <a class="esc-portal-aba" href="#" aria-current="@Atual("jogos")"><i class="ki-filled ki-cup"></i>Jogos</a>
-        <a class="esc-portal-aba" href="#" aria-current="@Atual("pagamentos")"><i class="ki-filled ki-dollar"></i>Pagamentos</a>
-        <a class="esc-portal-aba" href="#" aria-current="@Atual("avisos")"><i class="ki-filled ki-notification-status"></i>Avisos</a>
+        <a class="esc-portal-aba" href="/Portal" aria-current="@Atual("inicio")"><i class="ki-filled ki-home-2"></i>Início</a>
+        <a class="esc-portal-aba" href="/Portal/EmBreve?aba=jogos" aria-current="@Atual("jogos")"><i class="ki-filled ki-cup"></i>Jogos</a>
+        <a class="esc-portal-aba" href="/Portal/EmBreve?aba=pagamentos" aria-current="@Atual("pagamentos")"><i class="ki-filled ki-dollar"></i>Pagamentos</a>
+        <a class="esc-portal-aba" href="/Portal/Avisos" aria-current="@Atual("avisos")"><i class="ki-filled ki-notification-status"></i>Avisos</a>
     </nav>
 ```
 
@@ -540,7 +547,7 @@ Renomear qualquer um quebra o recolhimento, a rolagem do menu ou a busca.
 }
 ```
 
-- **Abas inferiores** (`esc-portal-abas`: fixas, quatro colunas, 64 px de altura, ícone de 22 px). A ativa vem de `ViewData["AbaPortal"]` (`inicio`, `jogos`, `pagamentos` ou `avisos`) e ganha `aria-current="page"`, na cor da marca. Os `href="#"` são provisórios até o S6 (`Areas/Portal`).
+- **Abas inferiores** (`esc-portal-abas`: fixas, quatro colunas, 64 px de altura, ícone de 22 px). A ativa vem de `ViewData["AbaPortal"]` (`inicio`, `jogos`, `pagamentos` ou `avisos`) e ganha `aria-current="page"`, na cor da marca. Desde o S2, as abas levam às páginas reais do `PortalController` (`Views/Portal`, sem área). Jogos e Pagamentos mostram "em breve" até o S5 e o S6; Início lista os filhos com vínculo confirmado, e Avisos lista os avisos do motor (abrir marca como lido).
 - **Conteúdo** (`esc-portal-conteudo`): uma coluna de cartões grandes, até 40rem, que reserva a altura das abas.
 - **Resposta Sim/Não** (`esc-resposta`): dois botões em grade, com 48 px e texto de 16 px em peso 600:
 
@@ -940,6 +947,11 @@ Fica em `Views/Parametros/_CampoParametro.cshtml` (não em `Shared`). Cada parâ
 ```
 
 - Sempre dentro de `kt-card-table kt-scrollable-x-auto`: a tabela rola dentro do cartão, nunca a página. Coluna secundária some com `hidden md:table-cell`.
+- **No celular, a tabela cabe em 320 px sem rolar** (cerca de 280 px de colunas visíveis), padrão do S2:
+  - o dado da coluna escondida desce para a célula principal, numa linha `sm:hidden`. Em Mensagens, a data e o canal vão para baixo do nome; em Convites, o selo de acesso;
+  - a largura mínima da coluna principal cai no celular: `min-w-[130px] sm:min-w-[190px]`;
+  - a ação vira só ícone: `<span class="hidden sm:inline">Convidar</span>` no texto, com `aria-label` no botão.
+- Texto longo sem espaço (um link) leva `wrap-anywhere`: é o conteúdo da mensagem no detalhe, no portal e no simulador.
 - Lista vazia vira `<estado-vazio>` dentro do mesmo `kt-card`.
 
 **Blocos de dados** (`custom.css`):
@@ -1042,6 +1054,31 @@ Os alertas de agenda são texto com `ki-information-2 text-warning`, um por linh
 
 - **`esc-passo-cabecalho`:** o título de uma etapa quando o formulário aparece inteiro (edição da turma, ou sem JS). Com o assistente ativo, ele some, porque o nome da etapa já está na lista `esc-passos` (§6.6).
 - **Filtros secundários em `<details>`** (Agenda): no celular, os filtros tomavam a primeira tela. Recorte e mês ficam à vista; período, situação e modalidade ficam num `<details>` com `<summary class="cursor-pointer text-sm font-medium text-mono">`, que abre sozinho quando algum desses filtros está em uso.
+
+### 6.25 Acesso da ficha: `_AcessoDaFicha`
+
+O acesso de uma ficha (responsável ou professor) e a ação do convite, para quem pode convidar:
+- o selo `SituacaoAcesso` e, com o convite em aberto, a validade;
+- a ação: "Convidar pelo WhatsApp", ou "Reenviar convite" (com `data-esc-confirmar`), ou "Cadastre o celular para convidar".
+
+O modelo vem de `ServicoConvites.SituacaoDaFichaAsync`, em `ViewData["Acesso"]`. Onde: fichas do responsável e do professor.
+
+### 6.26 Pendências do painel
+
+Cada `PendenciaPainel` (ícone, título, texto, ação e link) vira um `kt-alert kt-alert-light kt-alert-warning` no topo do Painel, com o botão que resolve (`kt-btn kt-btn-sm kt-btn-outline`). No S2, as pendências são os vínculos a confirmar, as mensagens retidas e o saldo abaixo do aviso. Elas fazem as vezes do sino, que não foi construído (D55).
+
+### 6.27 Linha do tempo da mensagem
+
+No detalhe da mensagem, um `esc-linhas` com um item por evento: o rótulo (`EventoMensagem.Rotulo`) e a data e hora na mesma linha, e o detalhe (motivo, texto da resposta) embaixo, em `text-xs`. A ordem é a do acontecimento: criada, agendada, retida, enviada, entregue, lida, resposta.
+
+### 6.28 Simulador do WhatsApp: `/dev/whatsapp`
+
+O celular das famílias, só em Development e com o modo Simulado:
+- um `kt-card` por número, com as mensagens da mais nova para a mais antiga;
+- cada mensagem traz o template, a hora, o status, o texto (com o link clicável e `wrap-anywhere`), os botões do template e as ações Entregar, Ler e Falhar;
+- a resposta em texto pode citar a mensagem ou não. Sem citar, o sistema acha a família pelo celular.
+
+Cada ação manda o webhook assinado pelo endpoint de verdade, e o toast confirma a entrega ao sistema.
 
 ---
 
@@ -1248,7 +1285,8 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 | modo escuro | `ki-moon` | | acesso negado | `ki-lock-2` |
 | aviso, erro, estado vazio padrão | `ki-information-2` | | filtrar (Agenda) | `ki-filter` |
 | encerrar turma | `ki-archive` | | cancelar sessão | `ki-cross-circle` |
-| trocar o responsável escolhido | `ki-arrows-circle` | | revogar consentimento | `ki-shield-cross` |
+| trocar o responsável escolhido; reenviar convite | `ki-arrows-circle` | | revogar consentimento | `ki-shield-cross` |
+| cadastrar o celular (Convites, no celular) | `ki-phone` | | ler (simulador) | `ki-double-check` |
 
 ### 9.4 Não existem (conferidos no CSS servido; não usar)
 
@@ -1420,6 +1458,7 @@ O `kt-input` é um contêiner flex, e o `<input>` de dentro herda o estilo. A me
 });
 ```
 
+- [ ] Tabela em 320 px sem rolar dentro do cartão: `[...document.querySelectorAll(".kt-scrollable-x-auto")].map(t => t.scrollWidth - t.clientWidth)` dá só zeros (§6.17).
 - [ ] Item flex dentro de barra fixa tem `min-width: 0`. Foi o defeito da barra da quadra em 375 px, corrigido no `custom.css` (`.esc-barra-acao > .kt-btn`).
 - [ ] Modo escuro: `localStorage.setItem("kt-theme", "dark"); location.reload();`, e depois `"light"`.
 - [ ] Quadra e portal: alvos de 48 px, campo com texto de 16 px, ação principal na barra inferior, nada escondido atrás da barra ou das abas.
@@ -1475,7 +1514,7 @@ Achadas no S1:
 
 ## 14. Diferenças entre o plano e o construído
 
-Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita na fatia S0 (26/09/2026) e revista na S1 (27/09/2026).
+Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita na fatia S0 (26/09/2026) e revista na S1 e na S2 (27/09/2026).
 
 ### 14.1 Previsto no plano e diferente, parcial ou ainda não construído
 
@@ -1487,10 +1526,10 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita 
 | 4 | Chaves de `localStorage` `esc.*` (4.1) | nenhuma; o tema usa a chave do KTUI, `kt-theme` | Não há estado de navegador próprio ainda |
 | 5 | Tudo sob `window.esc` (4.1) | exceção: `window.escSelecaoBusca` | Global fora do prefixo |
 | 6 | `_LayoutAutenticacao` com base no `authentication/branded`, "cor + formas em CSS" (4.3) | cartão central sobre `bg-muted/40` com o logo; sem painel de marca e sem formas | Mais simples que o previsto |
-| 7 | Header do painel com "sino" (4.3) | não existe | Planejado (S2) |
+| 7 | Header do painel com "sino" (4.3) | não construído no S2: as pendências da gestão aparecem no topo do Painel (§6.26, D55) | Adiado para o S5, com o tempo real |
 | 8 | Quadra: "a chamada funciona offline" (4.3) | só a CSP pronta (`worker-src`); o selo de conexão lê `data-pendentes`, mas a função que o atualiza não é pública | Planejado (S3) |
 | 9 | Portal: alvos de 48 px (4.3) | botões Sim/Não com 48 px (`esc-resposta`), abas com 64 px; **chips dos filhos com 36 px** | Chips abaixo do mínimo |
-| 10 | Portal em `Areas/Portal` (3.1, 4.3) | `_LayoutPortal` em `Views/Shared`; as abas apontam para `#`; a área não existe | Planejado (S6); o build já varre `Areas/` |
+| 10 | Portal em `Areas/Portal` (3.1, 4.3) | desde o S2, `Views/Portal` + `PortalController`, sem área; as abas levam às páginas reais (Jogos e Pagamentos "em breve") | A área não fez falta; o build continua varrendo `Areas/` |
 | 11 | Componentes do DP: ficha lateral única (drawer com versão e resposta 409) (4.4) | **não adotada no S1:** a ficha é página com abas, com URL própria; a versão de linha vai num campo do formulário, e o conflito vira mensagem | Decisão D37 |
 | 12 | Menu de ações ⋮ (4.4) | não construído; a vitrine mostra só o botão com `ki-dots-vertical`. No S1, as ações ficam no cabeçalho da ficha | Planejado |
 | 13 | Modal de confirmação com motivo (4.4) | a confirmação é `window.confirm` (`data-esc-confirmar`). No S1, desligar, encerrar e cancelar são páginas próprias, com o motivo no formulário e os efeitos explicados | Planejado |
@@ -1499,7 +1538,7 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita 
 | 16 | Quadra: `_StatusConexao`, `_LinhaChamada`, `_BarraAcaoInferior` (4.4) | não são parciais: selo no `_LayoutQuadra`, classes `esc-linha-chamada*`, seção `BarraAcao` | Forma diferente, mesma função |
 | 17 | Convocação: `_CartaoJogo`, `_SelecaoConvocados`, `_PainelConfirmacoes` (4.4) | não existem; a vitrine do portal mostra a forma do cartão de jogo | Planejado (S5) |
 | 18 | Portal: `_CartaoFilho`, `_CartaoConvocacao`, `_CartaoCobranca`, `_AbasPortal` (4.4) | não são parciais: abas no layout; os cartões só como markup na vitrine | Planejado (S6) |
-| 19 | Vitrine com "os selos de todas as máquinas" e "as 4 superfícies" (4.4) | selos de todos os enums do mapa central (S0, EX-01 e S1, por `Enum.GetValues`); quadra, portal e autenticação em páginas próprias; o painel aparece só como miolo (`_LayoutVitrine`, sem sidebar e header, porque a vitrine não exige login); o ícone `ki-timer` não está na vitrine | Parcial, por construção |
+| 19 | Vitrine com "os selos de todas as máquinas" e "as 4 superfícies" (4.4) | selos de todos os enums do mapa central (S0, EX-01, S1 e S2, por `Enum.GetValues`); quadra, portal e autenticação em páginas próprias; o painel aparece só como miolo (`_LayoutVitrine`, sem sidebar e header, porque a vitrine não exige login); o ícone `ki-timer` não está na vitrine | Parcial, por construção |
 | 20 | Nova escolinha em etapas: dados → modalidade → 1º gestor → **revisão** (4.5) | três etapas, sem revisão | Sem a etapa de revisão |
 | 21 | Mapa de status com a coluna "secondary / mono" (4.2) | `VarianteSelo` tem `Neutro` (`kt-badge-secondary`) e **`Primario`**, que o plano não previa (usado no papel Gestor); não tem Mono | Diferença de variantes |
 | 22 | "Cor de status nunca é escolhida na View" (4.2) | cumprido: os três estados sem enum de domínio ("Conta vinculada"/"Sem conta", "Vinculada", "abaixo de N") passam pelo `SinalTela` do mapa central | Resolvido em 26/09/2026 |
@@ -1530,6 +1569,8 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita 
 | Busca de responsável (`busca-responsavel.js`) e a parcial `_ResponsavelDoAluno`, com a sugestão de cadastro parecido | §6.20 |
 | `_CamposEndereco` | §6.21 |
 | `progress.esc-ocupacao`, `esc-item-agenda`, `esc-passo-cabecalho` e filtros em `<details>` | §6.22 a §6.24 |
+| `_AcessoDaFicha`, pendências do painel, linha do tempo da mensagem e o simulador `/dev/whatsapp` | §6.25 a §6.28 |
+| Tabela que cabe em 320 px (dado secundário na célula principal, ação só com ícone) e `wrap-anywhere` | §6.17 |
 | Helpers `Formatacao` de dia, mês, horário, CPF e idade; `DecimalBrasileiroModelBinder` | §8 |
 
 ### 14.3 Achados técnicos da revisão do guia

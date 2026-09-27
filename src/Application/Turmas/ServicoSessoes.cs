@@ -5,6 +5,7 @@ using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
+using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Domain.Agenda;
 using MinhaEscolinha.Domain.Turmas;
@@ -15,12 +16,13 @@ public record ResumoGeracaoSessoes(int Turmas, int Criadas, int Ajustadas, int R
 
 /// <summary>
 /// Sessões de treino: a geração a partir dos horários (BL-M04-04), no salvar da turma e no recorrente diário, e o
-/// cancelamento de uma sessão com motivo (BL-M04-06).
+/// cancelamento de uma sessão com motivo (BL-M04-06), que avisa as famílias pelo motor único (gatilho "Treino cancelado").
 /// </summary>
 public class ServicoSessoes(
     ITurmasRepositorio repositorio,
     IAutorizacao autorizacao,
     RegistroDeAlteracoes registro,
+    EmissorGatilhos emissor,
     IUsuarioAtual usuarioAtual,
     IRelogioBrasil relogio,
     IValidator<CancelarSessaoRequisicao> validadorCancelar,
@@ -88,8 +90,11 @@ public class ServicoSessoes(
 
         sessao.Cancelar(r.Motivo, relogio.Agora(), usuarioAtual.Id, usuarioAtual.Nome);
         registro.Registrar(ServicoTurmas.Entidade, sessao.Turma_ID, "Sessão cancelada", Descrever(sessao), "Cancelada", r.Motivo);
+        // O aviso às famílias entra na fila na mesma gravação do cancelamento (outbox): ou os dois, ou nenhum.
+        var avisos = await emissor.TreinoCanceladoAsync(sessao, sessao.Turma?.Nome ?? "—", ct);
         await repositorio.SalvarAsync(ct);
-        return ResultadoOperacao.Ok($"Treino de {Descrever(sessao)} cancelado.");
+        return ResultadoOperacao.Ok($"Treino de {Descrever(sessao)} cancelado." +
+                                    (avisos == 0 ? " Nenhuma família a avisar nesta turma." : $" {avisos} aviso(s) às famílias na fila de mensagens."));
     }
 
     public static SessaoResposta Resposta(SessaoTreino s) => new(

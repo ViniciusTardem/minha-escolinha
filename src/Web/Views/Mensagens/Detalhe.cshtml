@@ -1,0 +1,103 @@
+@model DetalheMensagem
+@{
+    ViewData["Title"] = "Mensagem";
+    var regra = CatalogoGatilhos.Obter(Model.Gatilho);
+    var ficha = Model.TipoDestinatario == TipoDestinatario.Professor ? $"/Professores/Ficha/{Model.DestinatarioId}" : $"/Responsaveis/Ficha/{Model.DestinatarioId}";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@regra.Nome" voltar-href="/Mensagens" voltar-texto="Mensagens" meta="@Formatacao.DataHora(Model.CriadaEm)"
+                      descricao="@($"{(Model.Canal == CanalMensagem.WhatsApp ? "WhatsApp" : "Aviso no portal")} para {Model.Destinatario}. Gatilho do catálogo: {regra.Evento} → {regra.RotuloDestinatario}.")">
+    </cabecalho-pagina>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2 flex flex-col gap-5">
+            <div class="kt-card">
+                <div class="kt-card-header">
+                    <h3 class="kt-card-title">Mensagem</h3>
+                    <selo-status valor="Model.Situacao"></selo-status>
+                </div>
+                <div class="kt-card-content flex flex-col gap-4">
+                    <p class="text-sm text-foreground whitespace-pre-line wrap-anywhere">@Model.Conteudo</p>
+                    @if (!string.IsNullOrWhiteSpace(Model.Motivo))
+                    {
+                        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="status">
+                            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                            <span class="text-sm">@Model.Motivo</span>
+                        </div>
+                    }
+                    <dl class="esc-dados">
+                        <dt>Para</dt>
+                        <dd><a class="kt-link" href="@ficha">@Model.Destinatario</a> (@(Model.TipoDestinatario == TipoDestinatario.Professor ? "professor" : "responsável"))</dd>
+                        @if (Model.Telefone is not null)
+                        {
+                            <dt>Celular</dt>
+                            <dd>@Formatacao.Telefone(Model.Telefone)</dd>
+                        }
+                        @if (Model.AlunoId is { } aluno)
+                        {
+                            <dt>Sobre o aluno</dt>
+                            <dd><a class="kt-link" href="/Alunos/Ficha/@aluno">Ver a ficha</a></dd>
+                        }
+                        <dt>Template</dt>
+                        <dd class="font-mono text-xs">@Model.Template</dd>
+                        <dt>Prioridade</dt>
+                        <dd>@(Model.Urgente ? "Urgente (escapa da janela de silêncio)" : Model.Essencial ? "Essencial (fica retida se faltar crédito)" : "Normal")</dd>
+                        <dt>Créditos</dt>
+                        <dd>@(Model.Canal == CanalMensagem.Portal ? "O portal não gasta crédito" : $"{Model.Creditos} crédito(s)")</dd>
+                        @if (Model.Tentativas > 1)
+                        {
+                            <dt>Tentativas</dt>
+                            <dd>@Model.Tentativas</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+
+            <div class="kt-card">
+                <div class="kt-card-header"><h3 class="kt-card-title">Respostas</h3></div>
+                @if (Model.Respostas.Count == 0)
+                {
+                    <estado-vazio icone="ki-message-text-2" titulo="Nenhuma resposta" texto="@(regra.EsperaResposta ? "Esta mensagem espera resposta pelos botões." : "Esta mensagem não espera resposta; se vier, aparece aqui.")"></estado-vazio>
+                }
+                else
+                {
+                    <ul class="esc-linhas">
+                        @foreach (var r in Model.Respostas)
+                        {
+                            <li class="flex flex-col gap-1 px-5 py-3">
+                                <span class="flex flex-wrap items-center gap-2 text-sm">
+                                    <span class="font-medium text-mono">@(r.Botao ? $"Botão: {r.Texto}" : r.Texto)</span>
+                                    <span class="text-xs text-secondary-foreground">@Formatacao.DataHora(r.RecebidaEm) · @(r.Canal == CanalMensagem.WhatsApp ? "WhatsApp" : "Portal")</span>
+                                </span>
+                                @if (!string.IsNullOrWhiteSpace(r.Observacao))
+                                {
+                                    <span class="text-xs text-secondary-foreground">@r.Observacao</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+        <div class="kt-card self-start">
+            <div class="kt-card-header"><h3 class="kt-card-title">Linha do tempo</h3></div>
+            <ul class="esc-linhas">
+                @foreach (var e in Model.Linha)
+                {
+                    <li class="flex flex-col gap-0.5 px-5 py-3">
+                        <span class="flex items-center justify-between gap-3 text-sm">
+                            <span class="font-medium text-mono">@EventoMensagem.Rotulo(e.Tipo)</span>
+                            <span class="text-xs text-secondary-foreground">@Formatacao.DataHora(e.Em)</span>
+                        </span>
+                        @if (!string.IsNullOrWhiteSpace(e.Detalhe))
+                        {
+                            <span class="text-xs text-secondary-foreground">@e.Detalhe</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>

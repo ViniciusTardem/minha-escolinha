@@ -1,0 +1,36 @@
+@model IReadOnlyList<AvisoDoPortal>
+@{
+    ViewData["Title"] = "Avisos";
+    Layout = "_LayoutPortal";
+}
+
+<div class="flex flex-col gap-1">
+    <h1 class="text-lg font-semibold text-mono">Avisos</h1>
+    <p class="text-sm text-secondary-foreground">Os mesmos avisos que chegaram pelo WhatsApp, guardados aqui.</p>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="kt-card">
+        <estado-vazio icone="ki-notification-status" titulo="Nenhum aviso ainda" texto="Quando a escolinha avisar algo (um treino cancelado, por exemplo), aparece aqui e no WhatsApp."></estado-vazio>
+    </div>
+}
+
+@foreach (var a in Model)
+{
+    <div class="kt-card">
+        <div class="kt-card-content flex flex-col gap-2">
+            <div class="flex items-center justify-between gap-2">
+                <span class="text-sm font-semibold text-mono">@CatalogoGatilhos.Rotulo(a.Gatilho)</span>
+                <span class="flex items-center gap-2">
+                    @if (a.NovoAgora)
+                    {
+                        <span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-primary">novo</span>
+                    }
+                    <span class="text-xs text-secondary-foreground">@Formatacao.DataHora(a.Em)</span>
+                </span>
+            </div>
+            <p class="text-sm text-foreground wrap-anywhere">@a.Conteudo</p>
+        </div>
+    </div>
+}

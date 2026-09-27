@@ -363,4 +363,11 @@ public class ConsultasEscopo(EscolinhaDbContext contexto) : IConsultasEscopo
 
     public async Task<IReadOnlyList<Guid>> TurmasDoProfessorAsync(Guid pessoaId, CancellationToken ct = default) =>
         await contexto.Turmas.Where(t => t.Professor!.Pessoa_ID == pessoaId).Select(t => t.Turma_ID).ToListAsync(ct);
+
+    public Task<bool> ResponsavelVerificadoDoAlunoAsync(Guid pessoaId, Guid alunoId, CancellationToken ct = default) =>
+        contexto.VinculosResponsavel.AnyAsync(v => v.Aluno_ID == alunoId && v.Responsavel!.Pessoa_ID == pessoaId
+                                                   && v.Verificacao == VerificacaoVinculo.Verificado, ct);
+
+    public Task<bool> ProprioResponsavelAsync(Guid pessoaId, Guid responsavelId, CancellationToken ct = default) =>
+        contexto.Responsaveis.AnyAsync(r => r.Responsavel_ID == responsavelId && r.Pessoa_ID == pessoaId, ct);
 }

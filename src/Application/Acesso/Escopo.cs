@@ -21,14 +21,20 @@ public interface IConsultasEscopo
 
     /// <summary>As turmas (ativas e encerradas) de que a pessoa é o professor responsável.</summary>
     Task<IReadOnlyList<Guid>> TurmasDoProfessorAsync(Guid pessoaId, CancellationToken ct = default);
+
+    /// <summary>A pessoa é responsável pelo aluno, com o vínculo confirmado pelo gestor (BL-M01-06).</summary>
+    Task<bool> ResponsavelVerificadoDoAlunoAsync(Guid pessoaId, Guid alunoId, CancellationToken ct = default);
+
+    /// <summary>A ficha de responsável é da pessoa.</summary>
+    Task<bool> ProprioResponsavelAsync(Guid pessoaId, Guid responsavelId, CancellationToken ct = default);
 }
 
 /// <summary>
 /// O escopo próprio de cada papel (BL-M08-05, matriz §7):
 /// <list type="bullet">
 /// <item><b>professor</b>: as turmas de que é o responsável, os alunos matriculados nelas e as sessões dele;</item>
-/// <item><b>responsável</b>: os filhos com vínculo verificado. A verificação nasce com o convite (S2, BL-M01-06):
-/// até lá, nenhum aluno está no escopo de um responsável — bloqueio total enquanto pendente.</item>
+/// <item><b>responsável</b>: a própria ficha e os filhos com vínculo verificado pelo gestor (S2, BL-M01-06): enquanto o
+/// vínculo está a confirmar, o aluno não está no escopo — bloqueio total.</item>
 /// </list>
 /// </summary>
 public sealed class ResolvedorEscopoCadastros(IConsultasEscopo consultas) : IResolvedorEscopo
@@ -42,6 +48,12 @@ public sealed class ResolvedorEscopoCadastros(IConsultasEscopo consultas) : IRes
                 TipoAlvoEscopo.Aluno => consultas.ProfessorDoAlunoAsync(pessoaId, alvo.Id, ct),
                 TipoAlvoEscopo.Sessao => consultas.ProfessorDaSessaoAsync(pessoaId, alvo.Id, ct),
                 TipoAlvoEscopo.Professor => consultas.ProprioProfessorAsync(pessoaId, alvo.Id, ct),
+                _ => Task.FromResult(false)
+            },
+            PapelAtuacao.Responsavel => alvo.Tipo switch
+            {
+                TipoAlvoEscopo.Aluno => consultas.ResponsavelVerificadoDoAlunoAsync(pessoaId, alvo.Id, ct),
+                TipoAlvoEscopo.Responsavel => consultas.ProprioResponsavelAsync(pessoaId, alvo.Id, ct),
                 _ => Task.FromResult(false)
             },
             _ => Task.FromResult(false)

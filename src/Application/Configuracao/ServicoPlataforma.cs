@@ -51,7 +51,7 @@ public class ServicoPlataforma(
 
         logger.LogInformation("Escolinha {Escolinha} ({Id}) criada por {Autor} com o gestor {Gestor}.",
             criada.Nome, criada.EscolinhaId, usuarioAtual.Login, login);
-        return ResultadoOperacao.Ok($"Escolinha {criada.Nome} criada.", criada);
+        return ResultadoOperacao.Ok($"Escolinha criada: {criada.Nome}.", criada);
     }
 
     /// <summary>

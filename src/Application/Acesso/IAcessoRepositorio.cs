@@ -1,4 +1,5 @@
 using MinhaEscolinha.Domain.Acesso;
+using MinhaEscolinha.Domain.Mensageria;
 
 namespace MinhaEscolinha.Application.Acesso;
 
@@ -13,6 +14,9 @@ public interface IAcessoRepositorio
     Task<Credencial?> ObterCredencialPorLoginAsync(string login, CancellationToken ct = default);
 
     Task<Credencial?> ObterCredencialAsync(Guid pessoaId, CancellationToken ct = default);
+
+    /// <summary>Login pelo CPF (responsável sem e-mail): a credencial da pessoa com este CPF (11 dígitos).</summary>
+    Task<Credencial?> ObterCredencialPorCpfAsync(string cpf, CancellationToken ct = default);
 
     Task<bool> LoginEmUsoAsync(string login, CancellationToken ct = default);
 
@@ -32,6 +36,15 @@ public interface IAcessoRepositorio
     Task<IReadOnlyList<PessoaDaEscolinha>> PessoasDaEscolinhaAsync(CancellationToken ct = default);
 
     void AdicionarPessoa(Pessoa pessoa);
+
+    /// <summary>Credencial para uma pessoa que já existe sem login.</summary>
+    void AdicionarCredencial(Credencial credencial);
+
+    /// <summary>
+    /// O convite pelo hash do segredo do link, em qualquer escolinha (a ativação é anônima: a escolinha sai do convite).
+    /// Por isso mora aqui, no arquivo autorizado a ignorar o filtro de escolinha.
+    /// </summary>
+    Task<ConviteAcesso?> ConvitePorHashAsync(string tokenHash, CancellationToken ct = default);
 
     void AdicionarVinculo(VinculoAtuacao vinculo);
 

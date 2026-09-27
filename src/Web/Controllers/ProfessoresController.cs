@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Equipe;
 using MinhaEscolinha.Domain.Acesso;
@@ -9,7 +10,7 @@ namespace MinhaEscolinha.Web.Controllers;
 
 /// <summary>Professores e equipe (BL-M08-01) e a escala de disponibilidade com as indisponibilidades (BL-M08-04).</summary>
 [Permissao(Recurso.CadastroProfessores)]
-public class ProfessoresController(ServicoProfessores servico) : Controller
+public class ProfessoresController(ServicoProfessores servico, ServicoConvites convites) : Controller
 {
     private const string Modulo = "professores";
 
@@ -25,7 +26,9 @@ public class ProfessoresController(ServicoProfessores servico) : Controller
     {
         ViewData["ModuloAtivo"] = Modulo;
         var ficha = await servico.ObterFichaAsync(id, ct);
-        return ficha is null ? NotFound() : View(new FichaProfessorViewModel(ficha, new IndisponibilidadeRequisicao { ProfessorId = id }));
+        if (ficha is null) return NotFound();
+        ViewData["Acesso"] = await convites.SituacaoDaFichaAsync(Domain.Mensageria.TipoConvite.Professor, id, ct);
+        return View(new FichaProfessorViewModel(ficha, new IndisponibilidadeRequisicao { ProfessorId = id }));
     }
 
     /// <summary>Professor novo; <paramref name="candidato"/> ("origem|id") traz o cadastro reaproveitado já preenchido.</summary>

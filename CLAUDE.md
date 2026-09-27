@@ -50,9 +50,10 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - Hoje:
     - `Comum`, `Acesso` (M01), `Configuracao` (M02), `Eventos` e `Auditoria`;
     - `Turmas` (M04), `Alunos` (M03) e `Equipe` (M08), do S1; `Agenda`, só no domínio: compromisso datado e conflitos;
-    - `Plataforma` e `Integracao` (Stripe, EX-01).
+    - `Plataforma` e `Integracao` (Stripe, EX-01; WhatsApp, S2);
+    - `Mensageria` (M09), do S2: motor, templates, convites (em `Acesso`) e o portal inicial.
     - Na `Infrastructure`, os repositórios do cadastro ficam juntos em `Cadastro/`.
-  - Próximos: `Mensageria`, `Presenca`, `Financeiro` e `Carga`.
+  - Próximos: `Presenca`, `Financeiro` e `Carga`.
 
 ---
 
@@ -66,15 +67,18 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - datas `datetime2(3)` no horário de Brasília;
   - tabelas no singular; índices nomeados `IX_`/`UQ_`;
   - configuração EF em `Data/Configuracoes`;
-  - `rowversion` onde há concorrência: saldo de créditos, compra, turma e aluno;
+  - `rowversion` onde há concorrência: saldo de créditos, compra, turma, aluno e mensagem;
   - `TimeOnly` como `time(0)` (horários de turma e de disponibilidade).
-- **Armadilha do EF com filho novo:** entidade nova ganha a chave `Guid.NewGuid()` já na criação e entra por `DbSet.Add` explícito. Com a chave preenchida, a descoberta pelo grafo trata o filho como existente e gera `UPDATE`, que falha por concorrência.
+- **Armadilha do EF com filho novo:** com a chave preenchida, o filho novo achado pelo grafo (a coleção de uma entidade já rastreada) é tratado como existente e gera `UPDATE`, que falha por concorrência. Há duas saídas:
+  - a entidade nova ganha `Guid.NewGuid()` na criação e entra por `DbSet.Add` explícito, que é o padrão dos cadastros;
+  - o filho que o domínio acrescenta pela coleção (a linha do tempo e as respostas da mensagem) nasce **sem** chave, e o banco gera (`NEWSEQUENTIALID`, D56).
 - **Multi-escolinha (X01):**
   - toda entidade de escolinha implementa `IEntidadeDaEscolinha` (`Escolinha_ID`), e todo índice único começa por `Escolinha_ID`;
   - o filtro global de escolinha é fechado por padrão: sem contexto, a consulta devolve zero linhas. No EF Core 9 cada entidade tem **um** filtro e `IgnoreQueryFilters()` ignora todos; outro filtro futuro (ex.: exclusão lógica) entra na mesma expressão;
   - o `EscolinhaInterceptor` carimba a escolinha no insert e lança exceção em gravação sem contexto, em outra escolinha ou trocando `Escolinha_ID`;
   - na requisição, o contexto vem do `ContextoEscolinhaMiddleware`; em plataforma, jobs e startup, do `IExecutorEscolinha`, que abre um escopo com o contexto definido;
-  - `IgnoreQueryFilters()` só em `AcessoRepositorio.cs` e `ConsultasPlataforma.cs`. Um teste falha em qualquer outro arquivo. Aumentar a lista é decisão registrada, nunca atalho.
+  - `IgnoreQueryFilters()` só em `AcessoRepositorio.cs` e `ConsultasPlataforma.cs`. Um teste falha em qualquer outro arquivo. Aumentar a lista é decisão registrada, nunca atalho;
+  - globais de propósito, sem `Escolinha_ID`: a identidade (`Pessoa`, `Credencial`), o webhook bruto (`WebhookRecebido`), os templates da plataforma (`TemplateMensagem`, D48) e o índice `RastreioWhatsApp`, que guarda só o id da Meta, a escolinha e a mensagem (D50).
 - **Credenciais só em user-secrets** (dev) ou variável de ambiente (produção). O login `sa` do SQL local só vale para desenvolvimento.
 
 ---
@@ -115,7 +119,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 2. ❌ **Nunca chamar sistema externo dentro do request HTTP.** Asaas, WhatsApp e Stripe sempre por job Hangfire com retentativa. **Única exceção (D26):** abrir a sessão de pagamento do Stripe na compra de créditos. A pessoa espera para ir ao pagamento; a compra é gravada antes e a chamada é idempotente.
 3. ❌ **Nunca gravar URL temporária de terceiro.** Grave o identificador e busque de novo.
 4. ✅ **Todo job relê o estado antes de agir.** Entre agendar e executar, tudo pode ter mudado.
-5. ✅ **Quando o evento chega, cancele o que ficou pendente.** Pagamento confirmado para a régua na hora.
+5. ✅ **Quando o evento chega, cancele o que ficou pendente.** Pagamento confirmado para a régua na hora. Convite substituído ou cancelado suprime na hora a mensagem que ainda estava na fila (`EmissorGatilhos.CancelarPendentesAsync`, D51).
 6. ✅ **Webhook: gravar o corpo bruto antes de interpretar**, responder `200` na hora e processar por job.
 7. ✅ **Segredo nunca em arquivo versionado.**
 8. ✅ **Distinguir erro retentável (5xx, timeout, 429) de definitivo.** O `FalhaIntegracao` do DP (`Application/Comum`) entrou com o Stripe (EX-01) e vale para a Asaas e o WhatsApp.
@@ -124,7 +128,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 
 **Novas neste projeto:**
 
-11. ✅ **Nenhum envio fora do catálogo de gatilhos (§8.3), nenhum destinatário aluno.** Substitui a regra do DP de copiar o WhatsApp ao atendente (X05).
+11. ✅ **Nenhum envio fora do catálogo de gatilhos (§8.3), nenhum destinatário aluno.** Substitui a regra do DP de copiar o WhatsApp ao atendente (X05). Teste: só o `EmissorGatilhos` cria `Mensagem`, e só o `ServicoEnvioMensagens` chama o canal.
 12. ✅ **Todo dado de escolinha passa pelo filtro.** `IgnoreQueryFilters` só na lista permitida (teste).
 13. ✅ **Toda action declara o acesso** com `[Permissao(Recurso, Operacao)]`, `[Plataforma]`, `[SomenteAutenticado]` ou `[AllowAnonymous]`. O padrão é negar (teste).
 14. ✅ **Parâmetro de regra vem do catálogo** (`IParametros`) e vale o valor do momento da decisão. Multa e juros ficam congelados na emissão.
@@ -148,7 +152,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 - **Usuário e contexto:**
   - `IUsuarioAtual.Id` é o `Pessoa_ID`;
   - `IContextoEscolinha` diz a escolinha da requisição e se a pessoa é da plataforma;
-  - `IAutorizacao.Pode(recurso, operacao)` decide o acesso; `PodeAsync(recurso, operacao, alvo)` decide sobre um alvo, com escopo por `IResolvedorEscopo` (`ResolvedorEscopoCadastros`: turma, aluno, sessão e professor);
+  - `IAutorizacao.Pode(recurso, operacao)` decide o acesso; `PodeAsync(recurso, operacao, alvo)` decide sobre um alvo, com escopo por `IResolvedorEscopo` (`ResolvedorEscopoCadastros`: turma, aluno, sessão e professor; o responsável, só os filhos com vínculo verificado, D53);
   - **listas filtram na consulta** pelas turmas de `IEscopoDeLeitura.TurmasAsync(recurso)`. A ficha confere `PodeAsync` e devolve 404 fora do escopo. O que vem junto (irmãos, outros filhos, marcas financeiras, CPF, valores) passa pelo mesmo escopo (D41);
   - dado de saúde pela `PoliticaSaude` (completo, treino ou nada), aplicada no view model. O registro de alterações nunca guarda o conteúdo (D36).
 - **Dados e integrações:**
@@ -156,10 +160,15 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - ação sensível via `RegistroDeAlteracoes.SeMudou/Registrar`;
   - segredo de negócio (chave Asaas da escolinha) com `IProtetorSegredos` (Data Protection); nunca em texto puro;
   - cliente HTTP externo sempre com `Microsoft.Extensions.Http.Resilience`;
-  - valor em reais digitado: `decimal` com o binder `DecimalBrasileiroModelBinder` (`Moeda.TentarLer`) e campo mostrado com `Moeda.ParaCampo` (D30).
+  - valor em reais digitado: `decimal` com o binder `DecimalBrasileiroModelBinder` (`Moeda.TentarLer`) e campo mostrado com `Moeda.ParaCampo` (D30);
+  - **mensagem:**
+    - o módulo chama um método do `EmissorGatilhos`, um por gatilho do catálogo;
+    - a mensagem é gravada na mesma transação da mudança de negócio, e o despacho sai depois do commit (D45);
+    - o texto vem do template, com o nome da escolinha como sujeito (D48);
+  - CPF (login ou digitado) nunca vai inteiro para o log: fica `***.456.789-**` (D52).
 - **Testes:**
   - xUnit + `FakeTimeProvider`;
-  - com banco, `[FatoComBanco]` e a coleção `BancoDeTestes`, com `AmbienteAplicacao.ComoPlataformaAsync`, `NaEscolinhaAsync` e `SemContextoAsync`;
+  - com banco, `[FatoComBanco]` e a coleção `BancoDeTestes`, com `AmbienteAplicacao.ComoPlataformaAsync`, `NaEscolinhaAsync` e `SemContextoAsync`. O WhatsApp é o `GatewayWhatsAppFalso` e os jobs vão para o `AgendadorMensageriaDeTeste`;
   - toda regra de negócio tem teste, e toda regra de ouro que pode ser verificada no código tem teste em `Arquitetura/RegrasDeOuroTestes.cs`.
 
 ---
@@ -179,9 +188,12 @@ Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons (só `ki-filled`). O mapa das tel
   - 4 superfícies: `_LayoutAutenticacao`, `_Layout` (painel), `_LayoutQuadra` e `_LayoutPortal`;
   - quadra e portal com alvos de 48 px (`esc-toque`) e barra de ação inferior fixa.
 - **Formato pt-BR** pelos helpers de `Formatacao`: dd/MM/aaaa, R$ 0,00, 24 h, "2,5 %", "ligado/desligado".
+- **Texto:** linguagem neutra, e o nome da escolinha nunca vem depois da palavra "escolinha". "A escolinha Escolinha X" duplica a palavra; use "Escolinha X informa" ou "em Escolinha X".
 - **Checagem de tela:**
   - sem rolagem horizontal em 375 e 320 px;
   - elemento `position: fixed` não aparece na checagem de rolagem, então confira que nada passa da largura da tela; item flex em barra fixa precisa de `min-width: 0`;
+  - **tabela no celular:** ficam só as colunas principais (cerca de 280 px, para caber em 320 px sem rolar a tabela). O dado secundário desce para a célula principal com `sm:hidden`, e a ação vira só ícone;
+  - texto longo sem espaço (um link) leva `wrap-anywhere`;
   - botão só com ícone tem `aria-label`; modal no fim do `<body>`;
   - `esc.reinicializarComponentes()` depois de HTML injetado.
 
@@ -196,7 +208,7 @@ dotnet test tests/Testes                 # inclui os testes com banco (escolinha
                                          # outra conexão para os testes: variável ESC_TESTES_SQL
 
 # App em https://localhost:7186. No startup: aplica as migrations, cria o 1º administrador da plataforma
-# (se não existir) e reconcilia os parâmetros das escolinhas.
+# (se não existir), reconcilia os parâmetros das escolinhas e grava os templates de WhatsApp que faltam.
 dotnet run --project src/Web --launch-profile https
 
 # Front (rodar em src/Web). O resultado vai para o git, porque o servidor não roda npm.
@@ -221,6 +233,15 @@ dotnet user-secrets set "Stripe:ChaveSecreta" "sk_test_..." --project src/Web   
 dotnet user-secrets set "Stripe:SegredoWebhook" "whsec_..." --project src/Web        # o que o Stripe CLI mostrar
 stripe listen --forward-to https://localhost:7186/api/v1/webhooks/stripe             # Stripe CLI: webhook em localhost
 
+# WhatsApp (Cloud API da Meta). Padrão: Simulado (/dev/whatsapp, sem conta). Para a API real com número de teste (P34):
+dotnet user-secrets set "WhatsApp:Modo" "Api" --project src/Web
+dotnet user-secrets set "WhatsApp:IdNumero" "<id do número na Meta>" --project src/Web
+dotnet user-secrets set "WhatsApp:TokenAcesso" "<token permanente>" --project src/Web         # usuário do sistema
+dotnet user-secrets set "WhatsApp:SegredoApp" "<segredo do app>" --project src/Web           # confere a assinatura do webhook
+dotnet user-secrets set "WhatsApp:TokenVerificacao" "<texto à escolha>" --project src/Web    # o mesmo do painel da Meta
+dotnet user-secrets set "WhatsApp:NumerosTeste:0" "+5543..." --project src/Web            # fora de Production, só estes recebem
+dotnet user-secrets set "WhatsApp:UrlPublica" "https://<endereço público>" --project src/Web  # vai no link do convite
+
 # Certificado HTTPS de desenvolvimento do SDK novo (uma vez; o Windows pede confirmação)
 dotnet dev-certs https --trust
 ```
@@ -231,7 +252,12 @@ dotnet dev-certs https --trust
 
 - **.NET 9 perde o suporte em 10/11/2026.** O projeto está em .NET 9 porque o servidor só tem esse runtime (D02). Antes dessa data, instale o Hosting Bundle do .NET 10 no servidor e suba o projeto, ou publique self-contained (P24).
 - **Production exige certificado do Data Protection:** `DataProtection:CertificadoArquivo` e `DataProtection:CertificadoSenha`. Sem ele, o app **não sobe**. Perder o certificado significa perder as chaves Asaas de todas as escolinhas, e cada uma terá de vincular a conta de novo.
-- **Integrações:** os clientes Asaas (S4) e WhatsApp (S2) ainda não existem. Quando entrarem, nascem em modo **Simulado** (opções Simulado/Api e trava de ambiente, no padrão do DP) e só mudam para Api com credencial real. Já hoje, a conta Asaas de Produção só é aceita com o sistema em Production.
+- **WhatsApp** (S2): roda em modo **Simulado** (`/dev/whatsapp`) até haver conta na Meta (P34). Trava de ambiente (`GuardaWhatsApp`):
+  - **Simulado** em Production: o canal fica desligado, com aviso no log. As mensagens essenciais ficam retidas, e o portal continua;
+  - **Api** exige `IdNumero`, `TokenAcesso`, `SegredoApp` e `TokenVerificacao`. Fora de Production, exige também `WhatsApp:NumerosTeste` e só manda para esses números (os demais são suprimidos, com o motivo). Em Production, exige `WhatsApp:ConfirmarProducao = true`;
+  - só sai template **aprovado** pela Meta (tela Plataforma › Templates);
+  - webhook: `https://<site>/api/v1/webhooks/whatsapp`, com o GET de verificação e o POST assinado. No painel da Meta, assine o campo `messages`.
+- **Asaas** (S4): vai seguir o mesmo padrão. Já hoje, a conta Asaas de Produção só é aceita com o sistema em Production.
 - **Stripe da LDNA** (só a LDNA cobra as escolinhas, pelos pacotes de créditos; a mensalidade do aluno é da Asaas, R1). Trava de ambiente (`GuardaStripe`):
   - **Simulado** em Production: a compra de créditos fica desligada, com aviso no log;
   - **Teste** em Production: o app **não sobe**, porque crédito comprado com cartão de teste gastaria WhatsApp de verdade. Para testar num servidor, use o ambiente Homologacao;
@@ -242,8 +268,10 @@ dotnet dev-certs https --trust
 - **O banco de desenvolvimento tem dados de validação.** Não use esses dados em demonstração ao cliente sem limpar:
   - as escolinhas A e B, com os seus gestores;
   - em A, os cadastros do S1 e a massa de demonstração;
-  - o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A, para validar o escopo do professor com login real. A ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL.
+  - o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A, para validar o escopo do professor com login real. A ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL;
+  - em A, desde o S2: a responsável Ana Almeida tem acesso (login pelo CPF, com o vínculo do Arthur confirmado), e o log tem as mensagens da validação (convite e treino cancelado).
 - **Jobs recorrentes** (horário de Brasília, registrados no startup):
   - `sessoes-gerar-horizonte`, às 03:15: gera as sessões de treino até o fim do mês seguinte, uma escolinha por vez (D31);
-  - `stripe-varredura-compras`, a cada 20 minutos: confere as compras de créditos pendentes. Sai quando o Stripe está desligado (`Stripe:Habilitado = false`).
-- **`/dev/design`** (vitrine) e **`/dev/massa`** (massa de demonstração: 3 turmas e 60 alunos em 38 famílias na escolinha ativa, uma vez por escolinha, D40) só existem em Development; fora dele respondem 404.
+  - `stripe-varredura-compras`, a cada 20 minutos: confere as compras de créditos pendentes. Sai quando o Stripe está desligado (`Stripe:Habilitado = false`);
+  - `mensagens-varredura`, a cada 5 minutos, uma escolinha por vez: solta as mensagens retidas quando o saldo volta e reenfileira as que venceram (D45).
+- **`/dev/design`** (vitrine), **`/dev/massa`** (massa de demonstração: 3 turmas e 60 alunos em 38 famílias na escolinha ativa, uma vez por escolinha, D40) e **`/dev/whatsapp`** (o celular das famílias: entregar, ler, falhar, tocar num botão ou responder manda o webhook assinado; só com o modo Simulado) só existem em Development. Fora dele respondem 404.

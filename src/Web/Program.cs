@@ -12,11 +12,13 @@ using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Integracao.Stripe;
+using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Domain.Comum;
 using MinhaEscolinha.Infrastructure;
 using MinhaEscolinha.Infrastructure.Cadastro;
 using MinhaEscolinha.Infrastructure.Data.Contexto;
 using MinhaEscolinha.Infrastructure.Data.Seed;
+using MinhaEscolinha.Infrastructure.Mensageria;
 using MinhaEscolinha.Infrastructure.Plataforma;
 using MinhaEscolinha.Infrastructure.Seguranca;
 using MinhaEscolinha.Web.Filters;
@@ -170,12 +172,17 @@ try
             escopo.ServiceProvider.GetRequiredService<IHashSenha>(),
             escopo.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(SeedAdministradorPlataforma)));
         await escopo.ServiceProvider.GetRequiredService<ReconciliadorParametros>().ReconciliarAsync();
+        // Catálogo de templates de WhatsApp: grava os textos padrão que faltam (nunca sobrescreve o que a equipe editou)
+        var templatesNovos = await escopo.ServiceProvider.GetRequiredService<ServicoTemplates>().ReconciliarAsync();
+        if (templatesNovos > 0) Log.Information("{Quantos} template(s) de WhatsApp gravado(s) no catálogo.", templatesNovos);
 
         // Varredura das compras de créditos pendentes no Stripe (cobre o webhook perdido)
         JobsPlataforma.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>(),
             escopo.ServiceProvider.GetRequiredService<OpcoesStripe>());
         // Sessões de treino: todo dia, o horizonte até o fim do mês seguinte (BL-M04-04)
         JobsTurmas.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
+        // Motor de mensagens: a varredura de 5 em 5 minutos (job perdido, fim da janela de silêncio, retidas com saldo)
+        JobsMensageria.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
     }
 
     // ── Pipeline ──

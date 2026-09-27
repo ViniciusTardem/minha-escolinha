@@ -451,7 +451,8 @@ public record FichaResponsavel(
     string? Email,
     Endereco Endereco,
     bool TemAcesso,
-    IReadOnlyList<(Guid AlunoId, string Aluno, Parentesco Parentesco, bool Pagador, bool RecebeCobranca, bool RecebeNotificacao, SituacaoAluno Situacao)> Alunos,
+    IReadOnlyList<(Guid AlunoId, string Aluno, Parentesco Parentesco, bool Pagador, bool RecebeCobranca, bool RecebeNotificacao, SituacaoAluno Situacao,
+        VerificacaoVinculo Verificacao)> Alunos,
     bool PodeEditar,
     bool VerFinanceiro);
 

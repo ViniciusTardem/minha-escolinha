@@ -1,0 +1,56 @@
+@model AtivacaoViewModel
+@{
+    ViewData["Title"] = "Ativar o acesso";
+    Layout = "_LayoutAutenticacao";
+    var id = Model.Identificacao!;
+    var r = Model.Ativacao ?? new AtivacaoRequisicao { Cpf = Model.Cpf.Cpf };
+    string? Invalido(string campo) => ViewData.ModelState[campo]?.Errors.Count > 0 ? "true" : null;
+}
+
+<div class="kt-card max-w-[440px] w-full">
+    <form method="post" asp-controller="Ativacao" asp-action="Ativar" asp-route-token="@Model.Token" class="kt-card-content flex flex-col gap-5 p-8 sm:p-10" novalidate>
+        <input type="hidden" name="Cpf" value="@r.Cpf" />
+        <div class="text-center mb-2.5">
+            <h1 class="text-lg font-medium text-mono leading-none mb-2.5">Olá, @EmissorGatilhos.PrimeiroNome(id.Nome)!</h1>
+            <p class="text-sm text-secondary-foreground">
+                CPF conferido. @(id.Tipo == TipoConvite.Responsavel ? $"Você vai acompanhar os alunos de quem é responsável em {id.Escolinha}." : $"Você vai entrar com o papel de professor em {id.Escolinha}.")
+            </p>
+        </div>
+
+        <partial name="_ErrosFormulario" />
+
+        @if (id.ContaExistente)
+        {
+            <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3" role="status">
+                <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                <span class="text-sm">Você já tem acesso ao Minha Escolinha@(id.Login is null ? "" : $" (login {id.Login})"). Entre com a mesma senha: @id.Escolinha passa a aparecer na sua conta.</span>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label font-normal text-mono" for="Senha">A sua senha</label>
+                <input class="kt-input" id="Senha" name="Senha" type="password" autocomplete="current-password" required autofocus aria-invalid="@Invalido("Senha")" />
+            </div>
+            <input type="hidden" name="ConfirmacaoSenha" value="" />
+            <button class="kt-btn kt-btn-primary flex justify-center grow" type="submit">Entrar e ativar</button>
+        }
+        else
+        {
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label font-normal text-mono" for="Email">E-mail <span class="text-muted-foreground">(opcional)</span></label>
+                <input class="kt-input" id="Email" name="Email" value="@r.Email" type="email" inputmode="email" autocomplete="email" autocapitalize="none"
+                       placeholder="voce@email.com" aria-invalid="@Invalido("Email")" />
+                <span class="text-xs text-muted-foreground">Sem e-mail, você entra com o CPF. O e-mail serve para recuperar o acesso e receber recibos; os avisos continuam pelo WhatsApp.</span>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label font-normal text-mono" for="Senha">Crie uma senha</label>
+                <input class="kt-input" id="Senha" name="Senha" type="password" autocomplete="new-password" required aria-invalid="@Invalido("Senha")" />
+                <span class="text-xs text-muted-foreground">Pelo menos 8 caracteres, com letras e números.</span>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label font-normal text-mono" for="ConfirmacaoSenha">Repita a senha</label>
+                <input class="kt-input" id="ConfirmacaoSenha" name="ConfirmacaoSenha" type="password" autocomplete="new-password" required
+                       aria-invalid="@Invalido("ConfirmacaoSenha")" />
+            </div>
+            <button class="kt-btn kt-btn-primary flex justify-center grow" type="submit">Ativar o acesso</button>
+        }
+    </form>
+</div>

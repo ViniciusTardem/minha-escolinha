@@ -1,14 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Domain.Acesso;
+using MinhaEscolinha.Domain.Mensageria;
 using MinhaEscolinha.Infrastructure.Data.Contexto;
 
 namespace MinhaEscolinha.Infrastructure.Acesso;
 
 /// <summary>
 /// ARQUIVO NA LISTA PERMITIDA do <c>IgnoreQueryFilters</c>: o login e a montagem do contexto leem os vínculos da pessoa
-/// antes de existir escolinha escolhida. Toda leitura que ignora o filtro aqui filtra pela pessoa (e pela escolinha,
-/// quando informada) explicitamente.
+/// antes de existir escolinha escolhida, e a ativação anônima acha o convite pelo hash do link. Toda leitura que ignora o
+/// filtro aqui filtra explicitamente pela pessoa (e pela escolinha, quando informada) ou pelo hash do convite.
 /// </summary>
 public class AcessoRepositorio(EscolinhaDbContext contexto) : IAcessoRepositorio
 {
@@ -17,6 +18,9 @@ public class AcessoRepositorio(EscolinhaDbContext contexto) : IAcessoRepositorio
 
     public Task<Credencial?> ObterCredencialAsync(Guid pessoaId, CancellationToken ct = default) =>
         contexto.Credenciais.Include(c => c.Pessoa).FirstOrDefaultAsync(c => c.Pessoa_ID == pessoaId, ct);
+
+    public Task<Credencial?> ObterCredencialPorCpfAsync(string cpf, CancellationToken ct = default) =>
+        contexto.Credenciais.Include(c => c.Pessoa).FirstOrDefaultAsync(c => c.Pessoa!.Cpf == cpf, ct);
 
     public Task<bool> LoginEmUsoAsync(string login, CancellationToken ct = default) =>
         contexto.Credenciais.AnyAsync(c => c.Login == login, ct);
@@ -66,6 +70,11 @@ public class AcessoRepositorio(EscolinhaDbContext contexto) : IAcessoRepositorio
     }
 
     public void AdicionarPessoa(Pessoa pessoa) => contexto.Pessoas.Add(pessoa);
+
+    public void AdicionarCredencial(Credencial credencial) => contexto.Credenciais.Add(credencial);
+
+    public Task<ConviteAcesso?> ConvitePorHashAsync(string tokenHash, CancellationToken ct = default) =>
+        contexto.Convites.IgnoreQueryFilters().AsNoTracking().FirstOrDefaultAsync(c => c.TokenHash == tokenHash, ct);
 
     public void AdicionarVinculo(VinculoAtuacao vinculo) => contexto.VinculosAtuacao.Add(vinculo);
 

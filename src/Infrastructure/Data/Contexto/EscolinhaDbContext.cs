@@ -10,6 +10,7 @@ using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
 using MinhaEscolinha.Domain.Equipe;
 using MinhaEscolinha.Domain.Integracao;
+using MinhaEscolinha.Domain.Mensageria;
 using MinhaEscolinha.Domain.Plataforma;
 using MinhaEscolinha.Domain.Turmas;
 
@@ -63,6 +64,12 @@ public class EscolinhaDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<VinculoAlunoResponsavel> VinculosResponsavel => Set<VinculoAlunoResponsavel>();
     public DbSet<Matricula> Matriculas => Set<Matricula>();
     public DbSet<ConsentimentoAluno> Consentimentos => Set<ConsentimentoAluno>();
+    public DbSet<Mensagem> Mensagens => Set<Mensagem>();
+    public DbSet<EventoMensagem> EventosMensagem => Set<EventoMensagem>();
+    public DbSet<RespostaMensagem> RespostasMensagem => Set<RespostaMensagem>();
+    public DbSet<TemplateMensagem> TemplatesMensagem => Set<TemplateMensagem>();
+    public DbSet<ConviteAcesso> Convites => Set<ConviteAcesso>();
+    public DbSet<RastreioWhatsApp> RastreiosWhatsApp => Set<RastreioWhatsApp>();
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

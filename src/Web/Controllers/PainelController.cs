@@ -4,6 +4,7 @@ using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
+using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Web.Infraestrutura;
@@ -28,6 +29,9 @@ public class PainelController(
     ServicoTurmas turmas,
     ServicoAlunos alunos,
     ServicoAgenda agenda,
+    ServicoConvites convites,
+    ServicoVerificacaoVinculos vinculos,
+    ServicoMensagens mensagens,
     IParametros valores,
     IRelogioBrasil relogio) : Controller
 {
@@ -38,6 +42,10 @@ public class PainelController(
             return autorizacao.AdministradorPlataforma
                 ? RedirectToAction("Index", "Plataforma")
                 : RedirectToAction("EscolherEscolinha", "Conta");
+
+        // Quem é só responsável usa o portal (P23, decidido no S2): o painel é de quem gere ou dá aula.
+        if (autorizacao.Papeis.Count > 0 && autorizacao.Papeis.All(p => p == PapelAtuacao.Responsavel))
+            return RedirectToAction("Index", "Portal");
 
         var dados = await escolinhas.ObterAsync(ct);
         var veConfiguracao = autorizacao.Pode(Recurso.ConfiguracaoEscolinha, Operacao.Ler);
@@ -75,6 +83,25 @@ public class PainelController(
                 "/Turmas", quantasTurmas > 0 ? "Ver turmas" : "Criar turma"));
             passos.Add(new("Alunos", $"{quantosAlunos} aluno(s) na escolinha, com responsáveis e matrícula.", "ki-people", quantosAlunos > 0,
                 "/Alunos", quantosAlunos > 0 ? "Ver alunos" : "Cadastrar aluno"));
+
+            // Acesso das famílias e da equipe (S2): quem não ativou continua recebendo tudo pelo WhatsApp.
+            var candidatos = await convites.CandidatosAsync(ct);
+            var comAcesso = candidatos.Count(c => c.Situacao == SituacaoAcesso.Ativo);
+            passos.Add(new("Convites de acesso", $"{comAcesso} de {candidatos.Count} responsáveis e professores com acesso; os demais recebem pelo WhatsApp.",
+                "ki-key", comAcesso > 0, "/Convites", comAcesso > 0 ? "Ver convites" : "Convidar"));
+        }
+
+        var pendencias = new List<PendenciaPainel>();
+        if (await vinculos.ContarPendentesAsync(ct) is > 0 and var aConfirmar)
+            pendencias.Add(new("Vínculos a confirmar", $"{aConfirmar} vínculo(s) de quem ativou o acesso: o portal só mostra o aluno depois da sua confirmação.",
+                "ki-user-tick", "/Vinculos", "Confirmar"));
+        if (await mensagens.ResumoAsync(1, ct) is { } resumo)
+        {
+            if (resumo.Retidas > 0)
+                pendencias.Add(new("Mensagens retidas", $"{resumo.Retidas} mensagem(ns) essencial(is) esperando crédito: saem sozinhas quando houver saldo.",
+                    "ki-message-text-2", "/Creditos", "Comprar créditos"));
+            else if (resumo.SaldoBaixo)
+                pendencias.Add(new("Saldo de créditos baixo", $"Restam {Formatacao.Numero(resumo.Saldo)} crédito(s) de mensagem.", "ki-wallet", "/Creditos", "Ver créditos"));
         }
 
         var hoje = DateOnly.FromDateTime(relogio.Hoje());
@@ -91,6 +118,6 @@ public class PainelController(
             .ToList();
 
         return View(new PainelViewModel(dados?.Nome ?? "Escolinha", RotulosAcesso.Papeis(autorizacao.Papeis), veConfiguracao, passos, proximas,
-            proximosTreinos, vencendo, vencidos, hoje));
+            proximosTreinos, vencendo, vencidos, hoje, pendencias));
     }
 }

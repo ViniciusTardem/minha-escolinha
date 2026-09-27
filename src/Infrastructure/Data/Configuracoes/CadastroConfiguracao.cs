@@ -284,6 +284,11 @@ public class VinculoAlunoResponsavelConfiguracao : IEntityTypeConfiguration<Vinc
         builder.HasIndex(v => new { v.Escolinha_ID, v.Aluno_ID, v.Responsavel_ID }).IsUnique()
             .HasDatabaseName("UQ_VinculoAlunoResponsavel_Escolinha_Aluno_Responsavel");
         builder.HasIndex(v => new { v.Escolinha_ID, v.Responsavel_ID }).HasDatabaseName("IX_VinculoAlunoResponsavel_Escolinha_Responsavel");
+
+        // Verificação do vínculo (S2, BL-M01-06): a fila do gestor procura os pendentes.
+        builder.Property(v => v.VerificadoPorNome).HasMaxLength(Responsavel.TamanhoNome);
+        builder.Property(v => v.MotivoRecusa).HasMaxLength(VinculoAlunoResponsavel.TamanhoMotivoRecusa);
+        builder.HasIndex(v => new { v.Escolinha_ID, v.Verificacao }).HasDatabaseName("IX_VinculoAlunoResponsavel_Escolinha_Verificacao");
     }
 }
 

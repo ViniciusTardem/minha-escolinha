@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Domain.Acesso;
@@ -15,12 +15,13 @@ public class ServicoAutenticacaoTestes
     private readonly FakeTimeProvider _tempo = new(new DateTimeOffset(2026, 9, 26, 15, 0, 0, TimeSpan.Zero)); // 12:00 em Brasília
     private readonly RepositorioEmMemoria _repositorio = new();
     private readonly UsuarioDeTeste _usuario = new();
+    private readonly LogEmMemoria _log = new();
     private readonly ServicoAutenticacao _servico;
 
     public ServicoAutenticacaoTestes()
     {
         _servico = new ServicoAutenticacao(_repositorio, new HashFalso(), new RelogioBrasil(_tempo), _usuario,
-            new LoginRequisicaoValidador(), new TrocarSenhaRequisicaoValidador(), NullLogger<ServicoAutenticacao>.Instance);
+            new LoginRequisicaoValidador(), new TrocarSenhaRequisicaoValidador(), _log);
     }
 
     private Credencial Cadastrar(string login, bool comEscolinha = true, bool plataforma = false)
@@ -106,6 +107,22 @@ public class ServicoAutenticacaoTestes
         Assert.Equal("Login ou senha inválidos.", (await Entrar("inativa@escolinha.com", SenhaCerta)).Mensagem);
     }
 
+    /// <summary>S2: quem ativou o acesso sem e-mail tem o CPF como login; quem tem e-mail também entra pelo CPF da própria pessoa.</summary>
+    [Fact]
+    public async Task Entra_pelo_cpf_com_ou_sem_pontuacao_e_o_cpf_nao_vai_inteiro_para_o_log()
+    {
+        Cadastrar("52998224725").Pessoa!.Cpf = "52998224725";
+        Cadastrar("rita@escolinha.com").Pessoa!.Cpf = "11144477735";
+
+        Assert.True((await Entrar("529.982.247-25", SenhaCerta)).Sucesso);
+        Assert.True((await Entrar("52998224725", SenhaCerta)).Sucesso);
+        Assert.True((await Entrar("111.444.777-35", SenhaCerta)).Sucesso);
+        Assert.Equal("Login ou senha inválidos.", (await Entrar("529.982.247-25", "errada")).Mensagem);
+
+        Assert.Contains(_log.Linhas, l => l.Contains("***.982.247-**"));
+        Assert.DoesNotContain(_log.Linhas, l => l.Contains("52998224725") || l.Contains("11144477735"));
+    }
+
     [Fact]
     public async Task Trocar_senha_renova_o_carimbo_e_derruba_as_outras_sessoes()
     {
@@ -135,6 +152,15 @@ public class ServicoAutenticacaoTestes
         Assert.False(await _servico.ConferirSenhaAsync("outra"));
     }
 
+    private sealed class LogEmMemoria : ILogger<ServicoAutenticacao>
+    {
+        public List<string> Linhas { get; } = [];
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+            Linhas.Add(formatter(state, exception));
+    }
+
     private sealed class HashFalso : IHashSenha
     {
         public static string Hash(string senha) => "hash:" + senha;
@@ -155,6 +181,14 @@ public class ServicoAutenticacaoTestes
 
         public Task<bool> LoginEmUsoAsync(string login, CancellationToken ct = default) =>
             Task.FromResult(Credenciais.Any(c => c.Login == login));
+
+        public Task<Credencial?> ObterCredencialPorCpfAsync(string cpf, CancellationToken ct = default) =>
+            Task.FromResult(Credenciais.FirstOrDefault(c => c.Pessoa?.Cpf == cpf));
+
+        public void AdicionarCredencial(Credencial credencial) => Credenciais.Add(credencial);
+
+        public Task<MinhaEscolinha.Domain.Mensageria.ConviteAcesso?> ConvitePorHashAsync(string tokenHash, CancellationToken ct = default) =>
+            Task.FromResult<MinhaEscolinha.Domain.Mensageria.ConviteAcesso?>(null);
 
         public Task<Pessoa?> ObterPessoaPorCpfAsync(string cpf, CancellationToken ct = default) =>
             Task.FromResult(Credenciais.Select(c => c.Pessoa).FirstOrDefault(p => p?.Cpf == cpf));

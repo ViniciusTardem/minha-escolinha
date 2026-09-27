@@ -9,7 +9,7 @@
 <div class="kt-container-fixed">
     <cabecalho-pagina titulo="Cancelar treino" meta="@($"{sessao.Turma} · {Formatacao.DiaCurto(sessao.Data)} · {Formatacao.Horario(sessao.Inicio, sessao.Fim)}")"
                       voltar-href="@destino" voltar-texto="Voltar"
-                      descricao="O cancelamento fica registrado com o motivo e quem cancelou. As famílias da turma serão avisadas pelo motor de mensagens assim que ele entrar (próxima etapa do piloto)."></cabecalho-pagina>
+                      descricao="O cancelamento fica registrado com o motivo e quem cancelou. As famílias da turma recebem o aviso pelo WhatsApp e, quem já ativou o acesso, também no portal. Treino nas próximas 24 horas é avisado mesmo na janela de silêncio."></cabecalho-pagina>
 
     <div class="kt-card max-w-[640px]">
         <form method="post" asp-action="Cancelar" asp-route-id="@sessao.Id" novalidate>

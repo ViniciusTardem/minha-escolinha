@@ -1,11 +1,13 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Domain.Alunos;
 using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
 using MinhaEscolinha.Domain.Integracao;
+using MinhaEscolinha.Domain.Mensageria;
 using MinhaEscolinha.Domain.Plataforma;
 using MinhaEscolinha.Domain.Turmas;
 
@@ -129,6 +131,34 @@ public static class ApresentacaoStatus
         EstadoConsentimento.Concedido => ("Autorizado", VarianteSelo.Sucesso),
         EstadoConsentimento.Recusado => ("Recusado", VarianteSelo.Neutro),
         EstadoConsentimento.Revogado => ("Revogado", VarianteSelo.Neutro),
+
+        SituacaoMensagem.Pendente => ("Na fila", VarianteSelo.Neutro),
+        SituacaoMensagem.Retida => ("Retida", VarianteSelo.Alerta),
+        SituacaoMensagem.Enviada => ("Enviada", VarianteSelo.Info),
+        SituacaoMensagem.Entregue => ("Entregue", VarianteSelo.Sucesso),
+        SituacaoMensagem.Lida => ("Lida", VarianteSelo.Sucesso),
+        SituacaoMensagem.Falhou => ("Falhou", VarianteSelo.Perigo),
+        SituacaoMensagem.Suprimida => ("Suprimida", VarianteSelo.Neutro),
+
+        SituacaoConvite.Pendente => ("Enviado", VarianteSelo.Info),
+        SituacaoConvite.Aceito => ("Aceito", VarianteSelo.Sucesso),
+        SituacaoConvite.Cancelado => ("Cancelado", VarianteSelo.Neutro),
+        SituacaoConvite.Substituido => ("Substituído", VarianteSelo.Neutro),
+
+        SituacaoAcesso.SemAcesso => ("Sem acesso", VarianteSelo.Neutro),
+        SituacaoAcesso.Convidado => ("Convidado", VarianteSelo.Info),
+        SituacaoAcesso.ConviteExpirado => ("Convite vencido", VarianteSelo.Alerta),
+        SituacaoAcesso.Ativo => ("Com acesso", VarianteSelo.Sucesso),
+
+        VerificacaoVinculo.NaoSolicitada => ("Sem acesso", VarianteSelo.Neutro),
+        VerificacaoVinculo.Pendente => ("A confirmar", VarianteSelo.Alerta),
+        VerificacaoVinculo.Verificado => ("Confirmado", VarianteSelo.Sucesso),
+        VerificacaoVinculo.Recusado => ("Recusado", VarianteSelo.Perigo),
+
+        SituacaoAprovacaoTemplate.Rascunho => ("Rascunho", VarianteSelo.Neutro),
+        SituacaoAprovacaoTemplate.EmAnalise => ("Em análise na Meta", VarianteSelo.Info),
+        SituacaoAprovacaoTemplate.Aprovado => ("Aprovado", VarianteSelo.Sucesso),
+        SituacaoAprovacaoTemplate.Rejeitado => ("Rejeitado", VarianteSelo.Perigo),
 
         _ => (valor.ToString(), VarianteSelo.Neutro)
     };

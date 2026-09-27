@@ -36,6 +36,21 @@ public static class Telefone
         return completo.Length is 10 or 11 && Valido(completo) ? "+55" + completo : null;
     }
 
+    /// <summary>O número como a API do WhatsApp recebe: só dígitos, com o código do país ("+5543988887777" → "5543988887777").</summary>
+    public static string ParaWhatsApp(string e164) => TextoHelper.SomenteDigitos(e164);
+
+    /// <summary>
+    /// Chave para casar números do WhatsApp: no Brasil, o id da conta (wa_id) de muitos celulares vem sem o 9º dígito
+    /// ("554388887777" para "+5543988887777"). A chave tira o 9 do celular brasileiro; os outros números ficam só com os dígitos.
+    /// </summary>
+    public static string ChaveWhatsApp(string? numero)
+    {
+        var digitos = TextoHelper.SomenteDigitos(numero);
+        return digitos.Length == 13 && digitos.StartsWith("55", StringComparison.Ordinal) && digitos[4] == '9'
+            ? digitos[..4] + digitos[5..]
+            : digitos;
+    }
+
     /// <summary>DDD entre 11 e 99; celular (11 dígitos) começa com 9.</summary>
     private static bool Valido(string comDdd)
     {

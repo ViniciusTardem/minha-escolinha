@@ -154,7 +154,7 @@ public class AutorizacaoTestes
     }
 
     [Fact]
-    public async Task O_resolvedor_real_pergunta_ao_banco_do_professor_e_nega_o_responsavel_ate_o_convite()
+    public async Task O_resolvedor_real_pergunta_ao_banco_do_professor_e_so_libera_ao_responsavel_o_vinculo_verificado()
     {
         var consultas = new ConsultasEscopoFalsas();
         var resolvedor = new ResolvedorEscopoCadastros(consultas);
@@ -167,14 +167,19 @@ public class AutorizacaoTestes
         Assert.True(await resolvedor.NoEscopoAsync(PapelAtuacao.Professor, AlunoDaMinhaTurma, pessoa));
         Assert.False(await resolvedor.NoEscopoAsync(PapelAtuacao.Professor, AlunoDeOutraTurma, pessoa));
         Assert.False(await resolvedor.NoEscopoAsync(PapelAtuacao.Professor, new AlvoEscopo(TipoAlvoEscopo.Cobranca, Guid.NewGuid()), pessoa));
-        // Responsável: o vínculo verificado nasce com o convite (S2) — até lá, bloqueio total.
+        // Responsável: só o filho com vínculo confirmado pelo gestor (S2, BL-M01-06); pendente é bloqueio total.
         Assert.False(await resolvedor.NoEscopoAsync(PapelAtuacao.Responsavel, AlunoDaMinhaTurma, pessoa));
+        consultas.VerificadosDoResponsavel[pessoa] = [AlunoDaMinhaTurma.Id];
+        Assert.True(await resolvedor.NoEscopoAsync(PapelAtuacao.Responsavel, AlunoDaMinhaTurma, pessoa));
+        Assert.False(await resolvedor.NoEscopoAsync(PapelAtuacao.Responsavel, AlunoDeOutraTurma, pessoa));
+        Assert.False(await resolvedor.NoEscopoAsync(PapelAtuacao.Responsavel, new AlvoEscopo(TipoAlvoEscopo.Turma, turma), pessoa));
     }
 
     private sealed class ConsultasEscopoFalsas : IConsultasEscopo
     {
         public Dictionary<Guid, List<Guid>> TurmasDoProfessor { get; } = [];
         public Dictionary<Guid, List<Guid>> AlunosDoProfessor { get; } = [];
+        public Dictionary<Guid, List<Guid>> VerificadosDoResponsavel { get; } = [];
 
         public Task<bool> ProfessorDaTurmaAsync(Guid pessoaId, Guid turmaId, CancellationToken ct = default) =>
             Task.FromResult(TurmasDoProfessor.GetValueOrDefault(pessoaId)?.Contains(turmaId) == true);
@@ -187,6 +192,11 @@ public class AutorizacaoTestes
 
         public Task<IReadOnlyList<Guid>> TurmasDoProfessorAsync(Guid pessoaId, CancellationToken ct = default) =>
             Task.FromResult<IReadOnlyList<Guid>>(TurmasDoProfessor.GetValueOrDefault(pessoaId) ?? []);
+
+        public Task<bool> ResponsavelVerificadoDoAlunoAsync(Guid pessoaId, Guid alunoId, CancellationToken ct = default) =>
+            Task.FromResult(VerificadosDoResponsavel.GetValueOrDefault(pessoaId)?.Contains(alunoId) == true);
+
+        public Task<bool> ProprioResponsavelAsync(Guid pessoaId, Guid responsavelId, CancellationToken ct = default) => Task.FromResult(false);
     }
 
     [Fact]

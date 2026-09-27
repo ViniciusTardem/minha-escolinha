@@ -1,0 +1,47 @@
+@model IReadOnlyList<TemplateNaLista>
+@{
+    ViewData["Title"] = "Templates de WhatsApp";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Templates de WhatsApp" meta="@($"{Model.Count(t => t.Situacao == SituacaoAprovacaoTemplate.Aprovado)} de {Model.Count} aprovados")"
+                      descricao="Um template por gatilho do catálogo fechado (e por tom, quando há variação). Pela API oficial só sai template aprovado pela Meta: submeta cedo. As categorias são provisórias até a validação do responsável (P02).">
+    </cabecalho-pagina>
+
+    <div class="kt-card">
+        @if (Model.Count == 0)
+        {
+            <estado-vazio icone="ki-message-text-2" titulo="Catálogo vazio" texto="Os textos padrão entram no catálogo no próximo início do sistema."></estado-vazio>
+        }
+        else
+        {
+            <ul class="esc-linhas">
+                @foreach (var t in Model)
+                {
+                    var regra = CatalogoGatilhos.Obter(t.Gatilho);
+                    <li class="flex flex-col gap-2 px-5 py-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="flex flex-wrap items-center gap-2">
+                                <span class="text-sm font-semibold text-mono">@regra.Nome@(t.Tom == TomMensagem.Direto ? " · tom direto" : "")</span>
+                                <span class="font-mono text-xs text-secondary-foreground">@t.NomeNaMeta</span>
+                            </span>
+                            <span class="flex items-center gap-2">
+                                <span class="kt-badge kt-badge-sm kt-badge-outline">@TemplateMensagem.Rotulo(t.Categoria)</span>
+                                <selo-status valor="t.Situacao"></selo-status>
+                                <a class="kt-btn kt-btn-sm kt-btn-outline" asp-action="Editar" asp-route-id="@t.Id"><i class="ki-filled ki-pencil"></i> Editar</a>
+                            </span>
+                        </div>
+                        <p class="text-sm text-foreground">@t.Corpo</p>
+                        <span class="text-xs text-secondary-foreground">
+                            Parâmetros: @string.Join(", ", t.Variaveis.Select((v, i) => $"{{{{{i + 1}}}}} {v}"))@(t.Botoes.Count == 0 ? "" : $" · Botões: {string.Join(" | ", t.Botoes)}") · Fase @regra.Fase
+                        </span>
+                        @if (!string.IsNullOrWhiteSpace(t.Observacao))
+                        {
+                            <span class="text-xs text-secondary-foreground">Nota: @t.Observacao</span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>

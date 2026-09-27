@@ -10,7 +10,10 @@ public enum TipoAlvoEscopo
     Professor = 30,
     Convocacao = 40,
     Cobranca = 50,
-    Sessao = 60
+    Sessao = 60,
+
+    /// <summary>A ficha de um responsável (o próprio responsável vê a dele).</summary>
+    Responsavel = 70
 }
 
 /// <summary>O registro sobre o qual se pede acesso (um aluno, uma turma...).</summary>

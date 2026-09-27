@@ -1,0 +1,49 @@
+@model IReadOnlyList<VinculoParaVerificar>
+@{
+    ViewData["Title"] = "Vínculos a confirmar";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Vínculos a confirmar" voltar-href="/Convites" voltar-texto="Convites" meta="@($"{Model.Count} a confirmar")"
+                      descricao="Quem ativou o acesso só vê o aluno no portal depois que você confirma que é mesmo o responsável dele. Até lá, o portal não mostra nada do aluno. As mensagens pelo WhatsApp continuam normalmente.">
+    </cabecalho-pagina>
+
+    <div class="kt-card">
+        @if (Model.Count == 0)
+        {
+            <estado-vazio icone="ki-user-tick" titulo="Nada a confirmar" texto="Quando um responsável ativar o acesso pelo convite, os vínculos dele com os alunos aparecem aqui."></estado-vazio>
+        }
+        else
+        {
+            <ul class="esc-linhas">
+                @foreach (var v in Model)
+                {
+                    <li class="flex flex-col lg:flex-row lg:items-center gap-3 px-5 py-4">
+                        <div class="flex flex-col gap-0.5 min-w-0 flex-1">
+                            <span class="text-sm">
+                                <a class="font-medium text-mono hover:text-primary" href="/Responsaveis/Ficha/@v.ResponsavelId">@v.Responsavel</a>
+                                <span class="text-secondary-foreground">é responsável por</span>
+                                <a class="font-medium text-mono hover:text-primary" href="/Alunos/Ficha/@v.AlunoId">@v.Aluno</a>
+                                <span class="text-secondary-foreground">(@VinculoAlunoResponsavel.Rotulo(v.Parentesco))?</span>
+                            </span>
+                            <span class="text-xs text-secondary-foreground">
+                                CPF conferido na ativação: @(v.Cpf is null ? "—" : Formatacao.Cpf(v.Cpf))@(v.Telefone is null ? "" : $" · {Formatacao.Telefone(v.Telefone)}")@(v.SolicitadoEm is { } em ? $" · ativou em {Formatacao.DataHora(em)}" : "")
+                            </span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <form method="post" asp-action="Confirmar" asp-route-id="@v.VinculoId">
+                                <button class="kt-btn kt-btn-sm kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Confirmar</button>
+                            </form>
+                            <form method="post" asp-action="Recusar" asp-route-id="@v.VinculoId" class="flex items-center gap-2"
+                                  data-esc-confirmar="@($"Recusar o vínculo de {v.Responsavel} com {v.Aluno}? O portal não vai mostrar este aluno a essa pessoa.")">
+                                <label class="sr-only" for="motivo_@v.VinculoId">Motivo da recusa</label>
+                                <input class="kt-input kt-input-sm w-44" id="motivo_@v.VinculoId" name="motivo" maxlength="300" placeholder="Motivo da recusa" required />
+                                <button class="kt-btn kt-btn-sm kt-btn-ghost" type="submit"><i class="ki-filled ki-cross-circle"></i> Recusar</button>
+                            </form>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>

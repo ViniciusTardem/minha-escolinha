@@ -626,6 +626,10 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Property<Guid>("Escolinha_ID")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("MotivoRecusa")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<bool>("Pagador")
                         .HasColumnType("bit");
 
@@ -647,6 +651,22 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Property<Guid?>("UsuarioCadastro_ID")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("Verificacao")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("VerificacaoSolicitadaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("VerificadoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("VerificadoPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("VerificadoPor_ID")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("VinculoAlunoResponsavel_ID")
                         .HasName("PK_VinculoAlunoResponsavel");
 
@@ -656,6 +676,9 @@ namespace MinhaEscolinha.Infrastructure.Migrations
 
                     b.HasIndex("Escolinha_ID", "Responsavel_ID")
                         .HasDatabaseName("IX_VinculoAlunoResponsavel_Escolinha_Responsavel");
+
+                    b.HasIndex("Escolinha_ID", "Verificacao")
+                        .HasDatabaseName("IX_VinculoAlunoResponsavel_Escolinha_Verificacao");
 
                     b.HasIndex("Escolinha_ID", "Aluno_ID", "Responsavel_ID")
                         .IsUnique()
@@ -1286,6 +1309,483 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasDatabaseName("IX_WebhookRecebido_Origem_RecebidoEm");
 
                     b.ToTable("WebhookRecebido", (string)null);
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.ConviteAcesso", b =>
+                {
+                    b.Property<Guid>("ConviteAcesso_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<DateTime?>("AceitoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("EmitidoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("EmitidoPorNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("EmitidoPor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("EncerradoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiraEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("MotivoEncerramento")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("Pessoa_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("Professor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("Responsavel_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Telefone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("TentativasIdentificacao")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ConviteAcesso_ID")
+                        .HasName("PK_ConviteAcesso");
+
+                    b.HasIndex("Pessoa_ID");
+
+                    b.HasIndex("Professor_ID");
+
+                    b.HasIndex("Responsavel_ID");
+
+                    b.HasIndex("TokenHash")
+                        .HasDatabaseName("IX_ConviteAcesso_TokenHash");
+
+                    b.HasIndex("Escolinha_ID", "Professor_ID")
+                        .HasDatabaseName("IX_ConviteAcesso_Escolinha_Professor");
+
+                    b.HasIndex("Escolinha_ID", "Responsavel_ID")
+                        .HasDatabaseName("IX_ConviteAcesso_Escolinha_Responsavel");
+
+                    b.HasIndex("Escolinha_ID", "TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_ConviteAcesso_Escolinha_TokenHash");
+
+                    b.ToTable("ConviteAcesso", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ConviteAcesso_Ficha", "([Tipo] = 10 AND [Responsavel_ID] IS NOT NULL AND [Professor_ID] IS NULL) OR ([Tipo] = 20 AND [Professor_ID] IS NOT NULL AND [Responsavel_ID] IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.EventoMensagem", b =>
+                {
+                    b.Property<Guid>("EventoMensagem_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("Detalhe")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("Em")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Mensagem_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("int");
+
+                    b.HasKey("EventoMensagem_ID")
+                        .HasName("PK_EventoMensagem");
+
+                    b.HasIndex("Mensagem_ID");
+
+                    b.HasIndex("Escolinha_ID", "Mensagem_ID", "Em")
+                        .HasDatabaseName("IX_EventoMensagem_Escolinha_Mensagem");
+
+                    b.ToTable("EventoMensagem", (string)null);
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.Mensagem", b =>
+                {
+                    b.Property<Guid>("Mensagem_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<DateTime?>("AgendadaPara")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid?>("Aluno_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Canal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Chave")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Conteudo")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("CreditoReservado")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("CreditosConsumidos")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CriadaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("DestinatarioNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("Destinatario_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("EntregueEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("EnviadaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Essencial")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("FalhouEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<int>("Gatilho")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IdExterno")
+                        .HasMaxLength(150)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<DateTime?>("LidaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Motivo")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("Origem_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("Pessoa_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("Referencia")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("ReservadaAte")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("RespondidaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Telefone")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Template")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(120)");
+
+                    b.Property<int>("Tentativas")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TipoDestinatario")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TipoOrigem")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(40)");
+
+                    b.Property<bool>("Urgente")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Variaveis")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<byte[]>("Versao")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Mensagem_ID")
+                        .HasName("PK_Mensagem");
+
+                    b.HasIndex("Aluno_ID");
+
+                    b.HasIndex("Pessoa_ID");
+
+                    b.HasIndex("Escolinha_ID", "Aluno_ID")
+                        .HasDatabaseName("IX_Mensagem_Escolinha_Aluno");
+
+                    b.HasIndex("Escolinha_ID", "Chave")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Mensagem_Escolinha_Chave");
+
+                    b.HasIndex("Escolinha_ID", "CriadaEm")
+                        .HasDatabaseName("IX_Mensagem_Escolinha_CriadaEm");
+
+                    b.HasIndex("Escolinha_ID", "Pessoa_ID", "Canal")
+                        .HasDatabaseName("IX_Mensagem_Escolinha_Pessoa");
+
+                    b.HasIndex("Escolinha_ID", "TipoOrigem", "Origem_ID")
+                        .HasDatabaseName("IX_Mensagem_Escolinha_Origem");
+
+                    b.HasIndex("Escolinha_ID", "Canal", "Situacao", "AgendadaPara")
+                        .HasDatabaseName("IX_Mensagem_Escolinha_Fila");
+
+                    b.ToTable("Mensagem", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Mensagem_Canal", "[Canal] IN (10, 20)");
+
+                            t.HasCheckConstraint("CK_Mensagem_Creditos", "[CreditosConsumidos] >= 0");
+
+                            t.HasCheckConstraint("CK_Mensagem_TipoDestinatario", "[TipoDestinatario] IN (10, 20)");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.RastreioWhatsApp", b =>
+                {
+                    b.Property<Guid>("RastreioWhatsApp_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("ChaveTelefone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("EnviadoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IdExterno")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<Guid>("Mensagem_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("RastreioWhatsApp_ID")
+                        .HasName("PK_RastreioWhatsApp");
+
+                    b.HasIndex("IdExterno")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_RastreioWhatsApp_IdExterno");
+
+                    b.HasIndex("ChaveTelefone", "EnviadoEm")
+                        .HasDatabaseName("IX_RastreioWhatsApp_Telefone_EnviadoEm");
+
+                    b.ToTable("RastreioWhatsApp", (string)null);
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.RespostaMensagem", b =>
+                {
+                    b.Property<Guid>("RespostaMensagem_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<int>("Canal")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IdExterno")
+                        .HasMaxLength(150)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<Guid>("Mensagem_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Observacao")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Payload")
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime>("RecebidaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Texto")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("Tratada")
+                        .HasColumnType("bit");
+
+                    b.HasKey("RespostaMensagem_ID")
+                        .HasName("PK_RespostaMensagem");
+
+                    b.HasIndex("Mensagem_ID");
+
+                    b.HasIndex("Escolinha_ID", "Mensagem_ID")
+                        .HasDatabaseName("IX_RespostaMensagem_Escolinha_Mensagem");
+
+                    b.ToTable("RespostaMensagem", (string)null);
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.TemplateMensagem", b =>
+                {
+                    b.Property<Guid>("TemplateMensagem_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("Botoes")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Categoria")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Corpo")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<int>("Gatilho")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Idioma")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<string>("NomeNaMeta")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(120)");
+
+                    b.Property<string>("Observacao")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Tom")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Variaveis")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(300)");
+
+                    b.HasKey("TemplateMensagem_ID")
+                        .HasName("PK_TemplateMensagem");
+
+                    b.HasIndex("NomeNaMeta")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_TemplateMensagem_NomeNaMeta");
+
+                    b.HasIndex("Gatilho", "Tom")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_TemplateMensagem_Gatilho_Tom");
+
+                    b.ToTable("TemplateMensagem", (string)null);
                 });
 
             modelBuilder.Entity("MinhaEscolinha.Domain.Plataforma.CompraCreditos", b =>
@@ -2013,6 +2513,90 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasConstraintName("FK_Professor_Pessoa");
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.ConviteAcesso", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ConviteAcesso_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Acesso.Pessoa", null)
+                        .WithMany()
+                        .HasForeignKey("Pessoa_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_ConviteAcesso_Pessoa");
+
+                    b.HasOne("MinhaEscolinha.Domain.Equipe.Professor", null)
+                        .WithMany()
+                        .HasForeignKey("Professor_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_ConviteAcesso_Professor");
+
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Responsavel", null)
+                        .WithMany()
+                        .HasForeignKey("Responsavel_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_ConviteAcesso_Responsavel");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.EventoMensagem", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_EventoMensagem_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Mensageria.Mensagem", null)
+                        .WithMany("Eventos")
+                        .HasForeignKey("Mensagem_ID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_EventoMensagem_Mensagem");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.Mensagem", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Aluno", null)
+                        .WithMany()
+                        .HasForeignKey("Aluno_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_Mensagem_Aluno");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Mensagem_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Acesso.Pessoa", null)
+                        .WithMany()
+                        .HasForeignKey("Pessoa_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_Mensagem_Pessoa");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.RespostaMensagem", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_RespostaMensagem_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Mensageria.Mensagem", null)
+                        .WithMany("Respostas")
+                        .HasForeignKey("Mensagem_ID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_RespostaMensagem_Mensagem");
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Plataforma.CompraCreditos", b =>
                 {
                     b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
@@ -2150,6 +2734,13 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Navigation("Disponibilidade");
 
                     b.Navigation("Indisponibilidades");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.Mensagem", b =>
+                {
+                    b.Navigation("Eventos");
+
+                    b.Navigation("Respostas");
                 });
 
             modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.Turma", b =>

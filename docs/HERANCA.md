@@ -25,7 +25,7 @@ Inventário feito em 26/09/2026 e atualizado ao fim de cada fatia.
 | **Organização de módulos e nomes** | 4 camadas, uma pasta por módulo nas camadas, tudo em português, prefixo das DLLs no `Directory.Build.props` | Igual, com o prefixo `MinhaEscolinha` |
 | **Testes** | xUnit 2.9 + `FakeTimeProvider`. Banco `_Testes` com `[FatoComBanco]`, agendador de jobs em memória, testes de regras de ouro e de estrutura, contrato HTTP com handler falso. | Igual: xUnit 2.9.3, `[FatoComBanco]` em `escolinhaesporte_Testes`, regras de ouro em teste |
 | **Fila e agendamento** | Hangfire 1.8 no mesmo processo e no mesmo banco, filas separadas, recorrentes no fuso de Brasília, painel `/jobs` só para o administrador | Igual (1.8.25), com as filas `esc_padrao`, `esc_mensagens`, `esc_webhooks` e `esc_integracoes` (D16) |
-| **Mensagens e integrações existentes** | Padrão completo: `Opcoes<Parceiro>` com Habilitado e Modo (Simulado/Api), trava de ambiente no startup, simulador com página `/dev/<parceiro>` e estado em arquivo, webhook bruto + job + varredura, `FalhaIntegracao` retentável × definitiva, cliente com `Http.Resilience`. Aplicado ao ZapSign e ao GoHighLevel. | Asaas (S4) e WhatsApp Cloud API (S2) seguirão esse padrão, em modo Simulado até haver credencial. **Existem clientes Asaas em outros projetos da LDNA, a reaproveitar no S4; não existe cliente de WhatsApp Cloud API** (seção 3). |
+| **Mensagens e integrações existentes** | Padrão completo: `Opcoes<Parceiro>` com Habilitado e Modo (Simulado/Api), trava de ambiente no startup, simulador com página `/dev/<parceiro>` e estado em arquivo, webhook bruto + job + varredura, `FalhaIntegracao` retentável × definitiva, cliente com `Http.Resilience`. Aplicado ao ZapSign e ao GoHighLevel. | **WhatsApp Cloud API (S2) já segue esse padrão**, em modo Simulado até haver credencial (D49). A Asaas (S4) vai seguir o mesmo padrão, reaproveitando um dos clientes Asaas de outros projetos da LDNA (seção 3). |
 | **Observabilidade e log** | Serilog em arquivo diário; `/health` (banco + heartbeat do Hangfire); middleware de log de exceção | Igual. `/health` responde `Healthy` para banco e Hangfire. |
 | **Ambientes, segredos e deploy** | user-secrets no dev, variáveis de ambiente em produção. Guarda contra banco de produção, CSP estrita, publish self-contained win-x64, keep-alive no `/health`. | Igual, com **UserSecretsId novo** (`minha-escolinha-web`; sem isso, o app leria os segredos do DP) e certificado do Data Protection obrigatório em Production (X04) |
 
@@ -58,6 +58,18 @@ O S1 não trouxe dependência nova: NuGet e npm continuam iguais aos do S0. As p
 | Versão de linha no formulário | `Application/Comum/Cadastros` (`Versao`, `LerVersao`, `MensagemConflito`) | D37. No DP, a versão vai pelo drawer (`ficha.js`); aqui vai num campo escondido do formulário, e o conflito vira mensagem. |
 | Massa de demonstração | `Web/Infraestrutura/Desenvolvimento/MassaDemonstracao`, página `/dev/massa` | D40. Segue a ideia das páginas `/dev` do DP: só em Development. |
 
+### 2.2 O que o S2 acrescentou (27/09/2026)
+
+O S2 não trouxe dependência nova: NuGet e npm continuam iguais aos do S1. O cliente HTTP usa o `Microsoft.Extensions.Http.Resilience` que já existia.
+
+| Peça | Onde | Relação com o DP |
+|---|---|---|
+| Motor de mensagens: outbox, despacho e varredura | `Application/Mensageria` (`EmissorGatilhos`, `ServicoEnvioMensagens`, `VarreduraMensagens`) e `Infrastructure/Mensageria` (`DespachoMensagensInterceptor`, `JobsMensageria`) | Segue o motor de lembretes do DP (outbox + varredura). **Novo:** o despacho sai de um interceptor do SaveChanges, depois do commit, então nenhum módulo precisa lembrar de enfileirar (D45). |
+| Cliente da Cloud API e simulador | `Infrastructure/Integracao/WhatsApp` (`WhatsAppClienteHttp`, `SimuladorWhatsApp`, `GuardaWhatsApp`); página `/dev/whatsapp` | O padrão ZapSign e GoHighLevel do DP: opções Simulado/Api, trava de ambiente, simulador com estado em arquivo e contrato com handler falso. **Novo:** POST sem retentativa HTTP (D49). |
+| Webhook do WhatsApp | `ProcessadorWebhooksWhatsApp`; `Api/WebhooksController` | O padrão do DP (corpo bruto, 200 na hora, job), na tabela genérica `WebhookRecebido` (D28), mais o índice global `RastreioWhatsApp` (D50). |
+| Convite, ativação e portal | `Application/Acesso` (`ServicoConvites`, `ServicoAtivacaoConvite`, `ServicoPortal`); controllers `Convites`, `Ativacao`, `Vinculos` e `Portal` | **Não há equivalente no DP:** lá a equipe cria os usuários, e não existe área do cliente final. Aqui a família ativa sozinha, pelo link e pelo CPF (D51 a D54). |
+| Agendador e gateway de teste | `AgendadorMensageriaDeTeste`, `GatewayWhatsAppFalso` | Seguem o `AgendadorDeTeste` do DP. |
+
 ## 3. Integrações existentes nos projetos locais
 
 Varredura por **conteúdo** em todo `C:\Users\vinic\Documents\Projetos`, em 26/09/2026:
@@ -69,7 +81,7 @@ Varredura por **conteúdo** em todo `C:\Users\vinic\Documents\Projetos`, em 26/0
 |---|---|---|
 | **Asaas** | <ul><li>**`Projetos\Aplicativos\Asaas API`:** SDK .NET 8 (MIT) com `HttpClient` tipado, `AddAsaasClient()`, DTOs, enums e serviços por domínio (clientes, cobranças por boleto, Pix e cartão, Pix, assinaturas, estornos, webhooks, financeiro, sandbox). Traz também `docs/` em pt-BR, um arquivo por domínio com rotas, payloads e armadilhas, refletindo a API em abril/2026.</li><li>**`Projetos\SaaS\AgenciaAzul\Application\Integracoes\Asaas`:** cliente com cobranças, financeiro, notas e webhooks, e testes de contrato (`Testes\AgenciaAzul.Grafo.Testes\Asaas`).</li></ul> | **Reaproveitar no S4**, como manda a §3 da spec. A escolha entre referenciar o SDK ou portar o cliente da AgenciaAzul fica para o início do S4 e sai registrada em 12.1 ou 12.3. Em qualquer caso, o cliente fica atrás do padrão do DP: opções Simulado/Api, simulador, `FalhaIntegracao`, `Http.Resilience` e webhook bruto. A pasta `docs/` do SDK é leitura obrigatória antes da conciliação (CA-7 a CA-9). |
 | **Stripe** (extra, X08) | Nenhum projeto usa Stripe em código: não há referência ao SDK `Stripe.net`, a `api.stripe.com` nem a `@stripe/` nos `.csproj`, `packages.config` e `package.json`. | Construído em 26/09/2026 no padrão de integração do DP, sem SDK (D29): cliente HTTP próprio, simulador em `/dev/stripe`, trava de ambiente, webhook bruto + job + varredura. |
-| **WhatsApp Cloud API** | Nenhum cliente. Os arquivos antes suspeitos (`ceal.londrina.br`, `LDNA SA 2026`) só geram links `wa.me`. As outras ocorrências da varredura eram falsos positivos: o endpoint `/messages` do GoHighLevel e da API da Anthropic, e bibliotecas `datatables`. | Construir no S2, no padrão de integração do DP |
+| **WhatsApp Cloud API** | Nenhum cliente. Os arquivos antes suspeitos (`ceal.londrina.br`, `LDNA SA 2026`) só geram links `wa.me`. As outras ocorrências da varredura eram falsos positivos: o endpoint `/messages` do GoHighLevel e da API da Anthropic, e bibliotecas `datatables`. | **Construído no S2** (27/09/2026), no padrão de integração do DP e sem SDK (D49): cliente HTTP próprio, simulador em `/dev/whatsapp`, trava de ambiente, webhook bruto + job + varredura. |
 
 ## 4. O que NÃO foi herdado, e por quê
 

@@ -6,6 +6,7 @@ using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
+using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
 using MinhaEscolinha.Application.Turmas;
 
@@ -51,6 +52,21 @@ public static class DependencyInjection
         services.AddScoped<ServicoMatriculas>();
         services.AddScoped<ServicoResponsaveis>();
         services.AddScoped<ServicoConsentimentos>();
+
+        // S2 — motor único de mensagens (M09), convites e ativação (M01), portal do responsável (começo do M10)
+        services.AddScoped<EmissorGatilhos>();
+        services.AddScoped<ServicoEnvioMensagens>();
+        services.AddScoped<ServicoRetornoMensagens>();
+        services.AddScoped<ProcessadorWebhooksWhatsApp>();
+        services.AddScoped<VarreduraMensagens>();
+        services.AddScoped<ServicoMensagens>();
+        services.AddScoped<ServicoTemplates>();
+        services.AddScoped<IValidadorOrigemMensagem, ValidadorOrigemConvite>();
+        services.AddScoped<ServicoConvites>();
+        services.AddScoped<ServicoVerificacaoVinculos>();
+        services.AddScoped<ServicoAtivacaoConvite>();
+        services.AddScoped<AtivacaoNaEscolinha>();
+        services.AddScoped<ServicoPortal>();
 
         // Plataforma — a LDNA vende pacotes de créditos às escolinhas (Stripe da LDNA; mensalidade de aluno segue na Asaas)
         services.AddScoped<ServicoPacotesCreditos>();

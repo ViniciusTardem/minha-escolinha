@@ -8,14 +8,14 @@
     <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" class="kt-card-content flex flex-col gap-5 p-8 sm:p-10" novalidate>
         <div class="text-center mb-2.5">
             <h1 class="text-lg font-medium text-mono leading-none mb-2.5">Entrar</h1>
-            <p class="text-sm text-secondary-foreground">Use o seu e-mail e a sua senha.</p>
+            <p class="text-sm text-secondary-foreground">Use o seu e-mail (ou o CPF, se ativou o acesso sem e-mail) e a sua senha.</p>
         </div>
 
         <partial name="_ErrosFormulario" />
 
         <div class="flex flex-col gap-1">
-            <label class="kt-form-label font-normal text-mono" asp-for="Login">E-mail</label>
-            <input class="kt-input" asp-for="Login" type="email" inputmode="email" autocomplete="username" autofocus placeholder="voce@escolinha.com.br" />
+            <label class="kt-form-label font-normal text-mono" asp-for="Login">E-mail ou CPF</label>
+            <input class="kt-input" asp-for="Login" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus placeholder="voce@escolinha.com.br" />
         </div>
 
         <div class="flex flex-col gap-1">

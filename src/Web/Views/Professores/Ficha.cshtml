@@ -5,6 +5,7 @@
     ViewData["Title"] = p.Nome;
     var podeAlterar = Autorizacao.Pode(Recurso.CadastroProfessores, Operacao.Alterar);
     string Ou(string? valor) => string.IsNullOrWhiteSpace(valor) ? "—" : valor;
+    var acesso = ViewData["Acesso"] as CandidatoAcesso;
 }
 
 <div class="kt-container-fixed">
@@ -36,9 +37,13 @@
         <div class="kt-card">
             <div class="kt-card-header">
                 <h3 class="kt-card-title">Dados</h3>
-                <selo-status valor="p.TemAcesso ? SinalTela.ComAcesso : SinalTela.SemAcesso"></selo-status>
+                @if (acesso is null)
+                {
+                    <selo-status valor="p.TemAcesso ? SinalTela.ComAcesso : SinalTela.SemAcesso"></selo-status>
+                }
             </div>
             <div class="kt-card-content flex flex-col gap-3">
+                <partial name="_AcessoDaFicha" model="acesso" />
                 <dl class="esc-dados">
                     <dt>CPF</dt>
                     <dd>@Ou(Formatacao.Cpf(p.Cpf))</dd>
@@ -47,10 +52,6 @@
                     <dt>E-mail</dt>
                     <dd>@Ou(p.Email)</dd>
                 </dl>
-                @if (!p.TemAcesso)
-                {
-                    <p class="text-xs text-muted-foreground">Ainda sem acesso ao sistema: o convite de acesso pelo WhatsApp chega na próxima etapa do piloto.</p>
-                }
             </div>
         </div>
 

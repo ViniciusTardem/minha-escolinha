@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Domain.Acesso;
@@ -12,7 +13,7 @@ namespace MinhaEscolinha.Web.Controllers;
 /// Ver e editar o cadastro: gestor, e o professor os das turmas dele. Vínculos (quem paga, quem recebe): gestor.
 /// </summary>
 [Permissao(Recurso.CadastroAlunosResponsaveis)]
-public class ResponsaveisController(ServicoResponsaveis servico, ServicoAlunos alunos) : Controller
+public class ResponsaveisController(ServicoResponsaveis servico, ServicoAlunos alunos, ServicoConvites convites) : Controller
 {
     private const string Modulo = "responsaveis";
 
@@ -28,7 +29,9 @@ public class ResponsaveisController(ServicoResponsaveis servico, ServicoAlunos a
     {
         ViewData["ModuloAtivo"] = Modulo;
         var ficha = await servico.ObterFichaAsync(id, ct);
-        return ficha is null ? NotFound() : View(ficha);
+        if (ficha is null) return NotFound();
+        ViewData["Acesso"] = await convites.SituacaoDaFichaAsync(Domain.Mensageria.TipoConvite.Responsavel, id, ct);
+        return View(ficha);
     }
 
     /// <summary>A busca do cadastro do aluno (JSON): nome, CPF ou celular; CPF mascarado.</summary>

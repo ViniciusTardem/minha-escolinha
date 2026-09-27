@@ -18,6 +18,8 @@ public class ServicoResponsaveis(
     IEscopoDeLeitura escopo,
     ServicoAlunos alunos,
     RegistroDeAlteracoes registro,
+    IRelogioBrasil relogio,
+    IUsuarioAtual usuarioAtual,
     IValidator<ResponsavelRequisicao> validador,
     IValidator<ResponsavelDoAlunoRequisicao> validadorDoAluno,
     IValidator<VinculoRequisicao> validadorVinculo)
@@ -62,7 +64,7 @@ public class ServicoResponsaveis(
                 visiveis.Add(v);
         return new FichaResponsavel(r.Responsavel_ID, r.Nome, gestao ? r.Cpf : null, r.Telefone, r.Email, r.Endereco, r.Pessoa_ID is not null,
             visiveis.OrderBy(v => v.Aluno!.Nome).Select(v => (v.Aluno_ID, v.Aluno!.Nome, v.Parentesco, v.Pagador, v.RecebeCobranca,
-                v.RecebeNotificacao, v.Aluno.Situacao)).ToList(),
+                v.RecebeNotificacao, v.Aluno.Situacao, v.Verificacao)).ToList(),
             await NoEscopoAsync(vinculos, Operacao.Alterar, ct),
             autorizacao.Pode(Recurso.FinanceiroEscolinha, Operacao.Ler));
     }
@@ -133,6 +135,7 @@ public class ServicoResponsaveis(
             Parentesco = pedido.Parentesco, RecebeNotificacao = pedido.RecebeNotificacao
         };
         vinculo.DefinirFinanceiro(pedido.Pagador, pedido.RecebeCobranca);
+        if (responsavel.Pessoa_ID is not null) vinculo.ConfirmarNaCriacao(relogio.Agora(), usuarioAtual.Id, usuarioAtual.Nome ?? "Gestor");
         repositorio.AdicionarVinculo(vinculo);
         registro.Registrar(ServicoAlunos.Entidade, alunoId, "Responsável", null, DescreverVinculo(responsavel.Nome, vinculo));
         await repositorio.SalvarAsync(ct);

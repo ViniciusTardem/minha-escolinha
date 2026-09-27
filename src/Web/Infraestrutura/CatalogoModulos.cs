@@ -104,10 +104,18 @@ public static class CatalogoModulos
             "S4", SituacaoModulo.Planejado, "/mensalidades", Recurso.FinanceiroEscolinha),
 
         new("mensagens", "Mensagens", "ki-message-text-2", SecaoComunicacao,
-            "Tudo o que saiu pelo WhatsApp e pelo portal, com entrega e leitura.",
-            "Registro de cada mensagem: enviada, entregue, lida ou com falha, e o consumo de créditos.",
-            ["Log de entrega por mensagem", "Templates por categoria", "Convites de acesso às famílias"],
-            "S2", SituacaoModulo.Planejado, "/mensagens", Recurso.ConfiguracaoEscolinha),
+            "Tudo o que saiu pelo WhatsApp e pelo portal, com entrega, leitura e resposta.",
+            "Registro de cada mensagem do motor único: na fila, retida, enviada, entregue, lida, com falha ou suprimida (com o motivo), " +
+            "a linha do tempo, as respostas e o consumo de créditos.",
+            ["Log de entrega por mensagem", "Motivo de retenção e supressão", "Respostas recebidas", "Consumo de créditos"],
+            "S2", SituacaoModulo.Disponivel, "/Mensagens", Recurso.ConfiguracaoEscolinha),
+
+        new("convites", "Convites de acesso", "ki-key", SecaoComunicacao,
+            "Convide responsáveis e professores a ativar o acesso, um a um ou em lote.",
+            "O convite vai pelo WhatsApp, com um link de uso único; a pessoa confere o CPF e cria a senha. Quem ainda não ativou " +
+            "continua recebendo tudo pelo WhatsApp.",
+            ["Convite individual ou em lote", "Reenvio e cancelamento", "Situação do acesso de cada pessoa", "Vínculos a confirmar"],
+            "S2", SituacaoModulo.Disponivel, "/Convites", Recurso.ConfiguracaoEscolinha),
 
         new("escolinha", "Dados da escolinha", "ki-home-3", SecaoEscolinha,
             "Identificação, endereço e contato da escolinha.",
@@ -171,6 +179,12 @@ public static class CatalogoModulos
             "webhook e os últimos eventos recebidos.",
             ["Pacotes à venda", "Integração com o Stripe"],
             "Extra", SituacaoModulo.Disponivel, "/Pacotes", SoPlataforma: true),
+
+        new("templates", "Templates de WhatsApp", "ki-message-text-2", SecaoPlataforma,
+            "O catálogo de templates da conta WhatsApp da LDNA e a aprovação na Meta.",
+            "Um template por gatilho do catálogo fechado e tom, com a categoria da política do WhatsApp e a situação da aprovação.",
+            ["Texto e parâmetros de cada gatilho", "Categoria e aprovação na Meta"],
+            "S2", SituacaoModulo.Disponivel, "/Templates", SoPlataforma: true),
 
         new("jobs", "Jobs", "ki-timer", SecaoPlataforma,
             "Painel do Hangfire: tudo o que roda em segundo plano.",

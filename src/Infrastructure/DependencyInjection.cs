@@ -8,6 +8,7 @@ using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
+using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
 using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Infrastructure.Acesso;
@@ -18,6 +19,8 @@ using MinhaEscolinha.Infrastructure.Data.Contexto;
 using MinhaEscolinha.Infrastructure.Data.Interceptadores;
 using MinhaEscolinha.Infrastructure.Hangfire;
 using MinhaEscolinha.Infrastructure.Integracao.Stripe;
+using MinhaEscolinha.Infrastructure.Integracao.WhatsApp;
+using MinhaEscolinha.Infrastructure.Mensageria;
 using MinhaEscolinha.Infrastructure.Plataforma;
 using MinhaEscolinha.Infrastructure.Seguranca;
 using MinhaEscolinha.Infrastructure.Tempo;
@@ -48,8 +51,11 @@ public static class DependencyInjection
 
         services.AddScoped<AuditoriaInterceptor>();
         services.AddScoped<EscolinhaInterceptor>();
+        services.AddScoped<DespachoMensagensInterceptor>();
+        // A ordem importa: o despacho do outbox lê a escolinha que o interceptor de escolinha carimbou.
         services.AddDbContext<EscolinhaDbContext>((sp, opcoes) => ConfigurarBanco(opcoes, connectionString)
-            .AddInterceptors(sp.GetRequiredService<AuditoriaInterceptor>(), sp.GetRequiredService<EscolinhaInterceptor>()));
+            .AddInterceptors(sp.GetRequiredService<AuditoriaInterceptor>(), sp.GetRequiredService<EscolinhaInterceptor>(),
+                sp.GetRequiredService<DespachoMensagensInterceptor>()));
 
         services.AddScoped<IExecutorEscolinha, ExecutorEscolinha>();
         services.AddScoped<IAcessoRepositorio, AcessoRepositorio>();
@@ -62,6 +68,13 @@ public static class DependencyInjection
         services.AddScoped<IAlunosRepositorio, AlunosRepositorio>();
         services.AddScoped<IConsultasEscopo, ConsultasEscopo>();
         services.AddScoped<JobsTurmas>();
+
+        // S2 — motor único de mensagens, WhatsApp (Cloud API ou simulador), convites
+        services.AddScoped<IMensageriaRepositorio, MensageriaRepositorio>();
+        services.AddScoped<IConvitesRepositorio, ConvitesRepositorio>();
+        services.AddScoped<IAgendadorMensageria, AgendadorMensageriaHangfire>();
+        services.AddScoped<JobsMensageria>();
+        services.AddWhatsApp(configuracao, ambiente, aviso);
 
         // Plataforma: pacotes de créditos vendidos pelo Stripe da LDNA
         services.AddScoped<IPlataformaRepositorio, PlataformaRepositorio>();

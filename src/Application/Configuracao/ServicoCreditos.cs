@@ -3,7 +3,7 @@ using MinhaEscolinha.Domain.Configuracao;
 
 namespace MinhaEscolinha.Application.Configuracao;
 
-/// <summary>Plano, saldo e histórico de créditos de mensagem (BL-M02-11). O consumo por mensagem entra na S2.</summary>
+/// <summary>Plano, saldo e histórico de créditos de mensagem (BL-M02-11). O consumo e o estorno por mensagem vêm do motor de mensagens (S2).</summary>
 public class ServicoCreditos(
     IConfiguracaoRepositorio repositorio,
     IParametros parametros,

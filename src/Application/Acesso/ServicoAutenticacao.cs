@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.Extensions.Logging;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Domain.Acesso;
+using MinhaEscolinha.Domain.Comum;
 
 namespace MinhaEscolinha.Application.Acesso;
 
@@ -71,20 +72,24 @@ public class ServicoAutenticacao : IServicoAutenticacao
         var validacao = await _validadorLogin.ValidateAsync(requisicao, ct);
         if (!validacao.IsValid) return ResultadoOperacao.Invalido(validacao);
 
+        // E-mail ou CPF: o responsável que ativou o acesso sem e-mail entra pelo CPF (S2).
         var login = Credencial.NormalizarLogin(requisicao.Login);
-        var credencial = await _repositorio.ObterCredencialPorLoginAsync(login, ct);
+        var cpf = login.Contains('@') ? null : Cpf.Normalizar(login);
+        var credencial = cpf is not null
+            ? await _repositorio.ObterCredencialPorCpfAsync(cpf, ct)
+            : await _repositorio.ObterCredencialPorLoginAsync(login, ct);
         var agora = _relogio.Agora();
 
         if (credencial is null)
         {
             _hashSenha.Verificar(requisicao.Senha, _hashFicticio.Value);
-            _logger.LogWarning("Login recusado: login {Login} não existe.", login);
+            _logger.LogWarning("Login recusado: login {Login} não existe.", ParaLog(login));
             return ResultadoOperacao.Erro(MensagemCredenciaisInvalidas);
         }
 
         if (credencial.EstaBloqueado(agora))
         {
-            _logger.LogWarning("Login recusado: {Login} bloqueado até {BloqueadoAte}.", login, credencial.BloqueadoAte);
+            _logger.LogWarning("Login recusado: {Login} bloqueado até {BloqueadoAte}.", ParaLog(login), credencial.BloqueadoAte);
             return ResultadoOperacao.Erro(
                 $"Acesso bloqueado por excesso de tentativas. Tente de novo a partir de {credencial.BloqueadoAte:HH:mm}.");
         }
@@ -97,26 +102,26 @@ public class ServicoAutenticacao : IServicoAutenticacao
             if (credencial.EstaBloqueado(agora))
             {
                 _logger.LogWarning("Login {Login} bloqueado até {BloqueadoAte} após {Max} falhas.",
-                    login, credencial.BloqueadoAte, Credencial.MaxTentativasFalhas);
+                    ParaLog(login), credencial.BloqueadoAte, Credencial.MaxTentativasFalhas);
                 return ResultadoOperacao.Erro(
                     $"Acesso bloqueado por excesso de tentativas. Tente de novo a partir de {credencial.BloqueadoAte:HH:mm}.");
             }
 
-            _logger.LogWarning("Login recusado: senha incorreta para {Login} ({Tentativas}ª falha).", login, credencial.TentativasFalhas);
+            _logger.LogWarning("Login recusado: senha incorreta para {Login} ({Tentativas}ª falha).", ParaLog(login), credencial.TentativasFalhas);
             return ResultadoOperacao.Erro(MensagemCredenciaisInvalidas);
         }
 
         // Senha certa de credencial inativa: mesma mensagem genérica (não revela que o login existe).
         if (!credencial.Ativa)
         {
-            _logger.LogWarning("Login recusado: {Login} está inativo.", login);
+            _logger.LogWarning("Login recusado: {Login} está inativo.", ParaLog(login));
             return ResultadoOperacao.Erro(MensagemCredenciaisInvalidas);
         }
 
         var escolinhas = await _repositorio.EscolinhasDaPessoaAsync(credencial.Pessoa_ID, ct);
         if (escolinhas.Count == 0 && !credencial.AdministradorPlataforma)
         {
-            _logger.LogWarning("Login recusado: {Login} não tem vínculo ativo em nenhuma escolinha.", login);
+            _logger.LogWarning("Login recusado: {Login} não tem vínculo ativo em nenhuma escolinha.", ParaLog(login));
             return ResultadoOperacao.Erro("O seu acesso não está ativo em nenhuma escolinha. Fale com a escolinha.");
         }
 
@@ -124,9 +129,13 @@ public class ServicoAutenticacao : IServicoAutenticacao
         await _repositorio.SalvarAsync(ct);
 
         _logger.LogInformation("Login de {Login} ({Escolinhas} escolinha(s), plataforma: {Plataforma}).",
-            login, escolinhas.Count, credencial.AdministradorPlataforma);
+            ParaLog(login), escolinhas.Count, credencial.AdministradorPlataforma);
         return ResultadoOperacao.Ok("Login realizado.", ParaAutenticada(credencial, escolinhas));
     }
+
+    /// <summary>O CPF usado como login não vai inteiro para o log (LGPD): fica "***.456.789-**", o padrão de publicação do governo.</summary>
+    private static string ParaLog(string login) =>
+        Cpf.Normalizar(login) is { } cpf ? $"***.{cpf[3..6]}.{cpf[6..9]}-**" : login;
 
     public async Task<CredencialAutenticada?> ValidarSessaoAsync(Guid pessoaId, Guid carimboSeguranca, CancellationToken ct = default)
     {
@@ -152,7 +161,7 @@ public class ServicoAutenticacao : IServicoAutenticacao
         credencial.DefinirSenha(_hashSenha.Gerar(requisicao.NovaSenha), trocarNoProximoAcesso: false);
         await _repositorio.SalvarAsync(ct);
 
-        _logger.LogInformation("{Login} trocou a própria senha.", credencial.Login);
+        _logger.LogInformation("{Login} trocou a própria senha.", ParaLog(credencial.Login));
         var escolinhas = await _repositorio.EscolinhasDaPessoaAsync(pessoaId, ct);
         return ResultadoOperacao.Ok("Senha alterada.", ParaAutenticada(credencial, escolinhas));
     }

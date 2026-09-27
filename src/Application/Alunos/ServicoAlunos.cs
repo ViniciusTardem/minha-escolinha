@@ -189,6 +189,7 @@ public class ServicoAlunos(
                 Parentesco = pedido.Parentesco, RecebeNotificacao = pedido.RecebeNotificacao
             };
             vinculo.DefinirFinanceiro(pedido.Pagador, pedido.RecebeCobranca);
+            if (responsavel.Pessoa_ID is not null) vinculo.ConfirmarNaCriacao(relogio.Agora(), usuarioAtual.Id, usuarioAtual.Nome ?? "Gestor");
             repositorio.AdicionarVinculo(vinculo);
         }
 

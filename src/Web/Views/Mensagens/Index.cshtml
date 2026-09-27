@@ -1,0 +1,178 @@
+@model MensagensViewModel
+@{
+    ViewData["Title"] = "Mensagens";
+    var f = Model.Filtro;
+    var r = Model.Resumo;
+    var paginacao = PaginacaoViewModel.De(Model.Lista, "mensagem(ns)", new Dictionary<string, string?>
+    {
+        ["de"] = f.De?.ToString("yyyy-MM-dd"),
+        ["ate"] = f.Ate?.ToString("yyyy-MM-dd"),
+        ["gatilho"] = f.Gatilho?.ToString(),
+        ["canal"] = f.Canal?.ToString(),
+        ["situacao"] = f.Situacao?.ToString(),
+        ["busca"] = f.Busca
+    });
+    var quadro = new (string Rotulo, int Valor, string Icone)[]
+    {
+        ("Enviadas", r.Contar(SituacaoMensagem.Enviada) + r.Contar(SituacaoMensagem.Entregue) + r.Contar(SituacaoMensagem.Lida), "ki-message-text-2"),
+        ("Entregues ou lidas", r.Contar(SituacaoMensagem.Entregue) + r.Contar(SituacaoMensagem.Lida), "ki-double-check"),
+        ("Na fila ou retidas", r.Contar(SituacaoMensagem.Pendente) + r.Contar(SituacaoMensagem.Retida), "ki-time"),
+        ("Falharam ou suprimidas", r.Contar(SituacaoMensagem.Falhou) + r.Contar(SituacaoMensagem.Suprimida), "ki-information-2")
+    };
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Mensagens" meta="@($"WhatsApp: {r.Canal}")"
+                      descricao="Tudo o que o motor de mensagens mandou pelo WhatsApp e pelo portal, com entrega, leitura e resposta. Retida e suprimida aparecem com o motivo: nada some em silêncio.">
+        <a class="kt-btn kt-btn-outline" href="/Convites"><i class="ki-filled ki-key"></i> Convites</a>
+        <a class="kt-btn kt-btn-outline" href="/Creditos"><i class="ki-filled ki-wallet"></i> Créditos</a>
+    </cabecalho-pagina>
+
+    @if (r.Retidas > 0)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3 mb-5" role="status">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <div class="flex flex-col gap-1 text-sm">
+                <span class="font-medium">@r.Retidas mensagem(ns) essencial(is) retida(s)</span>
+                <span>@(r.CanalHabilitado ? "Faltam créditos de mensagem: elas saem sozinhas assim que houver saldo." : "O WhatsApp está desligado nesta instalação: elas saem quando ele voltar.")</span>
+                @if (r.CanalHabilitado)
+                {
+                    <a class="kt-link" href="/Creditos">Comprar créditos</a>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-5 mb-5">
+        <div class="kt-card">
+            <div class="kt-card-content flex flex-col gap-1">
+                <span class="text-xs text-secondary-foreground">Saldo de créditos</span>
+                <span class="text-3xl font-semibold text-mono">@Formatacao.Numero(r.Saldo)</span>
+                @if (r.SaldoBaixo)
+                {
+                    <selo-status class="self-start" valor="SinalTela.SaldoCreditosBaixo" texto="@($"abaixo de {r.AvisoSaldoAbaixoDe}")"></selo-status>
+                }
+            </div>
+        </div>
+        @foreach (var (rotulo, valor, icone) in quadro)
+        {
+            <div class="kt-card">
+                <div class="kt-card-content flex flex-col gap-1">
+                    <span class="flex items-center gap-1.5 text-xs text-secondary-foreground"><i class="ki-filled @icone"></i> @rotulo</span>
+                    <span class="text-3xl font-semibold text-mono">@Formatacao.Numero(valor)</span>
+                    <span class="text-xs text-muted-foreground">últimos 30 dias</span>
+                </div>
+            </div>
+        }
+    </div>
+
+    <form method="get" class="kt-card mb-5">
+        <div class="kt-card-content grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
+            <div class="flex flex-col gap-1 lg:col-span-2">
+                <label class="kt-form-label" for="busca">Buscar</label>
+                <div class="kt-input">
+                    <i class="ki-filled ki-magnifier"></i>
+                    <input id="busca" name="busca" type="search" value="@f.Busca" placeholder="Destinatário ou texto da mensagem" />
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label" for="gatilho">Gatilho</label>
+                <select class="kt-select" id="gatilho" name="gatilho" data-esc-enviar-ao-mudar>
+                    <option value="">Todos</option>
+                    @foreach (var regra in CatalogoGatilhos.Todas)
+                    {
+                        <option value="@regra.Gatilho" selected="@(regra.Gatilho == f.Gatilho)">@regra.Nome</option>
+                    }
+                </select>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label" for="situacao">Situação</label>
+                <select class="kt-select" id="situacao" name="situacao" data-esc-enviar-ao-mudar>
+                    <option value="">Todas</option>
+                    @foreach (var s in Enum.GetValues<SituacaoMensagem>())
+                    {
+                        <option value="@s" selected="@(s == f.Situacao)">@Mensagem.RotuloSituacao(s)</option>
+                    }
+                </select>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label" for="canal">Canal</label>
+                <select class="kt-select" id="canal" name="canal" data-esc-enviar-ao-mudar>
+                    <option value="">Os dois</option>
+                    <option value="@CanalMensagem.WhatsApp" selected="@(f.Canal == CanalMensagem.WhatsApp)">WhatsApp</option>
+                    <option value="@CanalMensagem.Portal" selected="@(f.Canal == CanalMensagem.Portal)">Portal</option>
+                </select>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label" for="de">A partir de</label>
+                <input class="kt-input" id="de" name="de" type="date" value="@f.De?.ToString("yyyy-MM-dd")" />
+            </div>
+        </div>
+    </form>
+
+    <div class="kt-card">
+        @if (Model.Lista.Itens.Count == 0)
+        {
+            var semFiltro = f.Gatilho is null && f.Situacao is null && f.Canal is null && f.De is null && string.IsNullOrWhiteSpace(f.Busca);
+            <estado-vazio icone="ki-message-text-2" titulo="@(semFiltro ? "Nenhuma mensagem ainda" : "Nenhuma mensagem no filtro")"
+                          texto="@(semFiltro ? "As mensagens aparecem aqui quando algo as dispara: um convite de acesso, um treino cancelado." : "Mude a busca ou os filtros.")">
+            </estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[130px] hidden sm:table-cell">Quando</th>
+                            <th class="min-w-[130px] sm:min-w-[190px]">Para</th>
+                            <th class="min-w-[150px] hidden md:table-cell">Gatilho</th>
+                            <th class="min-w-[90px] hidden sm:table-cell">Canal</th>
+                            <th class="min-w-[110px] sm:min-w-[200px]">Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model.Lista.Itens)
+                        {
+                            <tr>
+                                <td class="hidden sm:table-cell text-secondary-foreground">@Formatacao.DataHora(m.CriadaEm)</td>
+                                <td>
+                                    <div class="flex flex-col gap-0.5">
+                                        <a class="font-medium text-mono hover:text-primary" asp-action="Detalhe" asp-route-id="@m.Id">@m.Destinatario</a>
+                                        <span class="text-xs text-secondary-foreground">@(m.TipoDestinatario == TipoDestinatario.Professor ? "Professor" : "Responsável")<span class="md:hidden"> · @CatalogoGatilhos.Rotulo(m.Gatilho)</span></span>
+                                        @* No celular, a data desce para cá: Para e Situação cabem em 320 px sem rolar a tabela. *@
+                                        <span class="text-xs text-secondary-foreground sm:hidden">@Formatacao.DataHora(m.CriadaEm) · @(m.Canal == CanalMensagem.WhatsApp ? "WhatsApp" : "Portal")</span>
+                                    </div>
+                                </td>
+                                <td class="hidden md:table-cell text-secondary-foreground">@CatalogoGatilhos.Rotulo(m.Gatilho)</td>
+                                <td class="hidden sm:table-cell text-secondary-foreground">
+                                    <span class="inline-flex items-center gap-1.5"><i class="ki-filled @(m.Canal == CanalMensagem.WhatsApp ? "ki-whatsapp" : "ki-notification-status")"></i> @(m.Canal == CanalMensagem.WhatsApp ? "WhatsApp" : "Portal")</span>
+                                </td>
+                                <td>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="flex flex-wrap items-center gap-1.5">
+                                            <selo-status valor="m.Situacao"></selo-status>
+                                            @if (m.Respondida)
+                                            {
+                                                <span class="text-xs text-secondary-foreground inline-flex items-center gap-1"><i class="ki-filled ki-message-text-2"></i> respondida</span>
+                                            }
+                                        </span>
+                                        @if (m.AgendadaPara is { } agendada && m.Situacao == SituacaoMensagem.Pendente)
+                                        {
+                                            <span class="text-xs text-secondary-foreground">Sai em @Formatacao.DataHora(agendada)</span>
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(m.Motivo) && m.Situacao is SituacaoMensagem.Retida or SituacaoMensagem.Suprimida or SituacaoMensagem.Falhou)
+                                        {
+                                            <span class="text-xs text-secondary-foreground">@m.Motivo</span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <partial name="_Paginacao" model="paginacao" />
+        }
+    </div>
+</div>

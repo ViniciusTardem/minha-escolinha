@@ -1,0 +1,31 @@
+@model CandidatoAcesso?
+@* O acesso de uma ficha (responsável ou professor) ao sistema e as ações do convite. Só o gestor vê (quem pode convidar). *@
+@if (Model is { } c)
+{
+    var voltar = Context.Request.Path + Context.Request.QueryString;
+    <div class="flex flex-wrap items-center gap-2.5">
+        <selo-status valor="c.Situacao"></selo-status>
+        @if (c.Situacao == SituacaoAcesso.Convidado && c.ExpiraEm is { } expira)
+        {
+            <span class="text-xs text-secondary-foreground">convite vale até @Formatacao.Data(expira)</span>
+        }
+        @if (c.Situacao is SituacaoAcesso.SemAcesso or SituacaoAcesso.ConviteExpirado && c.Telefone is not null)
+        {
+            <form method="post" asp-controller="Convites" asp-action="Convidar" asp-route-tipo="@c.Tipo" asp-route-id="@c.FichaId">
+                <input type="hidden" name="voltar" value="@voltar" />
+                <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit"><i class="ki-filled ki-whatsapp"></i> Convidar pelo WhatsApp</button>
+            </form>
+        }
+        else if (c.Situacao == SituacaoAcesso.Convidado && c.ConviteId is { } convite)
+        {
+            <form method="post" asp-controller="Convites" asp-action="Reenviar" asp-route-id="@convite" data-esc-confirmar="Reenviar o convite? O link anterior deixa de valer.">
+                <input type="hidden" name="voltar" value="@voltar" />
+                <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit"><i class="ki-filled ki-arrows-circle"></i> Reenviar convite</button>
+            </form>
+        }
+        else if (c.Telefone is null && c.Situacao != SituacaoAcesso.Ativo)
+        {
+            <span class="text-xs text-secondary-foreground">Cadastre o celular para convidar.</span>
+        }
+    </div>
+}

@@ -48,6 +48,29 @@ public partial class RegrasDeOuroTestes
             "Dado de escolinha só é lido fora do filtro nos arquivos da lista permitida (multi-escolinha): " + string.Join(", ", violacoes));
     }
 
+    /// <summary>R3 e regra de ouro 11: um único motor envia, e só o emissor do catálogo de gatilhos cria mensagem.</summary>
+    [Fact]
+    public void So_o_motor_envia_e_so_o_emissor_de_gatilhos_cria_mensagem()
+    {
+        var envios = LinhasDoCodigo()
+            .Where(l => l.Linha.Contains(".EnviarTemplateAsync(", StringComparison.Ordinal))
+            .Where(l => !l.Arquivo.EndsWith(Path.Combine("Application", "Mensageria", "ServicoEnvioMensagens.cs"), StringComparison.OrdinalIgnoreCase))
+            .Select(l => $"{l.Arquivo}:{l.Numero}")
+            .ToList();
+        var criacoes = LinhasDoCodigo()
+            .Where(l => CriacaoDeMensagem().IsMatch(l.Linha))
+            .Where(l => !l.Arquivo.EndsWith(Path.Combine("Application", "Mensageria", "EmissorGatilhos.cs"), StringComparison.OrdinalIgnoreCase))
+            .Select(l => $"{l.Arquivo}:{l.Numero}")
+            .ToList();
+
+        Assert.True(envios.Count == 0, "Só o ServicoEnvioMensagens chama o gateway do WhatsApp (R3): " + string.Join(", ", envios));
+        Assert.True(criacoes.Count == 0,
+            "Mensagem só nasce no EmissorGatilhos, a partir de uma regra do catálogo (R3): " + string.Join(", ", criacoes));
+    }
+
+    [GeneratedRegex(@"\bMensagem\.Nova\(")]
+    private static partial Regex CriacaoDeMensagem();
+
     [Fact]
     public void Toda_action_declara_o_acesso()
     {
