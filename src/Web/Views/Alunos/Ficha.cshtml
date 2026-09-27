@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = Model.Nome;
     var aba = Context.Request.Query["aba"].ToString();
+    var presenca = ViewData["Presenca"] as PresencaDoAluno;
     var abas = new List<(string Chave, string Rotulo, int? Contador)>
     {
         ("resumo", "Resumo", null),
@@ -10,6 +11,7 @@
         ("saude", "Saúde", null),
         ("consentimentos", "Consentimentos", null)
     };
+    if (presenca is not null) abas.Insert(3, ("presenca", "Presença", null));
     if (Model.Pode.VerHistorico) abas.Add(("historico", "Histórico", null));
     if (abas.All(a => a.Chave != aba)) aba = "resumo";
     string Ou(string? valor) => string.IsNullOrWhiteSpace(valor) ? "—" : valor;
@@ -51,6 +53,10 @@
         else if (Model.DiasParaFimDoTrial is { } dias)
         {
             <selo-status valor="SinalTela.TrialVencendo" texto="@(dias == 0 ? "Trial vence hoje" : $"Trial até {Formatacao.Data(Model.TrialAte)} ({dias} dia(s))")"></selo-status>
+        }
+        @if (presenca?.Frequencia is { EmRisco: true, Percentual: { } frequenciaAtual })
+        {
+            <selo-status valor="SinalTela.RiscoEvasao" texto="@($"Risco de evasão: {Formatacao.Percentual(frequenciaAtual)} em {presenca.Frequencia.JanelaDias} dias")"></selo-status>
         }
         @if (Model.Situacao == SituacaoAluno.Trial && Model.Pode.MudarSituacao)
         {
@@ -218,6 +224,109 @@
             }
         </div>
     </section>
+
+    @* ── Presença (S3): frequência da janela de risco, presenças do escopo e, para a gestão, os alertas de faltas (CA-6) ── *@
+    @if (presenca is not null)
+    {
+        <section id="painel_presenca" role="tabpanel" aria-labelledby="aba_presenca" hidden="@(aba != "presenca")">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div class="kt-card">
+                    <div class="kt-card-header"><h3 class="kt-card-title">Frequência</h3></div>
+                    <div class="kt-card-content flex flex-col gap-2">
+                        @if (presenca.Frequencia.Percentual is { } percentual)
+                        {
+                            <span class="text-3xl font-semibold text-mono">@Formatacao.Percentual(percentual)</span>
+                            <span class="text-sm text-secondary-foreground">
+                                @presenca.Frequencia.Presentes de @presenca.Frequencia.Consideradas treino(s) nos últimos @presenca.Frequencia.JanelaDias dias.
+                                Mínimo da escolinha: @Formatacao.Percentual(presenca.Frequencia.Minimo).
+                            </span>
+                            @if (presenca.Frequencia.EmRisco)
+                            {
+                                <selo-status class="self-start" valor="SinalTela.RiscoEvasao"></selo-status>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-sm text-secondary-foreground">Nenhuma chamada nos últimos @presenca.Frequencia.JanelaDias dias.</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="kt-card lg:col-span-2">
+                    <div class="kt-card-header"><h3 class="kt-card-title">Presenças recentes</h3></div>
+                    @if (presenca.Presencas.Count == 0)
+                    {
+                        <estado-vazio icone="ki-check-squared" titulo="Nenhuma presença registrada" texto="As marcações da chamada aparecem aqui."></estado-vazio>
+                    }
+                    else
+                    {
+                        <ul class="esc-linhas">
+                            @foreach (var p in presenca.Presencas)
+                            {
+                                <li class="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
+                                    <span class="flex flex-col gap-0.5 min-w-0">
+                                        <span class="text-sm font-medium text-mono">@Formatacao.DiaCurto(DateOnly.FromDateTime(p.Inicio)) · @p.Inicio.ToString("HH:mm") · @p.Turma</span>
+                                        @if (p.Situacao == SituacaoPresenca.Justificada)
+                                        {
+                                            <span class="text-xs text-secondary-foreground">
+                                                @(!p.MotivoVisivel ? "Motivo restrito: dado de saúde." : p.Justificativa ?? (p.JustificativaSaude ? "Motivo de saúde, sem texto." : "Sem motivo informado."))
+                                            </span>
+                                        }
+                                        <span class="text-xs text-secondary-foreground">Marcada por @p.MarcadaPor em @Formatacao.DataHora(p.MarcadaEm)</span>
+                                    </span>
+                                    <span class="flex items-center gap-2">
+                                        <selo-status valor="p.Situacao"></selo-status>
+                                        <a class="kt-btn kt-btn-sm kt-btn-ghost" href="/Chamada/Sessao/@p.SessaoId">Chamada</a>
+                                    </span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+
+            @if (presenca.Alertas is { } alertasFaltas)
+            {
+                <div class="kt-card mt-5">
+                    <div class="kt-card-header"><h3 class="kt-card-title">Alertas de faltas</h3></div>
+                    @if (alertasFaltas.Count == 0)
+                    {
+                        <estado-vazio icone="ki-message-text-2" titulo="Nenhum alerta de faltas"
+                                      texto="Quando a regra de faltas é atingida, o aviso aos responsáveis aparece aqui, com para quem saiu e como está."></estado-vazio>
+                    }
+                    else
+                    {
+                        <ul class="esc-linhas">
+                            @foreach (var a in alertasFaltas)
+                            {
+                                <li class="flex flex-col gap-2 px-5 py-4">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <span class="text-sm font-medium text-mono">@a.Descricao · @a.Turma</span>
+                                        <span class="flex items-center gap-2">
+                                            <span class="text-xs text-secondary-foreground">@Formatacao.DataHora(a.Em)</span>
+                                            <selo-status valor="a.Situacao"></selo-status>
+                                        </span>
+                                    </div>
+                                    @if (a.Motivo is not null)
+                                    {
+                                        <span class="text-xs text-secondary-foreground">@a.Motivo</span>
+                                    }
+                                    @foreach (var d in a.Destinos)
+                                    {
+                                        <a class="flex flex-wrap items-center gap-2 text-sm text-foreground hover:text-primary" href="/Mensagens/Detalhe/@d.MensagemId">
+                                            <i class="ki-filled @(d.Canal == CanalMensagem.WhatsApp ? "ki-whatsapp" : "ki-notification-status")"></i>
+                                            @d.Nome
+                                            <selo-status valor="d.Situacao"></selo-status>
+                                        </a>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            }
+        </section>
+    }
 
     @* ── Saúde (R5: o campo só sai do banco para quem pode ver) ── *@
     <section id="painel_saude" role="tabpanel" aria-labelledby="aba_saude" hidden="@(aba != "saude")">

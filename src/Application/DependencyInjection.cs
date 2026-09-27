@@ -8,6 +8,7 @@ using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
+using MinhaEscolinha.Application.Presencas;
 using MinhaEscolinha.Application.Turmas;
 
 namespace MinhaEscolinha.Application;
@@ -67,6 +68,13 @@ public static class DependencyInjection
         services.AddScoped<ServicoAtivacaoConvite>();
         services.AddScoped<AtivacaoNaEscolinha>();
         services.AddScoped<ServicoPortal>();
+
+        // S3 — chamada na quadra (M05), alerta de faltas pelo motor e risco de evasão
+        services.AddScoped<ServicoChamada>();
+        services.AddScoped<AvaliacaoFaltas>();
+        services.AddScoped<ServicoPresenca>();
+        services.AddScoped<IRiscoEvasao>(sp => sp.GetRequiredService<ServicoPresenca>());
+        services.AddScoped<IValidadorOrigemMensagem, ValidadorOrigemAlertaFaltas>();
 
         // Plataforma — a LDNA vende pacotes de créditos às escolinhas (Stripe da LDNA; mensalidade de aluno segue na Asaas)
         services.AddScoped<ServicoPacotesCreditos>();

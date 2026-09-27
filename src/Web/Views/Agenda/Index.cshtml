@@ -138,6 +138,10 @@
                                 </span>
                                 <span class="flex flex-wrap items-center justify-end gap-2">
                                     <selo-status valor="i.Situacao"></selo-status>
+                                    @if (i.PodeChamada)
+                                    {
+                                        <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Chamada/Sessao/@i.SessaoId"><i class="ki-filled ki-check-squared"></i> Chamada</a>
+                                    }
                                     @if (i.PodeCancelar)
                                     {
                                         <a class="kt-btn kt-btn-sm kt-btn-ghost" href="/Sessoes/Cancelar/@i.SessaoId?voltar=@voltar"><i class="ki-filled ki-cross-circle"></i> Cancelar</a>

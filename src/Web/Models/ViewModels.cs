@@ -5,6 +5,7 @@ using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
+using MinhaEscolinha.Application.Presencas;
 using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Domain.Auditoria;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
@@ -43,7 +44,9 @@ public record PainelViewModel(
     IReadOnlyList<(Guid Id, string Nome, DateOnly TrialAte)> TrialsVencendo,
     IReadOnlyList<(Guid Id, string Nome, DateOnly TrialAte)> TrialsVencidos,
     DateOnly Hoje,
-    IReadOnlyList<PendenciaPainel> Pendencias);
+    IReadOnlyList<PendenciaPainel> Pendencias,
+    IReadOnlyList<RiscoEvasao> Riscos,
+    bool FazChamada);
 
 public record ParametrosViewModel(
     DominioParametro Dominio,

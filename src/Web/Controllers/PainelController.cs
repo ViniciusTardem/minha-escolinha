@@ -5,6 +5,7 @@ using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
 using MinhaEscolinha.Application.Mensageria;
+using MinhaEscolinha.Application.Presencas;
 using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Web.Infraestrutura;
@@ -32,6 +33,7 @@ public class PainelController(
     ServicoConvites convites,
     ServicoVerificacaoVinculos vinculos,
     ServicoMensagens mensagens,
+    ServicoPresenca presenca,
     IParametros valores,
     IRelogioBrasil relogio) : Controller
 {
@@ -113,11 +115,14 @@ public class PainelController(
             ? await alunos.TrialsAsync(diasAviso, ct)
             : ([], []);
 
+        // Risco de evasão (S3): o gestor vê quem está com a frequência baixa sem pedir a ninguém; o professor, nas turmas dele.
+        var riscos = await presenca.AlunosEmRiscoAsync(ct);
+
         var proximas = CatalogoModulos.Todos
             .Where(m => m.Situacao == SituacaoModulo.Planejado && (m.Recurso is not { } r || autorizacao.Pode(r, Operacao.Ler)))
             .ToList();
 
         return View(new PainelViewModel(dados?.Nome ?? "Escolinha", RotulosAcesso.Papeis(autorizacao.Papeis), veConfiguracao, passos, proximas,
-            proximosTreinos, vencendo, vencidos, hoje, pendencias));
+            proximosTreinos, vencendo, vencidos, hoje, pendencias, riscos, autorizacao.Pode(Recurso.RegistroPresenca, Operacao.Alterar)));
     }
 }

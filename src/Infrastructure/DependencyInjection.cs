@@ -10,6 +10,7 @@ using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
+using MinhaEscolinha.Application.Presencas;
 using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Infrastructure.Acesso;
 using MinhaEscolinha.Infrastructure.Cadastro;
@@ -22,6 +23,7 @@ using MinhaEscolinha.Infrastructure.Integracao.Stripe;
 using MinhaEscolinha.Infrastructure.Integracao.WhatsApp;
 using MinhaEscolinha.Infrastructure.Mensageria;
 using MinhaEscolinha.Infrastructure.Plataforma;
+using MinhaEscolinha.Infrastructure.Presencas;
 using MinhaEscolinha.Infrastructure.Seguranca;
 using MinhaEscolinha.Infrastructure.Tempo;
 
@@ -75,6 +77,9 @@ public static class DependencyInjection
         services.AddScoped<IAgendadorMensageria, AgendadorMensageriaHangfire>();
         services.AddScoped<JobsMensageria>();
         services.AddWhatsApp(configuracao, ambiente, aviso);
+
+        // S3 — presença e alerta de faltas
+        services.AddScoped<IPresencaRepositorio, PresencaRepositorio>();
 
         // Plataforma: pacotes de créditos vendidos pelo Stripe da LDNA
         services.AddScoped<IPlataformaRepositorio, PlataformaRepositorio>();

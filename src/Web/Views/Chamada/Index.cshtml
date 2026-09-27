@@ -1,0 +1,51 @@
+@model ChamadaDoDia
+@{
+    ViewData["Title"] = "Chamada";
+    ViewData["Voltar"] = "/";
+    Layout = "_LayoutQuadra";
+}
+
+@* Hoje na quadra (S3): os treinos do dia e os que ficaram sem chamada. As páginas das sessões são guardadas no aparelho
+   ao abrir esta lista com sinal (chamada.js + sw-chamada.js), para a chamada funcionar sem sinal (R10, CA-21). *@
+<div class="flex flex-col gap-5" data-esc-chamada-hoje>
+    <section>
+        <h2 class="text-sm font-semibold text-mono mb-2">Hoje, @Formatacao.DiaPorExtenso(Model.Data).ToLowerInvariant()</h2>
+        @if (Model.Hoje.Count == 0)
+        {
+            <div class="kt-card">
+                <estado-vazio icone="ki-calendar" titulo="Nenhum treino hoje" texto="Os treinos das suas turmas aparecem aqui no dia."></estado-vazio>
+            </div>
+        }
+        else
+        {
+            <ul class="kt-card esc-linhas">
+                @foreach (var s in Model.Hoje)
+                {
+                    <partial name="_SessaoDaChamada" model="s" />
+                }
+            </ul>
+        }
+    </section>
+
+    @if (Model.SemChamada.Count > 0)
+    {
+        <section>
+            <h2 class="text-sm font-semibold text-mono mb-2">Sem chamada nos últimos @ServicoChamada.DiasSemChamada dias</h2>
+            <ul class="kt-card esc-linhas">
+                @foreach (var s in Model.SemChamada)
+                {
+                    <partial name="_SessaoDaChamada" model="s" />
+                }
+            </ul>
+        </section>
+    }
+
+    <p class="text-xs text-secondary-foreground">
+        Abra esta lista com sinal antes do treino: a chamada fica guardada no aparelho e funciona sem internet. As marcações
+        vão sozinhas quando o sinal voltar.
+    </p>
+</div>
+
+@section Scripts {
+    <script src="~/js/chamada.js" asp-append-version="true"></script>
+}

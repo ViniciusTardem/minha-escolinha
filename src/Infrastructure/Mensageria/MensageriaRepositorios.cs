@@ -20,11 +20,27 @@ public class MensageriaRepositorio(EscolinhaDbContext contexto) : IMensageriaRep
     public Task<bool> ChaveEmUsoAsync(string chave, CancellationToken ct = default) =>
         contexto.Mensagens.AnyAsync(m => m.Chave == chave, ct);
 
-    public async Task<IReadOnlyList<Mensagem>> EmFilaDaOrigemAsync(string tipoOrigem, Guid origemId, CancellationToken ct = default) =>
+    public async Task<IReadOnlyList<Mensagem>> CancelaveisDaOrigemAsync(string tipoOrigem, Guid origemId, CancellationToken ct = default) =>
         await contexto.Mensagens
             .Where(m => m.TipoOrigem == tipoOrigem && m.Origem_ID == origemId
-                        && (m.Situacao == SituacaoMensagem.Pendente || m.Situacao == SituacaoMensagem.Retida))
+                        && ((m.Canal == CanalMensagem.WhatsApp && (m.Situacao == SituacaoMensagem.Pendente || m.Situacao == SituacaoMensagem.Retida))
+                            || (m.Canal == CanalMensagem.Portal && m.Situacao == SituacaoMensagem.Enviada && m.LidaEm == null)))
             .ToListAsync(ct);
+
+    public Task<bool> AlgumaSaiuDaOrigemAsync(string tipoOrigem, Guid origemId, CancellationToken ct = default) =>
+        contexto.Mensagens.AnyAsync(m => m.TipoOrigem == tipoOrigem && m.Origem_ID == origemId
+                                         && ((m.Canal == CanalMensagem.WhatsApp && (m.Situacao == SituacaoMensagem.Enviada
+                                                  || m.Situacao == SituacaoMensagem.Entregue || m.Situacao == SituacaoMensagem.Lida))
+                                             || (m.Canal == CanalMensagem.Portal && m.LidaEm != null)), ct);
+
+    public async Task<IReadOnlyList<Mensagem>> MensagensDasOrigensAsync(string tipoOrigem, IReadOnlyCollection<Guid> origens,
+        CancellationToken ct = default) =>
+        origens.Count == 0
+            ? []
+            : await contexto.Mensagens.AsNoTracking()
+                .Where(m => m.TipoOrigem == tipoOrigem && origens.Contains(m.Origem_ID))
+                .OrderBy(m => m.DestinatarioNome).ThenBy(m => m.Canal)
+                .ToListAsync(ct);
 
     public Task<Mensagem?> ObterMensagemAsync(Guid id, CancellationToken ct = default) =>
         contexto.Mensagens.Include(m => m.Respostas).FirstOrDefaultAsync(m => m.Mensagem_ID == id, ct);
@@ -76,11 +92,12 @@ public class MensageriaRepositorio(EscolinhaDbContext contexto) : IMensageriaRep
 
     public async Task<IReadOnlyList<Mensagem>> AvisosDoPortalAsync(Guid pessoaId, int limite, CancellationToken ct = default) =>
         await contexto.Mensagens
-            .Where(m => m.Canal == CanalMensagem.Portal && m.Pessoa_ID == pessoaId)
+            .Where(m => m.Canal == CanalMensagem.Portal && m.Pessoa_ID == pessoaId && m.Situacao != SituacaoMensagem.Suprimida)
             .OrderByDescending(m => m.CriadaEm).Take(limite).ToListAsync(ct);
 
     public Task<int> AvisosNaoLidosAsync(Guid pessoaId, CancellationToken ct = default) =>
-        contexto.Mensagens.CountAsync(m => m.Canal == CanalMensagem.Portal && m.Pessoa_ID == pessoaId && m.LidaEm == null, ct);
+        contexto.Mensagens.CountAsync(m => m.Canal == CanalMensagem.Portal && m.Pessoa_ID == pessoaId && m.LidaEm == null
+                                           && m.Situacao != SituacaoMensagem.Suprimida, ct);
 
     public async Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisDaTurmaAsync(Guid turmaId, CancellationToken ct = default)
     {
@@ -116,6 +133,34 @@ public class MensageriaRepositorio(EscolinhaDbContext contexto) : IMensageriaRep
                     g.All(l => l.Verificacao == VerificacaoVinculo.Verificado),
                     g.DistinctBy(l => l.AlunoId).OrderBy(l => l.AlunoNome).Select(l => (l.AlunoId, l.AlunoNome)).ToList());
             })
+            .OrderBy(d => d.Nome)
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisDoAlunoAsync(Guid alunoId, CancellationToken ct = default)
+    {
+        var linhas = await contexto.VinculosResponsavel.AsNoTracking()
+            .Where(v => v.Aluno_ID == alunoId && v.RecebeNotificacao)
+            .Select(v => new
+            {
+                v.Responsavel_ID,
+                v.Responsavel!.Nome,
+                v.Responsavel.Telefone,
+                v.Responsavel.Pessoa_ID,
+                v.Verificacao,
+                AlunoNome = v.Aluno!.Nome
+            }).ToListAsync(ct);
+
+        var pessoas = linhas.Where(l => l.Pessoa_ID is not null).Select(l => l.Pessoa_ID!.Value).Distinct().ToList();
+        var comAcesso = (await contexto.VinculosAtuacao.AsNoTracking()
+                .Where(v => pessoas.Contains(v.Pessoa_ID) && v.Papel == PapelAtuacao.Responsavel && v.Situacao == SituacaoVinculo.Ativo)
+                .Select(v => v.Pessoa_ID).ToListAsync(ct))
+            .ToHashSet();
+
+        return linhas
+            .Select(l => new DestinatarioResponsavel(l.Responsavel_ID, l.Nome, l.Telefone, l.Pessoa_ID,
+                l.Pessoa_ID is { } pessoa && comAcesso.Contains(pessoa), l.Verificacao == VerificacaoVinculo.Verificado,
+                [(alunoId, l.AlunoNome)]))
             .OrderBy(d => d.Nome)
             .ToList();
     }

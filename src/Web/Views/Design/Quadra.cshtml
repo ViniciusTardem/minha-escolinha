@@ -20,6 +20,7 @@
             <div class="esc-segmento" data-esc-escolha role="group" aria-label="@($"Presença de {alunos[i]}")">
                 <button class="esc-segmento-opcao esc-presente" type="button" aria-pressed="@(i % 3 == 0 ? "true" : "false")" data-valor="P">P</button>
                 <button class="esc-segmento-opcao esc-falta" type="button" aria-pressed="@(i == 4 ? "true" : "false")" data-valor="F">F</button>
+                <button class="esc-segmento-opcao esc-justificada" type="button" aria-pressed="@(i == 5 ? "true" : "false")" data-valor="J">J</button>
             </div>
         </li>
     }

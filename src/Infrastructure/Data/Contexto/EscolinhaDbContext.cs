@@ -11,6 +11,7 @@ using MinhaEscolinha.Domain.Configuracao.Parametros;
 using MinhaEscolinha.Domain.Equipe;
 using MinhaEscolinha.Domain.Integracao;
 using MinhaEscolinha.Domain.Mensageria;
+using MinhaEscolinha.Domain.Presencas;
 using MinhaEscolinha.Domain.Plataforma;
 using MinhaEscolinha.Domain.Turmas;
 
@@ -70,6 +71,9 @@ public class EscolinhaDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<TemplateMensagem> TemplatesMensagem => Set<TemplateMensagem>();
     public DbSet<ConviteAcesso> Convites => Set<ConviteAcesso>();
     public DbSet<RastreioWhatsApp> RastreiosWhatsApp => Set<RastreioWhatsApp>();
+    public DbSet<Presenca> Presencas => Set<Presenca>();
+    public DbSet<MarcacaoPresenca> MarcacoesPresenca => Set<MarcacaoPresenca>();
+    public DbSet<AlertaFaltas> AlertasFaltas => Set<AlertaFaltas>();
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

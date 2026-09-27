@@ -70,6 +70,17 @@ O S2 não trouxe dependência nova: NuGet e npm continuam iguais aos do S1. O cl
 | Convite, ativação e portal | `Application/Acesso` (`ServicoConvites`, `ServicoAtivacaoConvite`, `ServicoPortal`); controllers `Convites`, `Ativacao`, `Vinculos` e `Portal` | **Não há equivalente no DP:** lá a equipe cria os usuários, e não existe área do cliente final. Aqui a família ativa sozinha, pelo link e pelo CPF (D51 a D54). |
 | Agendador e gateway de teste | `AgendadorMensageriaDeTeste`, `GatewayWhatsAppFalso` | Seguem o `AgendadorDeTeste` do DP. |
 
+### 2.3 O que o S3 acrescentou (27/09/2026)
+
+O S3 não trouxe dependência nova: NuGet e npm continuam iguais aos do S2. O IndexedDB, o service worker e o `crypto.randomUUID` são do próprio navegador.
+
+| Peça | Onde | Relação com o DP |
+|---|---|---|
+| Chamada sem sinal: fila e sincronização | `wwwroot/js/chamada.js`; `ChamadaController` (`Token` e `Sincronizar`); `Application/Presencas/ServicoChamada` | **Não há equivalente no DP**, que não tem trabalho offline (X07). O envio segue o `esc.fetch` do DP (antiforgery no cabeçalho), com o token buscado na hora porque a página pode estar guardada há horas (D60). |
+| Service worker | `wwwroot/sw-chamada.js`, escopo `/Chamada` | Novo (X07). A CSP herdada já tinha `worker-src 'self'`. |
+| Marcação idempotente | `Domain/Presencas` (`MarcacaoPresenca`, `RegraMarcacao`) | Segue a ideia do webhook do DP (guardar o que chegou antes de interpretar, e reconhecer o repetido pelo id), aplicada ao aparelho (D59). |
+| Alerta com revalidação | `AvaliacaoFaltas` e `ValidadorOrigemAlertaFaltas` | As regras de ouro 4 e 5 do DP, no motor do S2 (D61, D62). |
+
 ## 3. Integrações existentes nos projetos locais
 
 Varredura por **conteúdo** em todo `C:\Users\vinic\Documents\Projetos`, em 26/09/2026:

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
+using MinhaEscolinha.Application.Presencas;
 using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Domain.Alunos;
@@ -17,7 +18,7 @@ namespace MinhaEscolinha.Web.Controllers;
 /// </summary>
 [Permissao(Recurso.CadastroAlunosResponsaveis)]
 public class AlunosController(ServicoAlunos servico, ServicoTurmas turmas, ServicoResponsaveis responsaveis, IParametros parametros,
-    IRelogioBrasil relogio) : Controller
+    ServicoPresenca presenca, IRelogioBrasil relogio) : Controller
 {
     private const string Modulo = "alunos";
 
@@ -27,6 +28,7 @@ public class AlunosController(ServicoAlunos servico, ServicoTurmas turmas, Servi
         ViewData["ModuloAtivo"] = Modulo;
         var lista = await servico.ListarAsync(filtro, pagina, ct);
         var turmasVisiveis = await turmas.ListarAsync(false, null, ct);
+        ViewData["Risco"] = (await presenca.AlunosEmRiscoAsync(ct)).ToDictionary(r => r.AlunoId);
         return View(new AlunosViewModel(filtro, lista, turmasVisiveis, DateOnly.FromDateTime(relogio.Hoje())));
     }
 
@@ -35,7 +37,9 @@ public class AlunosController(ServicoAlunos servico, ServicoTurmas turmas, Servi
     {
         ViewData["ModuloAtivo"] = Modulo;
         var ficha = await servico.ObterFichaAsync(id, ct);
-        return ficha is null ? NotFound() : View(ficha);
+        if (ficha is null) return NotFound();
+        ViewData["Presenca"] = await presenca.DoAlunoAsync(id, ct);
+        return View(ficha);
     }
 
     [HttpGet]

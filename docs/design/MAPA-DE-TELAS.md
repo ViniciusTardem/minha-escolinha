@@ -1,6 +1,6 @@
 # Mapa de telas — Minha Escolinha
 
-> Onde cada tela mora, quem acessa, com que layout e em que fatia ela chega. As rotas e os atributos de acesso foram conferidos nos controllers e no `Program.cs` em 27/09/2026, com a fatia S1 pronta. O visual de cada superfície está no [`GUIA-DESIGN-SYSTEM.md`](GUIA-DESIGN-SYSTEM.md) (§5).
+> Onde cada tela mora, quem acessa, com que layout e em que fatia ela chega. As rotas e os atributos de acesso foram conferidos nos controllers e no `Program.cs` em 27/09/2026, com a fatia S3 pronta. O visual de cada superfície está no [`GUIA-DESIGN-SYSTEM.md`](GUIA-DESIGN-SYSTEM.md) (§5).
 >
 > **Atualize este mapa na mesma entrega da tela:** status, rota, acesso e data.
 
@@ -28,7 +28,7 @@
 - **No S1** entram os recursos de cadastro (D35):
   - `CadastroAlunosResponsaveis`: gestor com tudo; professor só no escopo das turmas dele;
   - `CadastroProfessores`: gestor;
-  - `RegistroPresenca`: agenda e cancelar sessão; o professor, só as próprias;
+  - `RegistroPresenca`: agenda e cancelar sessão; o professor, só as próprias. Desde o S3, também a chamada (`Alterar`) e a aba Presença da ficha do aluno (leitura);
   - `DocumentosObservacoesMedicas`: editar a saúde do aluno.
 - **Escopo nas fichas:** a ficha fora do escopo responde **404**, como o id de outra escolinha.
 - **Troca de senha pendente:** um filtro global manda qualquer página para `/Conta/TrocarSenha`. As actions marcadas com † (`[PermitirSemTrocarSenha]`) abrem mesmo assim.
@@ -52,7 +52,7 @@ A tabela da §4.5 do plano, com o status de hoje.
 | S1 | Turmas (ocupação de vagas), ficha da turma (horários, composição, sessões), nova turma em etapas; Agenda (por turma, professor ou quadra); Locais | gestor; professor só leitura das suas · Painel | `network/user-table/*`, `account/activity` | **Pronto** (27/09/2026) |
 | S1 | Alunos (por turma ou visão geral), **ficha do aluno** (página com abas: responsáveis, matrículas, saúde restrita, consentimentos, histórico; D37), novo aluno em etapas com detecção de duplicidade, desligar (data + motivo + efeitos); Responsáveis; Professores com disponibilidade | gestor; professor P · Painel | `public-profile/profiles/crm`, `account/members/*` | **Pronto** (27/09/2026) |
 | S2 | Mensagens (log de entrega + linha do tempo), Templates (categoria, tom, aprovação), Convites em lote, fila de verificação de vínculos; ativação do convite; portal inicial (filhos confirmados e avisos); `/dev/whatsapp` (caixa de entrada por número, com os botões do template) | gestor · Painel; equipe LDNA · Painel (Templates); convidado · Autenticação; responsável · Portal | `account/notifications`, `account/members/import-members` | **Pronto** (27/09/2026), no simulador. O sino não foi construído: as pendências ficam no Painel (D55) |
-| S3 | **Hoje → Chamada** (P/F num toque, offline, "Concluir chamada" na barra inferior); selo de risco nas listas; aba de alertas na ficha (CA-6) | professor · **Quadra**; gestor · Painel | — (tela própria) | Em breve (`/chamada`) |
+| S3 | **Hoje → Chamada** (P/F/J num toque, sem sinal, "Concluir chamada" na barra inferior); selo de risco nas listas; aba Presença na ficha, com os alertas (CA-6) | professor · **Quadra**; gestor · Painel | — (tela própria) | **Pronto** (27/09/2026). A reabertura sem sinal espera o certificado confiável (P37) |
 | S4 | Financeiro › Pagamentos (agrupado por situação, com as ações isentar, cancelar e reenviar); Divergências (resolução manual com autoria); aba Financeiro na ficha; `/dev/asaas` | gestor · Painel | `account/billing/*` | Em breve (`/mensalidades`) |
 | S5 | **Montar fim de semana** (jogos → convocados por jogo, com alertas → revisar → disparar tudo); **Painel de confirmações** em tempo real (registrar resposta por fora; cancelar, adiar ou alterar em um toque) | professor · **Quadra** (e Painel) | `network/user-cards/*` | Em breve (`/jogos`) |
 | S6 | Portal: Início (filhos, pendências, próximos jogos), Jogos (Sim/Não por filho), Pagamentos (total do mês + detalhamento por filho, pagar pela fatura Asaas ou pelo Pix copia-e-cola), Presenças (só leitura), Avisos | responsável · **Portal** | `store-client/checkout/*` (só a forma) | Começado no S2: Início (filhos confirmados) e Avisos prontos; Jogos e Pagamentos "em breve" |
@@ -204,19 +204,43 @@ O **Painel** ganhou, no S2, o passo "Convites de acesso" e as pendências da ges
 
 ---
 
+## 3B. S3: telas prontas (27/09/2026)
+
+### 3B.1 Quadra (`ChamadaController`, `_LayoutQuadra`)
+
+| Tela | Rota | Acesso | Observações | BL |
+|---|---|---|---|---|
+| Chamada: o dia | `GET /Chamada` | `RegistroPresenca`, `Alterar`; professor: as turmas dele | os treinos de hoje e os dos últimos 7 dias sem chamada; ao abrir com sinal, as páginas das sessões ficam guardadas no aparelho | M05-01 |
+| Chamada da sessão | `GET /Chamada/Sessao/{id}` | idem; fora do escopo → 404 | P, F ou J por aluno; o motivo da justificada (e se é de saúde); "Todos presentes" e "Concluir chamada"; treino cancelado ou de data futura só com o aviso | M05-01, M05-13 |
+| Token para o envio | `GET /Chamada/Token` (JSON, sem cache) | `RegistroPresenca`, `Alterar` | o antiforgery na hora do envio: a página guardada pode ter um token antigo | M05-01 |
+| Sincronizar | `POST /Chamada/Sincronizar` (JSON: `marcacoes`, até 500) | idem | o resultado de cada marcação (aplicada, repetida, ignorada ou recusada) e quantos alertas saíram; 409 quando outra marcação grava a mesma presença ao mesmo tempo (a fila manda de novo) | M05-01, M05-08 |
+| Sem sinal | `GET /Chamada/SemSinal` | `[AllowAnonymous]`, sem dado | o que o service worker mostra quando a página pedida nunca foi guardada | M05-01 |
+
+O service worker é o arquivo estático `/sw-chamada.js`, com escopo `/Chamada` (guia §6.29).
+
+### 3B.2 Gestão (Painel)
+
+| Tela | Rota | Acesso | Observações | BL |
+|---|---|---|---|---|
+| Ficha do aluno, aba Presença | `GET /Alunos/Ficha/{id}?aba=presenca` | `RegistroPresenca`, leitura; professor: as turmas dele | a frequência da janela de risco, as presenças recentes (com o link para a chamada) e, para a gestão, os alertas de faltas com os destinatários e o estado de cada mensagem (CA-6). O motivo de saúde só para a gestão e o professor da turma | M05-11, M05-13 |
+| Alunos em risco | `GET /Alunos?EmRisco=true` | a lista de alunos (§3.2) | a caixa "Só quem está em risco de evasão (N)" e o selo "Risco: N %" | M05-11 |
+
+O **Painel** ganhou, no S3, o botão "Chamada de hoje" nos próximos treinos e o cartão "Risco de evasão", com os alunos abaixo do mínimo e o link "Ver todos". A **Agenda** ganhou o botão "Chamada" em cada sessão do dia e dos dias anteriores.
+
+---
+
 ## 4. Páginas "em breve" (catálogo de módulos)
 
 A rota `{chave}` (registrada antes da rota padrão) só aceita as chaves dos módulos com situação `Planejado` no `CatalogoModulos`. A página mostra o que o módulo vai fazer, a fatia e a lista de recursos.
 
 | Rota | Módulo | Seção do menu | Fatia | Aparece no menu para (recurso, leitura) | Ícone |
 |---|---|---|---|---|---|
-| `/chamada` | Chamada | Operação | S3 | `RegistroPresenca`: gestor, professor e responsável | `ki-check-squared` |
 | `/jogos` | Jogos e convocações | Operação | S5 | `EventosConvocacao`: gestor e professor | `ki-cup` |
 | `/mensalidades` | Mensalidades | Financeiro | S4 | `FinanceiroEscolinha`: gestor | `ki-dollar` |
 | `/importacao` | Importação | Escolinha | S7 | `ConfiguracaoEscolinha`: gestor | `ki-file-up` |
 
 - **A página não confere o recurso** (não mostra dado nenhum): qualquer pessoa logada a abre pela URL. Quem filtra é o menu.
-- **Desde o S1**, Turmas, Alunos, Responsáveis e Agenda (Operação) e Professores e Locais de treino (Escolinha) são módulos prontos no `CatalogoModulos` e saíram desta lista. **Desde o S2**, também Mensagens e Convites de acesso (Comunicação), e Templates (Plataforma).
+- **Desde o S1**, Turmas, Alunos, Responsáveis e Agenda (Operação) e Professores e Locais de treino (Escolinha) são módulos prontos no `CatalogoModulos` e saíram desta lista. **Desde o S2**, também Mensagens e Convites de acesso (Comunicação), e Templates (Plataforma). **Desde o S3**, a Chamada (Operação).
 - **Quem é só Responsável não vê o painel:** desde o S2, o painel o leva ao portal (D54).
 - **Quando o módulo ficar pronto:** no `CatalogoModulos`, troque a `Situacao` para `Disponivel` e aponte a `Url` para o controller real. A chave sai da rota `{chave}` sozinha, e o menu, a busca rápida e o Painel acompanham.
 
@@ -243,11 +267,18 @@ O que cada fatia encontra pronto no design system e o que ainda precisa ser cons
 - **Não construído:** o sino no header (D55). A ativação não usa o assistente: são duas páginas, CPF e depois senha.
 - **Toast com texto de terceiros:** o `esc.toast` já escapa (D23), então os nomes das famílias vão seguros.
 
-### S3 — Presença e evasão (professor · Quadra; gestor · Painel)
+### S3 — Presença e evasão (professor · Quadra; gestor · Painel) — **pronto em 27/09/2026** (§3B)
 
-- **Onde entra:** o controller `Chamada`, com o `_LayoutQuadra`; `/chamada` deixa de ser "em breve".
-- **Pronto para usar:** a linha da chamada (`esc-linha-chamada`), o P/F (`esc-segmento` com `esc-presente` e `esc-falta`), a barra de ação ("Concluir chamada") e o selo de conexão (§5.3 e §6.9). Forma validada em `/dev/design/quadra`.
-- **A construir:** a fila offline (service worker com escopo `/Chamada/` e IndexedDB), ligada ao selo por `data-pendentes` e por uma função pública de atualização (hoje interna ao `app.js`); o selo de risco (Sinais, §4.3) nas listas; a aba de alertas na ficha (CA-6).
+- **Construído com o que já existia:**
+  - a linha da chamada, o controle segmentado, a barra de ação e o selo de conexão (§5.3 e §6.9);
+  - `<selo-status>` com as duas máquinas novas e o sinal de risco (§4.2);
+  - as abas da ficha e o `<estado-vazio>`.
+- **Construído no S3** (guia §6.29):
+  - o J e o painel do motivo;
+  - a fila no aparelho e o service worker;
+  - o `esc.atualizarConexao()` público, para o selo acompanhar a fila;
+  - a lista do dia (`esc-item-chamada`).
+- **Não validado nesta máquina:** a reabertura da página sem sinal, que depende do service worker e de um certificado confiável (P37).
 - **R10:** poucos toques; funciona sem sinal; o registro da quadra prevalece.
 
 ### S4 — Financeiro (gestor · Painel)

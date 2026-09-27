@@ -142,11 +142,17 @@ public class TurmasRepositorio(EscolinhaDbContext contexto) : ITurmasRepositorio
 
 public class AlunosRepositorio(EscolinhaDbContext contexto) : IAlunosRepositorio
 {
-    public async Task<Pagina<AlunoNaLista>> ListarAsync(FiltroAlunos filtro, EscopoTurmas escopo, int pagina, int tamanho, CancellationToken ct = default)
+    public async Task<Pagina<AlunoNaLista>> ListarAsync(FiltroAlunos filtro, EscopoTurmas escopo, IReadOnlyCollection<Guid>? somenteIds, int pagina,
+        int tamanho, CancellationToken ct = default)
     {
         if (!escopo.Todas && escopo.Turmas.Count == 0) return new Pagina<AlunoNaLista>([], 0, pagina, tamanho);
 
         var consulta = contexto.Alunos.AsNoTracking();
+        if (somenteIds is not null)
+        {
+            var ids = somenteIds.ToList();
+            consulta = consulta.Where(a => ids.Contains(a.Aluno_ID));
+        }
         if (!escopo.Todas)
         {
             // Professor: só os alunos com matrícula ativa numa turma dele (BL-M08-05).

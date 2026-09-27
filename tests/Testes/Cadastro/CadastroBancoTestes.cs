@@ -173,6 +173,27 @@ public sealed class CadastroBancoTestes(BancoDeTestes banco) : IAsyncLifetime, I
         Assert.All(tercas.Where(s => s.Situacao == SituacaoSessao.Prevista), s => Assert.Equal(17, s.Inicio.Hour));
     }
 
+    /// <summary>
+    /// Achado na validação do S3: incluir um horário numa turma que já existe gravava cada sessão dele duas vezes (o EF já
+    /// punha o horário novo na coleção da turma rastreada, e o serviço punha de novo) e a gravação falhava no índice único.
+    /// </summary>
+    [FatoComBanco]
+    public async Task Incluir_um_horario_na_turma_gera_as_sessoes_dele_uma_vez_so()
+    {
+        var b = await MontarAsync();
+        var edicao = await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoTurmas>().ParaEdicaoAsync(b.Turma));
+        edicao!.Horarios.Add(new HorarioRequisicao { DiaSemana = DayOfWeek.Saturday, Inicio = new TimeOnly(9, 0), Fim = new TimeOnly(10, 0) });
+        var editou = await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoTurmas>().EditarAsync(edicao));
+        Assert.True(editou.Sucesso, editou.Mensagem);
+
+        await using var db = BancoDeTestes.NovoContextoSemEscolinha();
+        var sabados = (await db.Sessoes.IgnoreQueryFilters().Where(s => s.Turma_ID == b.Turma).ToListAsync())
+            .Where(s => s.Data.DayOfWeek == DayOfWeek.Saturday).ToList();
+        Assert.NotEmpty(sabados);
+        Assert.Equal(sabados.Count, sabados.Select(s => s.Data).Distinct().Count());
+        Assert.All(sabados, s => Assert.Equal(9, s.Inicio.Hour));
+    }
+
     [FatoComBanco]
     public async Task A_turma_nova_nasce_com_os_valores_de_turma_da_escolinha_lidos_na_hora()
     {

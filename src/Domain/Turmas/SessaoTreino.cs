@@ -65,6 +65,15 @@ public class SessaoTreino : IEntidadeAuditavel, IEntidadeDaEscolinha
 
     public bool PodeCancelar => Situacao == SituacaoSessao.Prevista;
 
+    /// <summary>A chamada vale no dia do treino e depois (correção); nunca antes, nem em sessão cancelada (S3).</summary>
+    public bool AceitaChamada(DateOnly hoje) => Situacao != SituacaoSessao.Cancelada && Data <= hoje;
+
+    /// <summary>A primeira marcação registrada faz a sessão acontecer: prevista → realizada (§6).</summary>
+    public void RegistrarChamada()
+    {
+        if (Situacao == SituacaoSessao.Prevista) Situacao = SituacaoSessao.Realizada;
+    }
+
     public void Cancelar(string motivo, DateTime agora, Guid? autorId, string? autorNome)
     {
         if (!PodeCancelar) throw new InvalidOperationException($"Sessão {Situacao} não pode ser cancelada.");
@@ -109,7 +118,7 @@ public static class GeradorSessoes
     {
         for (var data = de; data <= ate; data = data.AddDays(1))
         {
-            foreach (var horario in turma.Horarios.Where(h => h.DiaSemana == data.DayOfWeek).OrderBy(h => h.Inicio))
+            foreach (var horario in turma.Horarios.Where(h => h.DiaSemana == data.DayOfWeek).DistinctBy(h => h.HorarioTurma_ID).OrderBy(h => h.Inicio))
             {
                 if (horario.Fim <= horario.Inicio) continue;
                 yield return new OcorrenciaSessao(horario.HorarioTurma_ID, data,

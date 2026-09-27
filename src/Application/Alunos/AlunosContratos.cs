@@ -12,7 +12,9 @@ namespace MinhaEscolinha.Application.Alunos;
 /// </summary>
 public interface IAlunosRepositorio
 {
-    Task<Pagina<AlunoNaLista>> ListarAsync(FiltroAlunos filtro, EscopoTurmas escopo, int pagina, int tamanho, CancellationToken ct = default);
+    /// <param name="somenteIds">Quando informado, só estes alunos (o filtro de risco de evasão).</param>
+    Task<Pagina<AlunoNaLista>> ListarAsync(FiltroAlunos filtro, EscopoTurmas escopo, IReadOnlyCollection<Guid>? somenteIds, int pagina, int tamanho,
+        CancellationToken ct = default);
 
     /// <summary>O aluno rastreado (para alterar).</summary>
     Task<Aluno?> ObterAlunoAsync(Guid id, CancellationToken ct = default);
@@ -83,6 +85,9 @@ public class FiltroAlunos
     public string? Busca { get; set; }
     public Guid? TurmaId { get; set; }
     public FiltroSituacaoAluno Situacao { get; set; } = FiltroSituacaoAluno.NaEscolinha;
+
+    /// <summary>Só os alunos em risco de evasão agora (BL-M05-11).</summary>
+    public bool EmRisco { get; set; }
 }
 
 public record AlunoNaLista(

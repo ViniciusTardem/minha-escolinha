@@ -1,0 +1,91 @@
+@model ChamadaDaSessao
+@{
+    ViewData["Title"] = $"{Model.Turma} · {Model.Inicio:HH:mm}";
+    ViewData["Voltar"] = "/Chamada";
+    Layout = "_LayoutQuadra";
+    string Pressionado(AlunoNaChamada a, SituacaoPresenca s) => a.Situacao == s ? "true" : "false";
+}
+
+@* A chamada da sessão (BL-M05-01): P, F ou J em um toque (R10). Cada toque vai para a fila do aparelho (IndexedDB) e
+   sincroniza quando há sinal; o registro da quadra prevalece (CA-21). A página não traz motivo de saúde: ela fica
+   guardada no aparelho. *@
+<div data-esc-chamada data-sessao="@Model.Id" data-pode-marcar="@(Model.PodeMarcar ? "true" : "false")">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <span class="text-sm text-secondary-foreground">@Formatacao.DiaCurto(Model.Data) · @Formatacao.Horario(Model.Inicio, Model.Fim) · @Model.Local</span>
+        <selo-status valor="Model.Situacao"></selo-status>
+    </div>
+    <p class="text-sm text-secondary-foreground mb-3">
+        <span data-esc-chamada-contador>@Model.Marcados</span> de @Model.Alunos.Count marcado(s)
+    </p>
+
+    @if (Model.Aviso is not null)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3 mb-3" role="status">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <span class="text-sm">@Model.Aviso</span>
+        </div>
+    }
+
+    @if (Model.Alunos.Count == 0)
+    {
+        <div class="kt-card">
+            <estado-vazio icone="ki-people" titulo="Nenhum aluno nesta data" texto="Só aparecem os alunos com matrícula na turma no dia do treino."></estado-vazio>
+        </div>
+    }
+    else
+    {
+        <ul class="esc-linhas" data-esc-chamada-lista>
+            @foreach (var a in Model.Alunos)
+            {
+                <li data-aluno="@a.Id" data-situacao="@(a.Situacao?.ToString() ?? "")">
+                    <div class="esc-linha-chamada">
+                        <span class="esc-linha-chamada-nome">
+                            @a.Nome
+                            @if (a.Trial)
+                            {
+                                <span class="text-xs font-normal text-secondary-foreground">· trial</span>
+                            }
+                        </span>
+                        <div class="esc-segmento" role="group" aria-label="@($"Presença de {a.Nome}")">
+                            <button class="esc-segmento-opcao esc-presente" type="button" data-esc-marcar="Presente"
+                                    aria-pressed="@Pressionado(a, SituacaoPresenca.Presente)" aria-label="@($"{a.Nome}: presente")" disabled="@(!Model.PodeMarcar)">P</button>
+                            <button class="esc-segmento-opcao esc-falta" type="button" data-esc-marcar="Falta"
+                                    aria-pressed="@Pressionado(a, SituacaoPresenca.Falta)" aria-label="@($"{a.Nome}: falta")" disabled="@(!Model.PodeMarcar)">F</button>
+                            <button class="esc-segmento-opcao esc-justificada" type="button" data-esc-marcar="Justificada"
+                                    aria-pressed="@Pressionado(a, SituacaoPresenca.Justificada)" aria-label="@($"{a.Nome}: falta justificada")" disabled="@(!Model.PodeMarcar)">J</button>
+                        </div>
+                    </div>
+                    <div class="esc-justificativa" data-esc-justificativa hidden="@(a.Situacao != SituacaoPresenca.Justificada)">
+                        @if (a.JustificativaSaude)
+                        {
+                            <span class="text-xs text-secondary-foreground">Motivo de saúde registrado: ele não fica guardado no aparelho.</span>
+                        }
+                        <label class="sr-only" for="motivo_@a.Id">Motivo da falta de @a.Nome</label>
+                        <input class="kt-input" id="motivo_@a.Id" type="text" maxlength="300" autocomplete="off" placeholder="Motivo da falta (opcional)"
+                               value="@a.Justificativa" data-esc-motivo disabled="@(!Model.PodeMarcar)" />
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <label class="kt-label">
+                                <input class="kt-checkbox kt-checkbox-sm" type="checkbox" data-esc-saude checked="@a.JustificativaSaude" disabled="@(!Model.PodeMarcar)" />
+                                <span class="text-xs text-secondary-foreground">É de saúde (só a gestão, o professor da turma e a família veem)</span>
+                            </label>
+                            <button class="kt-btn kt-btn-sm kt-btn-outline" type="button" data-esc-guardar-motivo disabled>Guardar motivo</button>
+                        </div>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@section BarraAcao {
+    <button class="kt-btn kt-btn-outline" type="button" data-esc-todos-presentes disabled="@(!Model.PodeMarcar || Model.Alunos.Count == 0)">
+        <i class="ki-filled ki-check-squared"></i> Todos presentes
+    </button>
+    <button class="kt-btn kt-btn-primary" type="button" data-esc-concluir disabled="@(!Model.PodeMarcar)">
+        <i class="ki-filled ki-check"></i> Concluir chamada
+    </button>
+}
+
+@section Scripts {
+    <script src="~/js/chamada.js" asp-append-version="true"></script>
+}

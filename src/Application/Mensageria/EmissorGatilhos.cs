@@ -3,6 +3,7 @@ using System.Text.Json;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Domain.Mensageria;
+using MinhaEscolinha.Domain.Presencas;
 using MinhaEscolinha.Domain.Turmas;
 
 namespace MinhaEscolinha.Application.Mensageria;
@@ -26,6 +27,7 @@ public class EmissorGatilhos(
 
     public const string OrigemSessao = "Sessao";
     public const string OrigemConvite = "Convite";
+    public const string OrigemAlertaFaltas = "AlertaFaltas";
 
     /// <summary>
     /// Treino cancelado (§8.3): os responsáveis que recebem notificação, dos alunos que treinam na turma, um aviso por
@@ -80,21 +82,57 @@ public class EmissorGatilhos(
     }
 
     /// <summary>
-    /// A origem deixou de valer (regra de ouro 5: quando o evento chega, cancele o que ficou pendente): o que ainda está na
-    /// fila dela é suprimido na hora, com o motivo, na mesma gravação de quem chama. Fica de fora a mensagem com envio em
-    /// andamento ou com crédito já reservado (tentativa que volta à fila): o trabalho de envio revalida a origem e estorna.
+    /// Regra de faltas atingida (§8.3, BL-M05-08): os responsáveis do aluno que recebem notificação, um aviso por responsável,
+    /// no tom escolhido pela escolinha (<c>presenca.alerta.tom</c>). Não é urgente: respeita a janela de silêncio.
+    /// </summary>
+    public async Task<int> FaltasAtingidasAsync(AlertaFaltas alerta, string aluno, string turma, TomMensagem tom, CancellationToken ct = default)
+    {
+        var regra = CatalogoGatilhos.Obter(GatilhoMensagem.FaltasAtingidas);
+        var template = await TemplateAsync(regra.Gatilho, tom, ct);
+        var escolinha = await NomeEscolinhaAsync(ct);
+        var agora = relogio.Agora();
+
+        var criadas = 0;
+        foreach (var d in await repositorio.ResponsaveisDoAlunoAsync(alerta.Aluno_ID, ct))
+        {
+            var valores = new Dictionary<string, string>
+            {
+                ["responsavel"] = PrimeiroNome(d.Nome),
+                ["escolinha"] = escolinha,
+                ["aluno"] = PrimeiroNome(aluno),
+                ["faltas"] = alerta.QuantidadeFaltas,
+                ["periodo"] = alerta.Periodo,
+                ["turma"] = turma
+            };
+            criadas += await CriarAsync(regra, template, OrigemAlertaFaltas, alerta.AlertaFaltas_ID, TipoDestinatario.Responsavel,
+                d.ResponsavelId, d.Nome, d.Telefone, d.AcessoAtivo && d.TodosVerificados ? d.PessoaId : null, alerta.Aluno_ID,
+                valores, false, null, agora, ct);
+        }
+        return criadas;
+    }
+
+    /// <summary>
+    /// A origem deixou de valer (regra de ouro 5: quando o evento chega, cancele o que ficou pendente): o WhatsApp que ainda
+    /// está na fila é suprimido na hora, e o aviso do portal que ninguém abriu sai do portal, com o motivo, na mesma gravação
+    /// de quem chama. Fica de fora a mensagem com envio em andamento ou com crédito já reservado (tentativa que volta à
+    /// fila): o trabalho de envio revalida a origem e estorna.
     /// </summary>
     public async Task<int> CancelarPendentesAsync(string tipoOrigem, Guid origemId, string motivo, CancellationToken ct = default)
     {
         var agora = relogio.Agora();
-        var suprimidas = 0;
-        foreach (var mensagem in await repositorio.EmFilaDaOrigemAsync(tipoOrigem, origemId, ct))
+        var recolhidas = 0;
+        foreach (var mensagem in await repositorio.CancelaveisDaOrigemAsync(tipoOrigem, origemId, ct))
         {
+            if (mensagem.Canal == CanalMensagem.Portal)
+            {
+                if (mensagem.RecolherDoPortal(motivo, agora)) recolhidas++;
+                continue;
+            }
             if (mensagem.ReservadaPorOutro(agora) || mensagem.CreditoReservado) continue;
             mensagem.Suprimir(motivo, agora);
-            suprimidas++;
+            recolhidas++;
         }
-        return suprimidas;
+        return recolhidas;
     }
 
     private async Task<int> CriarAsync(RegraGatilho regra, TemplateMensagem template, string tipoOrigem, Guid origemId,

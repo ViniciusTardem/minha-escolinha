@@ -266,7 +266,8 @@ public record ItemAgenda(
     SituacaoSessao Situacao,
     string? MotivoCancelamento,
     IReadOnlyList<string> Alertas,
-    bool PodeCancelar);
+    bool PodeCancelar,
+    bool PodeChamada);
 
 public record OpcaoAgenda(Guid Id, string Nome);
 

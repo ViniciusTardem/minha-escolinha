@@ -595,6 +595,31 @@ progress.esc-ocupacao::-moz-progress-bar { background-color: var(--primary); bor
     background-color: var(--destructive);
     color: #fff;
 }
+.esc-justificada[aria-pressed="true"] {
+    background-color: var(--color-amber-500, #f59e0b);
+    color: #fff;
+}
+
+/* Chamada (S3): o motivo da falta justificada abre embaixo da linha do aluno. */
+.esc-justificativa {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0 0 0.75rem;
+}
+.esc-justificativa[hidden] { display: none; }
+
+/* Lista do dia da chamada: a sessão inteira é o alvo de toque. */
+.esc-item-chamada {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: var(--esc-toque);
+    padding: 0.75rem 1rem;
+    color: inherit;
+}
+.esc-item-chamada:hover { background-color: var(--accent); }
 
 /* ============================================
    PORTAL DO RESPONSÁVEL (_LayoutPortal) — celular, sem instalar nada

@@ -9,6 +9,7 @@ using MinhaEscolinha.Domain.Configuracao.Parametros;
 using MinhaEscolinha.Domain.Integracao;
 using MinhaEscolinha.Domain.Mensageria;
 using MinhaEscolinha.Domain.Plataforma;
+using MinhaEscolinha.Domain.Presencas;
 using MinhaEscolinha.Domain.Turmas;
 
 namespace MinhaEscolinha.Web.Infraestrutura;
@@ -61,7 +62,10 @@ public enum SinalTela
     SemMatricula,
     ComAcesso,
     SemAcesso,
-    Pagador
+    Pagador,
+
+    /// <summary>Frequência da janela de risco abaixo do mínimo (BL-M05-11): sinal, não bloqueio (R9).</summary>
+    RiscoEvasao
 }
 
 /// <summary>
@@ -110,6 +114,7 @@ public static class ApresentacaoStatus
         SinalTela.ComAcesso => ("Com acesso", VarianteSelo.Sucesso),
         SinalTela.SemAcesso => ("Sem acesso ainda", VarianteSelo.Neutro),
         SinalTela.Pagador => ("Pagador", VarianteSelo.Primario),
+        SinalTela.RiscoEvasao => ("Risco de evasão", VarianteSelo.Alerta),
 
         SituacaoAluno.Trial => ("Trial", VarianteSelo.Info),
         SituacaoAluno.Ativo => ("Ativo", VarianteSelo.Sucesso),
@@ -159,6 +164,14 @@ public static class ApresentacaoStatus
         SituacaoAprovacaoTemplate.EmAnalise => ("Em análise na Meta", VarianteSelo.Info),
         SituacaoAprovacaoTemplate.Aprovado => ("Aprovado", VarianteSelo.Sucesso),
         SituacaoAprovacaoTemplate.Rejeitado => ("Rejeitado", VarianteSelo.Perigo),
+
+        SituacaoPresenca.Presente => ("Presente", VarianteSelo.Sucesso),
+        SituacaoPresenca.Falta => ("Falta", VarianteSelo.Perigo),
+        SituacaoPresenca.Justificada => ("Falta justificada", VarianteSelo.Alerta),
+
+        SituacaoAlertaFaltas.Disparado => ("Disparado", VarianteSelo.Info),
+        SituacaoAlertaFaltas.Suprimido => ("Suprimido", VarianteSelo.Neutro),
+        SituacaoAlertaFaltas.Anulado => ("Anulado", VarianteSelo.Neutro),
 
         _ => (valor.ToString(), VarianteSelo.Neutro)
     };
@@ -260,6 +273,9 @@ public static class Formatacao
     public static string Idade(int anos) => anos == 1 ? "1 ano" : $"{anos} anos";
 
     public static string Numero(int valor) => valor.ToString("N0", PtBr);
+
+    /// <summary>"62,5 %" e "60 %": até uma casa decimal, com espaço antes do símbolo.</summary>
+    public static string Percentual(decimal valor) => $"{valor.ToString("0.#", PtBr)} %";
 
     /// <summary>"R$ 1.234,50".</summary>
     public static string Moeda(decimal valor) => valor.ToString("C", PtBr);

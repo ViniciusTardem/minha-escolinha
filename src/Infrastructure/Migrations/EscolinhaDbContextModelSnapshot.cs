@@ -1945,6 +1945,265 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Presencas.AlertaFaltas", b =>
+                {
+                    b.Property<Guid>("AlertaFaltas_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Aluno_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AnuladoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("AvaliadoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<bool>("ContaJustificada")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Faltas")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Limite")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Motivo")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Periodo")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("Regra")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SessaoInicio")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("SessaoTreino_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Turma_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("AlertaFaltas_ID")
+                        .HasName("PK_AlertaFaltas");
+
+                    b.HasIndex("Aluno_ID");
+
+                    b.HasIndex("SessaoTreino_ID");
+
+                    b.HasIndex("Turma_ID");
+
+                    b.HasIndex("Escolinha_ID", "Aluno_ID", "Situacao", "AvaliadoEm")
+                        .HasDatabaseName("IX_AlertaFaltas_Escolinha_Aluno_Situacao_Avaliado");
+
+                    b.ToTable("AlertaFaltas", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AlertaFaltas_Faltas", "[Faltas] >= 1 AND [Limite] >= 1");
+
+                            t.HasCheckConstraint("CK_AlertaFaltas_Situacao", "[Situacao] IN (10, 20, 30)");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Presencas.MarcacaoPresenca", b =>
+                {
+                    b.Property<Guid>("MarcacaoPresenca_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Aluno_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Dispositivo")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Justificativa")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("JustificativaSaude")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("Marcacao")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("MarcadaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Observacao")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PessoaNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("Pessoa_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("RecebidaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<int>("Resultado")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Sequencia")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SessaoTreino_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.HasKey("MarcacaoPresenca_ID")
+                        .HasName("PK_MarcacaoPresenca");
+
+                    b.HasIndex("Aluno_ID");
+
+                    b.HasIndex("SessaoTreino_ID");
+
+                    b.HasIndex("Escolinha_ID", "Marcacao")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_MarcacaoPresenca_Escolinha_Marcacao");
+
+                    b.HasIndex("Escolinha_ID", "SessaoTreino_ID", "Aluno_ID")
+                        .HasDatabaseName("IX_MarcacaoPresenca_Escolinha_Sessao_Aluno");
+
+                    b.ToTable("MarcacaoPresenca", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MarcacaoPresenca_Resultado", "[Resultado] IN (10, 20)");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Presencas.Presenca", b =>
+                {
+                    b.Property<Guid>("Presenca_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Aluno_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Dispositivo")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Justificativa")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("JustificativaSaude")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("Marcacao")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("MarcadaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("MarcadaPorNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("MarcadaPor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("Sequencia")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("SessaoInicio")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("SessaoTreino_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Turma_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Versao")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Presenca_ID")
+                        .HasName("PK_Presenca");
+
+                    b.HasIndex("Aluno_ID");
+
+                    b.HasIndex("SessaoTreino_ID");
+
+                    b.HasIndex("Turma_ID");
+
+                    b.HasIndex("Escolinha_ID", "SessaoInicio")
+                        .HasDatabaseName("IX_Presenca_Escolinha_Inicio");
+
+                    b.HasIndex("Escolinha_ID", "SessaoTreino_ID", "Aluno_ID")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Presenca_Escolinha_Sessao_Aluno");
+
+                    b.HasIndex("Escolinha_ID", "Aluno_ID", "Turma_ID", "SessaoInicio")
+                        .HasDatabaseName("IX_Presenca_Escolinha_Aluno_Turma_Inicio");
+
+                    b.ToTable("Presenca", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Presenca_Situacao", "[Situacao] IN (10, 20, 30)");
+                        });
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.HorarioTurma", b =>
                 {
                     b.Property<Guid>("HorarioTurma_ID")
@@ -2612,6 +2871,92 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_CompraCreditos_PacoteCreditos");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Presencas.AlertaFaltas", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Aluno", null)
+                        .WithMany()
+                        .HasForeignKey("Aluno_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_AlertaFaltas_Aluno");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_AlertaFaltas_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.SessaoTreino", null)
+                        .WithMany()
+                        .HasForeignKey("SessaoTreino_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_AlertaFaltas_SessaoTreino");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Turma", null)
+                        .WithMany()
+                        .HasForeignKey("Turma_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_AlertaFaltas_Turma");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Presencas.MarcacaoPresenca", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Aluno", null)
+                        .WithMany()
+                        .HasForeignKey("Aluno_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_MarcacaoPresenca_Aluno");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_MarcacaoPresenca_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.SessaoTreino", null)
+                        .WithMany()
+                        .HasForeignKey("SessaoTreino_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_MarcacaoPresenca_SessaoTreino");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Presencas.Presenca", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Aluno", null)
+                        .WithMany()
+                        .HasForeignKey("Aluno_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Presenca_Aluno");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Presenca_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.SessaoTreino", null)
+                        .WithMany()
+                        .HasForeignKey("SessaoTreino_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Presenca_SessaoTreino");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Turma", null)
+                        .WithMany()
+                        .HasForeignKey("Turma_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Presenca_Turma");
                 });
 
             modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.HorarioTurma", b =>

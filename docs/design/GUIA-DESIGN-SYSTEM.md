@@ -5,7 +5,7 @@
 > **Stack:** ASP.NET Core MVC (.NET 9) + Razor · Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons (só `ki-filled`).
 > **Prefixo do projeto:** `esc-` (classes), `data-esc-` (atributos), `window.esc` (JS), `esc:*` (eventos).
 >
-> **Como foi verificado (27/09/2026, fatia S1 pronta):** toda classe citada aqui foi conferida no CSS que o navegador recebe (`keenicons-filled.css`, `styles.css`, `css/esc.css` e `custom.css`, em `src/Web/wwwroot`), e todo comportamento, no código. O que ainda não existe está marcado como **planejado** e listado na §14.
+> **Como foi verificado (27/09/2026, fatia S3 pronta):** toda classe citada aqui foi conferida no CSS que o navegador recebe (`keenicons-filled.css`, `styles.css`, `css/esc.css` e `custom.css`, em `src/Web/wwwroot`), e todo comportamento, no código. O que ainda não existe está marcado como **planejado** e listado na §14.
 >
 > **Base:** o guia verificado do Adama/Candeias (`docs/metronic/GUIA-DESIGN-SYSTEM.md`, cópia local fora do git), reescrito para este projeto. O `docs/metronic/GUIA-REFERENCIA-METRONIC-KTUI.md` está superado e tem afirmações erradas: não use.
 >
@@ -14,7 +14,8 @@
 > - D19 e X06 (erro ligado ao campo), D20 (nome de binding);
 > - D22 (validação no navegador);
 > - D23 (toast escapado), D24 (mensagens de validação em pt-BR), D25 (`SinalTela`);
-> - do S1: D30 (valor em reais), D37 (ficha em página com abas), D41 (escopo no que vem junto) e D42 (assistente sem botões).
+> - do S1: D30 (valor em reais), D37 (ficha em página com abas), D41 (escopo no que vem junto) e D42 (assistente sem botões);
+> - do S3: D58 a D60 (chamada e sem sinal, X07) e D64 (motivo de saúde).
 
 ## Sumário
 
@@ -202,7 +203,7 @@ base-uri 'self'; frame-ancestors 'self'; form-action 'self' https://checkout.str
 | `style-src 'self' 'unsafe-inline'` | o KTUI posiciona dropdown e drawer por atributo `style`, então o navegador aceita estilo inline. **A regra do projeto continua: nenhum `style=` nem `<style>` nas Views.** Não há teste automático; é revisão |
 | `img-src` e `font-src` com `'self' data:` | nada de CDN, Google Fonts ou imagem externa |
 | `connect-src 'self'` | `fetch` e SignalR só na mesma origem |
-| `worker-src` e `manifest-src` com `'self'` | já preparam a chamada offline (service worker, S3) |
+| `worker-src` e `manifest-src` com `'self'` | o service worker da chamada sem sinal (`/sw-chamada.js`, S3); não há manifesto |
 | `frame-ancestors 'self'` (e `X-Frame-Options: SAMEORIGIN`) | a vitrine põe a quadra e o portal em `<iframe>`; outro site não consegue |
 | `form-action 'self' https://checkout.stripe.com` | o POST "Comprar" dos pacotes de créditos redireciona para o Checkout do Stripe, e o navegador aplica o `form-action` também ao redirecionamento. Qualquer outro destino externo de formulário precisa entrar aqui, registrado |
 
@@ -210,7 +211,7 @@ Também vão em toda resposta: `X-Content-Type-Options: nosniff`, `Referrer-Poli
 
 ### 2.7 Arquivos estáticos
 
-`app.UseStaticFiles()` antes da autenticação, e `asp-append-version="true"` em todo `<link>` e `<script>` (hash na query string para renovar o cache). O `MapStaticAssets` previsto no plano (Brotli/gzip e fingerprint) não foi adotado: D18, a reavaliar no S3 pelo desempenho da quadra com sinal ruim.
+`app.UseStaticFiles()` antes da autenticação, e `asp-append-version="true"` em todo `<link>` e `<script>` (hash na query string para renovar o cache). O `MapStaticAssets` previsto no plano (Brotli/gzip e fingerprint) não foi adotado (D18). Na chamada, o service worker guarda no aparelho os arquivos do layout da quadra (§6.29). Como a URL leva o hash, um arquivo alterado chega com endereço novo e não fica preso na cópia antiga.
 
 ---
 
@@ -335,6 +336,9 @@ A utility que falta nasce no `npm run css` quando uma View passa a usá-la; o ve
 | `SituacaoAprovacaoTemplate` | `Rascunho` · Neutro; `EmAnalise` → "Em análise na Meta" · Info; `Aprovado` · Sucesso; `Rejeitado` · Perigo | Templates |
 | `SituacaoConvite` | `Pendente` → "Enviado" · Info; `Aceito` · Sucesso; `Cancelado` · Neutro; `Substituido` → "Substituído" · Neutro | só a vitrine, por enquanto (as telas mostram o `SituacaoAcesso`, que junta convite e acesso) |
 | `SinalTela`, valores do S1 | `TrialVencendo` → "Trial vencendo" · Alerta; `TrialVencido` → "Trial vencido" · Alerta; `TurmaLotada` → "Lotada" · Alerta; `SemMatricula` → "Sem turma" · Alerta; `ComAcesso` → "Com acesso" · Sucesso; `SemAcesso` → "Sem acesso ainda" · Neutro; `Pagador` → "Pagador" · Primario | Painel, Alunos, fichas do aluno e da turma, Turmas, Professores e Responsáveis |
+| `SituacaoPresenca` | `Presente` · Sucesso; `Falta` · Perigo; `Justificada` → "Falta justificada" · Alerta. O "não marcado" é a ausência de presença, sem selo | ficha do aluno (Presença) |
+| `SituacaoAlertaFaltas` | `Disparado` · Info; `Suprimido` · Neutro; `Anulado` · Neutro | ficha do aluno (alertas de faltas) |
+| `SinalTela.RiscoEvasao` (S3) | "Risco de evasão" · Alerta; o `texto` diz o percentual ("Risco: 0 %", "Risco de evasão: 0 % em 30 dias") | Alunos, cabeçalho e aba Presença da ficha, Painel |
 
 Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e sem cor. **Máquina nova entra inteira no mapa, na mesma entrega:**
 
@@ -342,9 +346,13 @@ Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e
 2. os valores no array `selos` da vitrine (`Views/Design/Index.cshtml`);
 3. na View, só `<selo-status>`.
 
-### 4.3 A tabela do plano (Aluno, Sessão e Mensagem prontos; as demais planejadas)
+### 4.3 A tabela do plano (Aluno, Sessão, Mensagem, Presença e risco prontos; as demais planejadas)
 
-A tabela da §4.2 do plano. **Aluno e Sessão entraram no mapa no S1, e Mensagem no S2, como planejados** (a "pendente" do plano aparece como "Na fila"); o "trial vencido" é o `SinalTela.TrialVencido`, porque o trial vencido continua em trial (§6 da spec). As outras máquinas valem quando cada uma nascer:
+A tabela da §4.2 do plano:
+- **Aluno e Sessão entraram no mapa no S1, e Mensagem no S2, como planejados.** A "pendente" do plano aparece como "Na fila".
+- O "trial vencido" é o `SinalTela.TrialVencido`, porque o trial vencido continua em trial (§6 da spec).
+- **Presença e o risco de evasão entraram no S3.** A "justificada" aparece como "Falta justificada", e o "não marcado" não tem selo: é a linha sem marcação.
+- As outras máquinas valem quando cada uma nascer.
 
 | Máquina | Sucesso | Info | Alerta | Perigo | Neutro |
 |---|---|---|---|---|---|
@@ -502,7 +510,7 @@ Renomear qualquer um quebra o recolhimento, a rolagem do menu ou a busca.
 ```
 
 - **Barra superior compacta** (`esc-quadra-topo`, sticky, respeita a `safe-area-inset-top`): voltar (`ViewData["Voltar"]`, padrão `/`), o título com reticências (`esc-quadra-titulo`) e o selo de conexão.
-- **Selo de conexão** (`esc-conexao`): o `app.js` atualiza na carga e nos eventos `online` e `offline`. Com sinal: "Online" ou, com pendentes, "Enviando N", e ícone `ki-wifi`. Sem sinal: "Sem sinal · N pendentes", ícone `ki-cloud-change` e a classe `esc-conexao-offline` (âmbar, com par no escuro). O número vem de `data-pendentes`.
+- **Selo de conexão** (`esc-conexao`): o `app.js` atualiza na carga e nos eventos `online` e `offline`. Com sinal: "Online" ou, com pendentes, "Enviando N", e ícone `ki-wifi`. Sem sinal: "Sem sinal · N pendentes", ícone `ki-cloud-change` e a classe `esc-conexao-offline` (âmbar, com par no escuro). O número vem de `data-pendentes`: quem muda a fila grava o número ali e chama `esc.atualizarConexao()` (a chamada faz isso, §6.29).
 - **Barra de ação inferior fixa** (`esc-barra-acao`, seção `BarraAcao`): dois ou três `kt-btn` lado a lado. Cada um é `flex: 1 1 0` com **`min-width: 0`**: sem isso, a barra vazava da tela em 375 px. O rótulo quebra em duas linhas, e o `kt-btn-primary` cresce 1,4 vez. A barra respeita a `safe-area-inset-bottom`, e o conteúdo (`esc-quadra-conteudo`, até 40rem) reserva a altura dela (`--esc-barra-acao`).
 
 ```cshtml
@@ -513,7 +521,7 @@ Renomear qualquer um quebra o recolhimento, a rolagem do menu ou a busca.
 ```
 
 - **Toque (`esc-toque` no `<body>`):** `kt-btn`, `kt-input`, `kt-select` e `kt-textarea` com altura mínima de 48 px e texto de 16 px (o iOS dá zoom em campo com menos de 16 px); `kt-btn-icon` com 48 px de largura; `esc-segmento-opcao` com 48 px. O KTUI puro tem 34 px e texto de 13 px.
-- **Planejado:** as telas reais são os controllers `Chamada` (S3) e `Convocacao` (S5). A chamada offline (S3) usa service worker com escopo `/Chamada/` e fila no IndexedDB; a CSP já permite o worker. O `atualizarConexao()` do `app.js` ainda não é público, e a fila offline vai precisar expô-lo para atualizar o selo quando o número de pendentes mudar.
+- **Telas reais:** a chamada (`ChamadaController`, S3, §6.29) e, no S5, a convocação (`Convocacao`).
 
 ### 5.4 `_LayoutPortal`: o responsável no celular, sem instalar nada
 
@@ -755,7 +763,7 @@ document.addEventListener("esc:escolha", function (evento) {
 });
 ```
 
-- **P/F da chamada:** as opções ganham `esc-presente` (verde) e `esc-falta` (`--destructive`) quando marcadas; na quadra (`esc-toque`), cada opção tem 48 px. A forma, simplificada da vitrine (`Design/Quadra.cshtml`):
+- **P/F/J da chamada:** as opções ganham `esc-presente` (verde), `esc-falta` (`--destructive`) e `esc-justificada` (âmbar) quando marcadas; na quadra (`esc-toque`), cada opção tem 48 px. A forma da vitrine (`Design/Quadra.cshtml`), sem o J; a tela real está na §6.29:
 
 ```cshtml
 <li class="esc-linha-chamada">
@@ -768,7 +776,8 @@ document.addEventListener("esc:escolha", function (evento) {
 ```
 
 - Os **chips dos filhos** do portal (`esc-chips` e `esc-chip`, §5.4) usam o mesmo `data-esc-escolha`.
-- O controle guarda só o estado visual: gravar a escolha é da tela, ouvindo `esc:escolha` (planejado para a chamada, S3).
+- O controle guarda só o estado visual: gravar a escolha é da tela, ouvindo `esc:escolha`.
+- **A chamada real não usa o `data-esc-escolha`:** o `chamada.js` cuida do toque, do `aria-pressed`, da fila e do painel do motivo (§6.29).
 
 ### 6.10 Seleção com busca (`js/selecao-busca.js`)
 
@@ -982,8 +991,10 @@ Fica em `Views/Parametros/_CampoParametro.cshtml` (não em `Shared`). Cada parâ
 | `esc-quadra`, `esc-quadra-topo`, `esc-quadra-titulo`, `esc-quadra-conteudo` | a estrutura do `_LayoutQuadra` (altura mínima `100dvh`) |
 | `esc-barra-acao` | a barra de ação inferior fixa |
 | `esc-conexao`, `esc-conexao-offline` | o selo de conexão (online / sem sinal) |
-| `esc-linha-chamada`, `esc-linha-chamada-nome` | a linha do aluno na chamada: nome com reticências + P/F |
-| `esc-presente`, `esc-falta` | a cor do P e do F marcados (`aria-pressed="true"`) |
+| `esc-linha-chamada`, `esc-linha-chamada-nome` | a linha do aluno na chamada: nome com reticências + P/F/J |
+| `esc-presente`, `esc-falta`, `esc-justificada` | a cor do P, do F e do J marcados (`aria-pressed="true"`) |
+| `esc-justificativa` | o painel do motivo, embaixo da linha do aluno; some com `hidden` |
+| `esc-item-chamada` | a sessão na lista do dia: o item inteiro é o alvo de toque (48 px de altura mínima) |
 | `esc-segmento`, `esc-segmento-opcao` | o controle segmentado (§6.9) |
 | `esc-portal`, `esc-portal-topo`, `esc-portal-conteudo` | a estrutura do `_LayoutPortal` |
 | `esc-chips`, `esc-chip` | os chips dos filhos; o marcado tem `aria-pressed="true"` e a cor da marca |
@@ -1079,6 +1090,55 @@ O celular das famílias, só em Development e com o modo Simulado:
 - a resposta em texto pode citar a mensagem ou não. Sem citar, o sistema acha a família pelo celular.
 
 Cada ação manda o webhook assinado pelo endpoint de verdade, e o toast confirma a entrega ao sistema.
+
+### 6.29 Chamada na quadra (`js/chamada.js` e `sw-chamada.js`)
+
+As telas `/Chamada` (o dia) e `/Chamada/Sessao/{id}`, no `_LayoutQuadra`. Cada toque vai para uma fila no aparelho e sincroniza quando há sinal (D58 a D60).
+
+**A lista do dia** (`Chamada/Index` e a parcial `_SessaoDaChamada`):
+- **Seções:** "Hoje" e "Sem chamada nos últimos 7 dias", cada uma um `kt-card esc-linhas`.
+- **Item:** cada sessão é um link `esc-item-chamada` com `data-esc-chamada-sessao`, que mostra a turma, o dia e o horário, o local e o professor, o selo da sessão e quantos foram marcados. O `chamada.js` pede ao service worker para guardar esses links.
+- **Aviso no rodapé:** "Abra esta lista com sinal antes do treino".
+
+**A sessão** (`Chamada/Sessao`):
+
+```cshtml
+<div data-esc-chamada data-sessao="@Model.Id" data-pode-marcar="true">
+    <span data-esc-chamada-contador>0</span> de 12 marcado(s)
+    <ul class="esc-linhas" data-esc-chamada-lista>
+        <li data-aluno="@a.Id" data-situacao="">
+            <div class="esc-linha-chamada">
+                <span class="esc-linha-chamada-nome">@a.Nome</span>
+                <div class="esc-segmento" role="group" aria-label="@($"Presença de {a.Nome}")">
+                    <button class="esc-segmento-opcao esc-presente" type="button" data-esc-marcar="Presente" aria-pressed="false" aria-label="@($"{a.Nome}: presente")">P</button>
+                    <button class="esc-segmento-opcao esc-falta" type="button" data-esc-marcar="Falta" aria-pressed="false" aria-label="@($"{a.Nome}: falta")">F</button>
+                    <button class="esc-segmento-opcao esc-justificada" type="button" data-esc-marcar="Justificada" aria-pressed="false" aria-label="@($"{a.Nome}: falta justificada")">J</button>
+                </div>
+            </div>
+            <div class="esc-justificativa" data-esc-justificativa hidden>
+                <input class="kt-input" type="text" maxlength="300" data-esc-motivo placeholder="Motivo da falta (opcional)" />
+                <label class="kt-label"><input class="kt-checkbox kt-checkbox-sm" type="checkbox" data-esc-saude /> É de saúde (...)</label>
+                <button class="kt-btn kt-btn-sm kt-btn-outline" type="button" data-esc-guardar-motivo disabled>Guardar motivo</button>
+            </div>
+        </li>
+    </ul>
+</div>
+```
+
+- **Toque:**
+  - um toque em P, F ou J marca, mostra na hora e entra na fila;
+  - o J abre o painel do motivo. "Guardar motivo" só se habilita com texto, e manda uma marcação nova, com o motivo e a marca de saúde;
+  - `data-situacao` na linha guarda o estado (vazio = não marcado), e o contador conta as linhas marcadas.
+- **Barra inferior:**
+  - "Todos presentes" (`data-esc-todos-presentes`) marca só quem ainda não tem marcação;
+  - "Concluir chamada" (`data-esc-concluir`) avisa quantos ficaram sem marcação, tenta enviar e volta para a lista. Sem sinal, diz quantas marcações ficaram guardadas.
+- **Página guardada:** mostra o que o servidor tinha quando a página foi guardada, e a fila do aparelho é aplicada por cima ao abrir. O motivo de saúde nunca vem na página: a linha diz só "Motivo de saúde registrado" (D64).
+- **Aviso:** o treino cancelado ou de data futura traz um `kt-alert` e os botões desabilitados (`data-pode-marcar="false"`).
+- **Selo de conexão:** o `chamada.js` grava o tamanho da fila em `data-pendentes` e chama `esc.atualizarConexao()` (§5.3).
+- **Toasts:** marcação recusada (com o motivo do servidor), avisos de faltas que entraram na fila e sessão expirada ("entre de novo: as marcações continuam guardadas").
+- **Sem sinal e sem cópia:** `/Chamada/SemSinal`, página anônima e sem dado, que o service worker guarda na instalação.
+- **Limpeza:** o logout (formulário `/Conta/Sair`) e a tela de login (`data-esc-limpar-offline`) apagam as páginas guardadas. A fila de marcações fica até sair (D60).
+- **Service worker:** ao mudar o que ele guarda, suba a `VERSAO` do `sw-chamada.js`, para a cópia antiga sair dos aparelhos.
 
 ---
 
@@ -1214,42 +1274,44 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 
 ### 9.1 Domínio (a lista validada do plano)
 
+"Uso hoje" conferido no código em 27/09/2026, no fim do S3. Além do que a tabela cita, todo ícone aparece na vitrine (`/dev/design`).
+
 | Conceito | Ícone | Uso hoje |
 |---|---|---|
-| painel | `ki-element-11` | menu (Painel); ícone padrão da busca rápida |
-| alunos | `ki-people` | menu (Alunos, em breve) |
-| responsáveis | `ki-users` | só a vitrine |
-| professores | `ki-teacher` | só a vitrine |
-| turmas | `ki-category` | menu (Turmas, em breve) |
-| agenda | `ki-calendar` | menu (Agenda, em breve); cartão de jogo da vitrine |
-| chamada | `ki-check-squared` | menu (Chamada, em breve); "Todos presentes" na vitrine |
-| jogos | `ki-cup` | menu (Jogos e convocações, em breve); aba Jogos do portal; **logo provisório** |
-| convocação | `ki-flag` | só a vitrine |
-| confirmações | `ki-double-check` | só a vitrine |
-| mensagens | `ki-message-text-2` | menu (Mensagens, em breve) |
-| WhatsApp | `ki-whatsapp` | só a vitrine |
-| avisos | `ki-notification-status` | aba Avisos do portal |
-| financeiro | `ki-dollar` | menu (Mensalidades, em breve); aba Pagamentos do portal |
-| cobrança | `ki-bill` | só a vitrine |
-| cartão | `ki-credit-cart` | só a vitrine. O nome é `credit-cart` mesmo |
-| créditos | `ki-wallet` | menu (Créditos); Plataforma; Painel |
+| painel | `ki-element-11` | menu (Painel); ícone padrão da busca rápida; portal |
+| alunos | `ki-people` | menu (Alunos); passos do Painel; Alunos, Responsáveis e ficha da turma (estado vazio); chamada sem alunos; portal |
+| responsáveis | `ki-users` | menu (Responsáveis); Alunos; Responsáveis |
+| professores | `ki-teacher` | menu (Professores); passos do Painel; Professores |
+| turmas | `ki-category` | menu (Turmas); passos do Painel; Turmas; fichas do aluno e do professor; portal |
+| agenda | `ki-calendar` | menu (Agenda); Agenda; Turmas e fichas da turma e do professor; lista da chamada sem treino no dia |
+| chamada | `ki-check-squared` | menu (Chamada); "Chamada de hoje" no Painel; "Chamada" na Agenda; "Todos presentes" na chamada; aba Presença da ficha (estado vazio) |
+| jogos | `ki-cup` | menu (Jogos e convocações, em breve); Painel (próximas entregas); aba Jogos do portal; **logo provisório** |
+| convocação | `ki-flag` | só a vitrine (S5) |
+| confirmações | `ki-double-check` | Mensagens (entregue e lida); simulador do WhatsApp |
+| mensagens | `ki-message-text-2` | menu (Mensagens); passos do Painel; Mensagens e detalhe; Templates; ficha do aluno; simulador do WhatsApp |
+| WhatsApp | `ki-whatsapp` | Mensagens; Convites; acesso da ficha; ficha do aluno (destinatário do alerta); simulador do WhatsApp |
+| avisos | `ki-notification-status` | Mensagens (portal); ficha do aluno; portal (aba Avisos e início) |
+| financeiro | `ki-dollar` | menu (Mensalidades, em breve); ficha do aluno; aba Pagamentos do portal |
+| cobrança | `ki-bill` | simulador do Stripe (S4 na Asaas) |
+| cartão | `ki-credit-cart` | simulador do Stripe. O nome é `credit-cart` mesmo |
+| créditos | `ki-wallet` | menu (Créditos); passos do Painel; Créditos; Mensagens; Plataforma |
 | configuração | `ki-setting-2` | só a vitrine |
-| parâmetros | `ki-setting-3` | menu (Parâmetros); Painel |
-| locais | `ki-geolocation` | só a vitrine |
-| mapa | `ki-map` | só a vitrine |
-| saúde | `ki-heart` | só a vitrine |
-| consentimento | `ki-shield-tick` | só a vitrine |
-| acesso | `ki-key` | menu da pessoa (Trocar senha) |
+| parâmetros | `ki-setting-3` | menu (Parâmetros); passos do Painel |
+| locais | `ki-geolocation` | menu (Locais); passos do Painel; Locais |
+| mapa | `ki-map` | só a vitrine (S5, local do jogo) |
+| saúde | `ki-heart` | ficha do aluno (saúde) |
+| consentimento | `ki-shield-tick` | ficha do aluno e aluno novo (consentimentos) |
+| acesso | `ki-key` | menu (Convites) e menu da pessoa (Trocar senha); passos do Painel; Convites; ativação; Mensagens |
 | permissões | `ki-security-user` | só a vitrine |
-| vínculo verificado | `ki-user-tick` | só a vitrine |
+| vínculo verificado | `ki-user-tick` | passos do Painel; Vínculos; Convites; responsável do aluno; professor |
 | importação | `ki-file-up` | menu (Importação, em breve) |
-| modelo para baixar | `ki-file-down` | só a vitrine |
+| modelo para baixar | `ki-file-down` | só a vitrine (S7) |
 | online (conexão) | `ki-wifi` | selo de conexão da quadra, com sinal |
-| sem sinal / sincronizar | `ki-cloud-change` | selo de conexão da quadra, sem sinal (o `app.js` troca o ícone) |
-| horário, histórico | `ki-time` | Parâmetros (botão e histórico vazio) |
+| sem sinal / sincronizar | `ki-cloud-change` | selo de conexão da quadra, sem sinal (o `app.js` troca o ícone); página "sem sinal" da chamada |
+| horário, histórico | `ki-time` | Parâmetros e histórico; ficha do aluno; ficha do professor; Mensagens; compra de créditos |
 | início do portal | `ki-home-2` | aba Início do portal; "Ir para o início" na página de erro |
-| copiar (Pix) | `ki-copy` | copiar a senha temporária |
-| risco | `ki-chart-line-down` | só a vitrine |
+| copiar (Pix) | `ki-copy` | copiar a senha temporária; Pacotes de créditos; simulador do Stripe |
+| risco | `ki-chart-line-down` | só a vitrine: o risco de evasão aparece como selo (`SinalTela.RiscoEvasao`), sem ícone |
 
 ### 9.2 Estrutura (menu e cabeçalho), fora da lista do plano
 
@@ -1527,7 +1589,7 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita 
 | 5 | Tudo sob `window.esc` (4.1) | exceção: `window.escSelecaoBusca` | Global fora do prefixo |
 | 6 | `_LayoutAutenticacao` com base no `authentication/branded`, "cor + formas em CSS" (4.3) | cartão central sobre `bg-muted/40` com o logo; sem painel de marca e sem formas | Mais simples que o previsto |
 | 7 | Header do painel com "sino" (4.3) | não construído no S2: as pendências da gestão aparecem no topo do Painel (§6.26, D55) | Adiado para o S5, com o tempo real |
-| 8 | Quadra: "a chamada funciona offline" (4.3) | só a CSP pronta (`worker-src`); o selo de conexão lê `data-pendentes`, mas a função que o atualiza não é pública | Planejado (S3) |
+| 8 | Quadra: "a chamada funciona offline" (4.3) | fila no aparelho e service worker (§6.29, X07). A reabertura sem sinal não foi validada nesta máquina: o certificado de desenvolvimento não é confiável (P37) | Construído no S3 |
 | 9 | Portal: alvos de 48 px (4.3) | botões Sim/Não com 48 px (`esc-resposta`), abas com 64 px; **chips dos filhos com 36 px** | Chips abaixo do mínimo |
 | 10 | Portal em `Areas/Portal` (3.1, 4.3) | desde o S2, `Views/Portal` + `PortalController`, sem área; as abas levam às páginas reais (Jogos e Pagamentos "em breve") | A área não fez falta; o build continua varrendo `Areas/` |
 | 11 | Componentes do DP: ficha lateral única (drawer com versão e resposta 409) (4.4) | **não adotada no S1:** a ficha é página com abas, com URL própria; a versão de linha vai num campo do formulário, e o conflito vira mensagem | Decisão D37 |

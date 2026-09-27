@@ -12,20 +12,20 @@ Registro de progresso exigido pela seção 12.4 da spec. Os 81 entregáveis e os
 
 Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-ABERTO.md).
 
-## Resumo (27/09/2026, fim do S2)
+## Resumo (27/09/2026, fim do S3)
 
 | Fatia | Itens | Concluídos | Parciais | Situação |
 |---|---:|---:|---:|---|
 | F0 — Esqueleto vivo | — | — | — | **Pronto** (sem itens de backlog) |
 | S0 — Fundação | 12 | 12 | 0 | **Pronto** e commitado (a444b48). O `BL-M02-12` fechou no S1, com o valor por turma. |
 | S1 — Cadastro | 20 | 19 | 1 | **Pronto** e commitado (b6a4c3f). O `BL-M04-06` fechou no S2, com o aviso às famílias. |
-| S2 — Mensageria e acesso | 14 | 14 | 0 | **Pronto no simulador** (27/09/2026). A prova com um número real espera a conta na Meta (P34). Commit aguardando autorização. |
-| S3 — Presença e evasão | 6 | 0 | 0 | — |
+| S2 — Mensageria e acesso | 14 | 14 | 0 | **Pronto no simulador** e commitado (c642f2f). A prova com um número real espera a conta na Meta (P34). |
+| S3 — Presença e evasão | 6 | 6 | 0 | **Pronto** (27/09/2026). A reabertura da chamada sem sinal, pelo service worker, espera um navegador que confie no certificado (P37). Commit aguardando autorização. |
 | S4 — Financeiro | 8 | 0 | 0 | — |
 | S5 — Eventos e convocações | 10 | 0 | 0 | — |
 | S6 — Portal do responsável | 6 | 0 | 0 | — |
 | S7 — Carga inicial | 5 | 0 | 0 | — |
-| **Total** | **81** | **45** | **1** | |
+| **Total** | **81** | **51** | **1** | |
 
 O parcial do S1 depende do S4:
 - `BL-M03-08`: o desligamento exige data e motivo, encerra as matrículas, libera a vaga e preserva o histórico. Encerrar a recorrência de cobrança é do S4 (`BL-M06-14`), que nasce da matrícula já encerrada.
@@ -160,16 +160,48 @@ O parcial do S1 depende do S4:
 
 ---
 
-## S3 — Presença e controle de evasão · 6 itens · A fazer
+## S3 — Presença e controle de evasão · 6 itens · **Pronto em 27/09/2026**
 
-| ID | Entregável | Status |
-|---|---|---|
-| `BL-M05-01` | Chamada da sessão de treino | A fazer (offline: X07) |
-| `BL-M05-07` | Configuração da regra de alerta e do risco | A fazer (os parâmetros já existem desde o S0) |
-| `BL-M05-08` | Disparo do alerta de faltas | A fazer |
-| `BL-M05-09` | Janela anti-duplicidade | A fazer |
-| `BL-M05-11` | Cálculo e sinalização de risco de evasão | A fazer |
-| `BL-M05-13` | Restrição de acesso a motivo de saúde | A fazer |
+**Critério de pronto da spec:** o professor faz a chamada pelo celular na quadra, sem internet, e ao reconectar o alerta de faltas sai sozinho para o responsável certo.
+
+**Situação:** demonstrado no navegador, com o celular emulado sem rede. Uma parte ficou sem validar nesta máquina: abrir ou recarregar a página da chamada já sem sinal. Isso depende do service worker, que o navegador não registra com o certificado de desenvolvimento não confiável (P37). A fila das marcações não depende dele.
+
+**Demonstrado no navegador em 27/09/2026, na escolinha A:**
+- **Quadra, em 375 px:** o login de gestão de B, que é professor em A, abriu a Chamada e viu o treino do dia.
+- **Sem sinal:**
+  - com o aparelho sem rede, marcou J com o motivo "Consulta médica", como saúde, e depois F;
+  - o selo mostrou "Sem sinal · 3 pendentes", e a fila no aparelho (IndexedDB) guardou as 3 marcações.
+- **Ao reconectar:**
+  - a fila saiu sozinha, e as 3 marcações foram aplicadas na ordem do aparelho;
+  - a presença ficou Falta, e a sessão passou a Realizada;
+  - o motivo de saúde não foi copiado para o log das marcações.
+- **Alerta:** com o limite ajustado para 1 só para a validação, a falta disparou "1 falta em setembro". A mensagem saiu para a Maria Lima, responsável da Ana, e chegou ao simulador do WhatsApp.
+- **Gestão:**
+  - a ficha da Ana, na aba Presença, mostrou a frequência, a falta e o alerta, com o destinatário e o estado da mensagem (CA-6);
+  - o painel mostrou o cartão "Risco de evasão", e a lista de alunos, o filtro "Só quem está em risco".
+- **Achados:**
+  - o texto dizia "1 falta(s)". Agora a quantidade vai flexionada ("1 falta", "3 faltas"). Os templates ainda não foram submetidos à Meta (P02), então a troca não custa nada;
+  - **defeito do S1:** incluir um horário na turma gerava as sessões dele duas vezes, e a gravação falhava no índice único. Corrigido, com teste de regressão (D65).
+- **Telas:** chamada (lista, sessão e sem sinal), ficha, alunos e painel conferidos em 375 e 320 px, no claro e no escuro, sem rolagem horizontal.
+- **Dados de validação desfeitos:** o limite voltou a 4 pela tela, com histórico. O horário de domingo saiu da turma, e a sessão de 27/09, já realizada, ficou no histórico.
+
+| ID | Entregável | Status | Onde está | Testes |
+|---|---|---|---|---|
+| `BL-M05-01` | Chamada da sessão de treino | Concluído | <ul><li>`Domain/Presencas`: `Presenca` (uma por sessão e aluno), `MarcacaoPresenca` (o registro de cada marcação recebida) e `RegraMarcacao` (D58, D59).</li><li>`ServicoChamada`: a lista do dia, a chamada da sessão e a sincronização das marcações.</li><li>Tela `/Chamada` (hoje e a chamada esquecida dos últimos 7 dias) e `/Chamada/Sessao/{id}`: P, F ou J num toque, "Todos presentes" e "Concluir chamada" na barra inferior.</li><li>Sem sinal: fila no aparelho e service worker `/sw-chamada.js` (D60, X07).</li><li>Atalhos "Chamada" na agenda e no painel.</li></ul> | `PresencaBancoTestes` (sem sinal, a fila chega depois uma vez só; a marcação atrasada não desfaz a correção; recusa de treino cancelado, dia futuro, aluno fora da turma e quem não tem acesso; o desligado sai da chamada a partir da data); `PresencaUnidadeTestes` (regra da marcação; a chamada vale no dia e depois) |
+| `BL-M05-07` | Configuração da regra de alerta e do risco | Concluído | Os 7 parâmetros `presenca.*` do catálogo (S0), lidos na hora da decisão: regra (no mês ou em sequência), limite, tom, janela anti-duplicidade, se a justificada conta, frequência mínima e janela de risco. O alerta guarda a regra, o limite e o critério da justificada com que foi decidido (regra de ouro 14). | `PresencaBancoTestes` (mudar o limite vale na falta seguinte, sem reiniciar) |
+| `BL-M05-08` | Disparo do alerta de faltas | Concluído | <ul><li>`AvaliacaoFaltas`: avaliada a cada falta registrada, inclusive a que chega da fila, na mesma gravação das presenças. A mensagem sai pelo motor (R3), para os responsáveis do aluno que recebem notificação (D61).</li><li>A correção da falta antes do envio recolhe o aviso e anula o alerta; o envio revalida o alerta (`ValidadorOrigemAlertaFaltas`, D62).</li></ul> | `PresencaBancoTestes` (a 3ª falta do mês avisa os responsáveis; corrigir antes do envio recolhe e anula; o envio revalida); `PresencaUnidadeTestes` (no mês; em sequência; a justificada só conta se a escolinha ligar; o alerta deixa de valer com a correção) |
+| `BL-M05-09` | Janela anti-duplicidade | Concluído | Por aluno, contada do último alerta disparado. Dentro da janela, o alerta fica registrado como suprimido, com o motivo, e nenhuma mensagem sai. O alerta anulado não conta para a janela (D61). | `PresencaBancoTestes` (a falta seguinte, dentro da janela, fica suprimida; o alerta anulado libera a janela); `PresencaUnidadeTestes` (o motivo da supressão) |
+| `BL-M05-11` | Cálculo e sinalização de risco de evasão | Concluído | <ul><li>`CalculadoraFrequencia`: presenças sobre as sessões marcadas na janela; abaixo do mínimo, o aluno fica em risco (D63).</li><li>Sinal, sem mensagem (R9): selo no cabeçalho da ficha, na lista de alunos (com o filtro "Só quem está em risco") e o cartão "Risco de evasão" no painel.</li></ul> | `PresencaUnidadeTestes` (o mínimo e a regra da justificada); `PresencaBancoTestes` (a ficha e o painel mostram o risco) |
+| `BL-M05-13` | Restrição de acesso a motivo de saúde | Concluído | O motivo de saúde não vai para a página da chamada, que fica guardada no aparelho, nem para o log das marcações. Na ficha, só a gestão e o professor da turma o veem (`PoliticaSaude`); para os demais, a falta aparece como "Falta justificada" (D64). | `PresencaBancoTestes` (o motivo de saúde não vai para a página guardada nem para o log, e só quem pode vê) |
+
+**Critérios de aceite tocados no S3:**
+- **CA-3:** a chamada completa a parte do S1. O desligado sai da chamada a partir da data do desligamento e continua na chamada de antes (teste). Falta a convocação (S5).
+- **CA-4:** coberto. A 3ª falta do mês dispara na hora do registro, e a do mês anterior não conta (testes de unidade e de banco).
+- **CA-5:** coberto. A falta seguinte, dentro da janela, gera o alerta suprimido e nenhuma mensagem.
+- **CA-6:** coberto. A ficha mostra qual alerta saiu, quando, para quem e o estado de cada mensagem (P09).
+- **CA-18:** consumidor `presenca.*`. O limite alterado vale na falta seguinte, sem reiniciar.
+- **CA-21:** coberto no servidor e na fila do aparelho. A reabertura da página sem sinal espera a validação do service worker (P37).
+- **R4:** o aviso de faltas vai aos responsáveis, nunca ao aluno.
 
 ## S4 — Financeiro: mensalidade, régua e conciliação · 8 itens · A fazer
 
@@ -239,10 +271,10 @@ Pendências do EX-01: P25 (plano recorrente), P26 (pacotes e preços comerciais)
 |---|---|---|---|
 | CA-1 | 2º filho reaproveita o responsável, sem duplicidade | S1 (e S7) | **Coberto no S1** (`CadastroBancoTestes` e navegador); a importação repete no S7 |
 | CA-2 | Desligamento exige data e motivo e encerra a recorrência | S1 e S4 | Parte do S1 coberta (data e motivo, matrículas encerradas); a recorrência é do S4 |
-| CA-3 | Desligado some da chamada e da convocação, fica no histórico | S1, S3 e S5 | Parte do S1 coberta (sai das listas e da turma, fica no histórico); chamada no S3, convocação no S5 |
-| CA-4 | "3 faltas no mês" dispara na 3ª falta | S3 | A fazer |
-| CA-5 | Sem dois alertas dentro da janela anti-duplicidade | S3 | A fazer |
-| CA-6 | Gestor vê na ficha qual alerta saiu, quando e para quem | S3 | A fazer (P09) |
+| CA-3 | Desligado some da chamada e da convocação, fica no histórico | S1, S3 e S5 | S1 e S3 cobertos (sai das listas, da turma e da chamada a partir da data; fica no histórico); a convocação é do S5 |
+| CA-4 | "3 faltas no mês" dispara na 3ª falta | S3 | **Coberto no S3** (`PresencaBancoTestes` e `PresencaUnidadeTestes`) |
+| CA-5 | Sem dois alertas dentro da janela anti-duplicidade | S3 | **Coberto no S3** (o alerta dentro da janela fica suprimido, sem mensagem) |
+| CA-6 | Gestor vê na ficha qual alerta saiu, quando e para quem | S3 | **Coberto no S3** (aba Presença da ficha, P09; teste e navegador) |
 | CA-7 | Pagamento confirmado muda o estado e para a régua | S4 | A fazer |
 | CA-8 | Quem pagou nunca recebe cobrança posterior | S4 | A fazer |
 | CA-9 | Parcial ou divergente fica sinalizado, sem conciliar | S4 | A fazer |
@@ -254,7 +286,7 @@ Pendências do EX-01: P25 (plano recorrente), P26 (pacotes e preços comerciais)
 | CA-15 | Uma conta mostra os dois filhos | S6 | A fazer (P10) |
 | CA-16 | Total do mês e detalhamento por filho | S6 | A fazer |
 | CA-17 | Nada essencial só no app | S2 (e S5, S6) | **Coberto no S2** (toda mensagem vai pelo WhatsApp; o portal é cópia). O S5 e o S6 repetem. |
-| CA-18 | Nenhum parâmetro exige nova entrega | S0 (+ um teste por consumidor em cada fatia) | **Parcial**: catálogo e "vale sem reiniciar" testados; no S1, o consumidor `turma.*` (a turma nova usa o valor alterado); no S2, o `mensagem.*` (janela de silêncio lida na hora do envio) |
+| CA-18 | Nenhum parâmetro exige nova entrega | S0 (+ um teste por consumidor em cada fatia) | **Parcial**: catálogo e "vale sem reiniciar" testados; no S1, o consumidor `turma.*` (a turma nova usa o valor alterado); no S2, o `mensagem.*` (janela de silêncio lida na hora do envio); no S3, o `presenca.*` (o limite alterado vale na falta seguinte) |
 | CA-19 | Nenhuma comunicação dirigida ao menor | S2 (e S5, S6) | **Coberto no S2** (destinatário nunca é o aluno: enum e restrição no banco). O S5 e o S6 repetem. |
 | CA-20 | Nenhum envio fora do catálogo de gatilhos | S2 (e S5, S6) | **Coberto no S2** (regra 1:1 por gatilho e teste de arquitetura: só o emissor cria mensagem, só o motor envia) |
-| CA-21 | Chamada sem sinal, registro da quadra prevalece | S3 | A fazer |
+| CA-21 | Chamada sem sinal, registro da quadra prevalece | S3 | **Coberto no S3** no servidor (teste) e na fila do aparelho (navegador). A reabertura da página sem sinal, pelo service worker, espera a validação (P37). |

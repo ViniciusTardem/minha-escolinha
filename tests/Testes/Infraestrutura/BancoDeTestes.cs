@@ -70,6 +70,9 @@ public sealed class BancoDeTestes : IAsyncLifetime
         GarantirBancoDeTeste();
         await using var contexto = NovoContextoSemEscolinha();
         await contexto.Database.ExecuteSqlRawAsync("""
+            DELETE FROM AlertaFaltas;
+            DELETE FROM MarcacaoPresenca;
+            DELETE FROM Presenca;
             DELETE FROM RespostaMensagem;
             DELETE FROM EventoMensagem;
             DELETE FROM Mensagem;
@@ -213,6 +216,7 @@ public sealed class AmbienteAplicacao : IDisposable
         services.AddSingleton<IAgendadorPlataforma>(Agendador);
         services.AddScoped<MinhaEscolinha.Application.Mensageria.IMensageriaRepositorio, MinhaEscolinha.Infrastructure.Mensageria.MensageriaRepositorio>();
         services.AddScoped<MinhaEscolinha.Application.Acesso.IConvitesRepositorio, MinhaEscolinha.Infrastructure.Mensageria.ConvitesRepositorio>();
+        services.AddScoped<MinhaEscolinha.Application.Presencas.IPresencaRepositorio, MinhaEscolinha.Infrastructure.Presencas.PresencaRepositorio>();
         services.AddSingleton(WhatsApp);
         services.AddSingleton<MinhaEscolinha.Application.Mensageria.IGatewayWhatsApp>(GatewayWhatsApp);
         services.AddSingleton<MinhaEscolinha.Application.Mensageria.IAgendadorMensageria>(Mensageria);

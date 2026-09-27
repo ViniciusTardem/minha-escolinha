@@ -51,9 +51,10 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
     - `Comum`, `Acesso` (M01), `Configuracao` (M02), `Eventos` e `Auditoria`;
     - `Turmas` (M04), `Alunos` (M03) e `Equipe` (M08), do S1; `Agenda`, só no domínio: compromisso datado e conflitos;
     - `Plataforma` e `Integracao` (Stripe, EX-01; WhatsApp, S2);
-    - `Mensageria` (M09), do S2: motor, templates, convites (em `Acesso`) e o portal inicial.
+    - `Mensageria` (M09), do S2: motor, templates, convites (em `Acesso`) e o portal inicial;
+    - `Presencas` (M05), do S3: chamada, alerta de faltas e risco de evasão.
     - Na `Infrastructure`, os repositórios do cadastro ficam juntos em `Cadastro/`.
-  - Próximos: `Presenca`, `Financeiro` e `Carga`.
+  - Próximos: `Financeiro` e `Carga`.
 
 ---
 
@@ -67,11 +68,13 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - datas `datetime2(3)` no horário de Brasília;
   - tabelas no singular; índices nomeados `IX_`/`UQ_`;
   - configuração EF em `Data/Configuracoes`;
-  - `rowversion` onde há concorrência: saldo de créditos, compra, turma, aluno e mensagem;
+  - `rowversion` onde há concorrência: saldo de créditos, compra, turma, aluno, mensagem e presença;
   - `TimeOnly` como `time(0)` (horários de turma e de disponibilidade).
 - **Armadilha do EF com filho novo:** com a chave preenchida, o filho novo achado pelo grafo (a coleção de uma entidade já rastreada) é tratado como existente e gera `UPDATE`, que falha por concorrência. Há duas saídas:
   - a entidade nova ganha `Guid.NewGuid()` na criação e entra por `DbSet.Add` explícito, que é o padrão dos cadastros;
   - o filho que o domínio acrescenta pela coleção (a linha do tempo e as respostas da mensagem) nasce **sem** chave, e o banco gera (`NEWSEQUENTIALID`, D56).
+
+  E o contrário: a entidade que entra por `DbSet.Add` com a chave de um pai rastreado já aparece na coleção dele (correção de relacionamentos do EF). Acrescentá-la de novo à coleção deixa a lista com ela duas vezes; confira com `Contains` antes (D65).
 - **Multi-escolinha (X01):**
   - toda entidade de escolinha implementa `IEntidadeDaEscolinha` (`Escolinha_ID`), e todo índice único começa por `Escolinha_ID`;
   - o filtro global de escolinha é fechado por padrão: sem contexto, a consulta devolve zero linhas. No EF Core 9 cada entidade tem **um** filtro e `IgnoreQueryFilters()` ignora todos; outro filtro futuro (ex.: exclusão lógica) entra na mesma expressão;
@@ -165,7 +168,12 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
     - o módulo chama um método do `EmissorGatilhos`, um por gatilho do catálogo;
     - a mensagem é gravada na mesma transação da mudança de negócio, e o despacho sai depois do commit (D45);
     - o texto vem do template, com o nome da escolinha como sujeito (D48);
-  - CPF (login ou digitado) nunca vai inteiro para o log: fica `***.456.789-**` (D52).
+  - CPF (login ou digitado) nunca vai inteiro para o log: fica `***.456.789-**` (D52);
+  - **presença:**
+    - toda marcação passa pelo `ServicoChamada.SincronizarAsync`, online ou da fila do aparelho;
+    - o id (UUID) gerado no aparelho garante que cada marcação seja aplicada uma vez só, e o registro da quadra prevalece (D59);
+    - o alerta de faltas entra na mesma gravação das presenças (D61);
+    - o motivo de saúde nunca vai para a página guardada no aparelho nem para o log das marcações (D64).
 - **Testes:**
   - xUnit + `FakeTimeProvider`;
   - com banco, `[FatoComBanco]` e a coleção `BancoDeTestes`, com `AmbienteAplicacao.ComoPlataformaAsync`, `NaEscolinhaAsync` e `SemContextoAsync`. O WhatsApp é o `GatewayWhatsAppFalso` e os jobs vão para o `AgendadorMensageriaDeTeste`;
@@ -187,6 +195,7 @@ Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons (só `ki-filled`). O mapa das tel
 - **Layouts e toque:**
   - 4 superfícies: `_LayoutAutenticacao`, `_Layout` (painel), `_LayoutQuadra` e `_LayoutPortal`;
   - quadra e portal com alvos de 48 px (`esc-toque`) e barra de ação inferior fixa.
+- **Service worker:** só na chamada (`/sw-chamada.js`, escopo `/Chamada`). Ao mudar o que ele guarda ou como guarda, suba a `VERSAO` dele, para a cópia antiga sair dos aparelhos (D60).
 - **Formato pt-BR** pelos helpers de `Formatacao`: dd/MM/aaaa, R$ 0,00, 24 h, "2,5 %", "ligado/desligado".
 - **Texto:** linguagem neutra, e o nome da escolinha nunca vem depois da palavra "escolinha". "A escolinha Escolinha X" duplica a palavra; use "Escolinha X informa" ou "em Escolinha X".
 - **Checagem de tela:**
@@ -269,7 +278,9 @@ dotnet dev-certs https --trust
   - as escolinhas A e B, com os seus gestores;
   - em A, os cadastros do S1 e a massa de demonstração;
   - o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A, para validar o escopo do professor com login real. A ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL;
-  - em A, desde o S2: a responsável Ana Almeida tem acesso (login pelo CPF, com o vínculo do Arthur confirmado), e o log tem as mensagens da validação (convite e treino cancelado).
+  - em A, desde o S2: a responsável Ana Almeida tem acesso (login pelo CPF, com o vínculo do Arthur confirmado), e o log tem as mensagens da validação (convite e treino cancelado);
+  - em A, desde o S3: uma sessão de domingo, 27/09, na turma "Sub-11 · segunda e quarta", com a falta da Ana Lima, o alerta e a mensagem à responsável.
+- **Chamada sem sinal:** o navegador só registra o service worker com certificado confiável. Em desenvolvimento, rode `dotnet dev-certs https --trust`; sem isso, a fila funciona com a página aberta, mas a página não reabre sem sinal (P37).
 - **Jobs recorrentes** (horário de Brasília, registrados no startup):
   - `sessoes-gerar-horizonte`, às 03:15: gera as sessões de treino até o fim do mês seguinte, uma escolinha por vez (D31);
   - `stripe-varredura-compras`, a cada 20 minutos: confere as compras de créditos pendentes. Sai quando o Stripe está desligado (`Stripe:Habilitado = false`);

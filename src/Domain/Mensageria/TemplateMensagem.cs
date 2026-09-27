@@ -122,11 +122,11 @@ public static class TemplatesPadrao
     public static readonly IReadOnlyList<Padrao> Todos =
     [
         new(GatilhoMensagem.FaltasAtingidas, TomMensagem.Cordial, "faltas_atingidas_cordial_v1",
-            "Olá, {{1}}! {{2}} informa: {{3}} teve {{4}} falta(s) em {{5}} nos treinos da turma {{6}}. Está tudo bem? " +
+            "Olá, {{1}}! {{2}} informa: {{3}} teve {{4}} em {{5}} nos treinos da turma {{6}}. Está tudo bem? " +
             "Se precisar, fale com a equipe.",
             "responsavel,escolinha,aluno,faltas,periodo,turma"),
         new(GatilhoMensagem.FaltasAtingidas, TomMensagem.Direto, "faltas_atingidas_direto_v1",
-            "Atenção, {{1}}: {{2}} informa que {{3}} já soma {{4}} falta(s) em {{5}} na turma {{6}}. Por favor, entre em contato com a equipe.",
+            "Atenção, {{1}}: {{2}} informa que {{3}} já soma {{4}} em {{5}} na turma {{6}}. Por favor, entre em contato com a equipe.",
             "responsavel,escolinha,aluno,faltas,periodo,turma"),
         new(GatilhoMensagem.TreinoCancelado, TomMensagem.Cordial, "treino_cancelado_v1",
             "Olá, {{1}}! {{2}} informa: o treino da turma {{3}} de {{4}} foi cancelado. Motivo: {{5}}. Aviso para: {{6}}.",

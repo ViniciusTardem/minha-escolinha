@@ -1,0 +1,11 @@
+@{
+    ViewData["Title"] = "Sem sinal";
+    ViewData["Voltar"] = "/Chamada";
+    Layout = "_LayoutQuadra";
+}
+
+@* Guardada no aparelho pelo service worker: aparece sem sinal quando a página pedida ainda não foi aberta aqui. *@
+<div class="kt-card">
+    <estado-vazio icone="ki-cloud-change" titulo="Sem sinal"
+                  texto="Esta chamada ainda não foi aberta neste aparelho. Com sinal, abra a lista da chamada uma vez: os treinos do dia ficam guardados e funcionam sem internet."></estado-vazio>
+</div>

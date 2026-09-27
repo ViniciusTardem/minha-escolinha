@@ -3,12 +3,14 @@
 @{
     ViewData["Title"] = "Alunos";
     var f = Model.Filtro;
+    var riscos = ViewData["Risco"] as IReadOnlyDictionary<Guid, RiscoEvasao> ?? new Dictionary<Guid, RiscoEvasao>();
     var podeCadastrar = Autorizacao.Pode(Recurso.CadastroAlunosResponsaveis, Operacao.Alterar) && Autorizacao.Pode(Recurso.FinanceiroEscolinha, Operacao.Alterar);
     var paginacao = PaginacaoViewModel.De(Model.Lista, "aluno(s)", new Dictionary<string, string?>
     {
         ["busca"] = f.Busca,
         ["turmaId"] = f.TurmaId?.ToString(),
-        ["situacao"] = f.Situacao == FiltroSituacaoAluno.NaEscolinha ? null : f.Situacao.ToString()
+        ["situacao"] = f.Situacao == FiltroSituacaoAluno.NaEscolinha ? null : f.Situacao.ToString(),
+        ["emRisco"] = f.EmRisco ? "true" : null
     });
     var situacoes = new (FiltroSituacaoAluno Valor, string Rotulo)[]
     {
@@ -59,13 +61,17 @@
                     }
                 </select>
             </div>
+            <label class="kt-label md:col-span-4">
+                <input class="kt-checkbox kt-checkbox-sm" type="checkbox" name="emRisco" value="true" checked="@f.EmRisco" data-esc-enviar-ao-mudar />
+                <span class="text-sm">Só quem está em risco de evasão (@riscos.Count)</span>
+            </label>
         </div>
     </form>
 
     <div class="kt-card">
         @if (Model.Lista.Itens.Count == 0)
         {
-            var semFiltro = string.IsNullOrWhiteSpace(f.Busca) && f.TurmaId is null && f.Situacao == FiltroSituacaoAluno.NaEscolinha;
+            var semFiltro = string.IsNullOrWhiteSpace(f.Busca) && f.TurmaId is null && f.Situacao == FiltroSituacaoAluno.NaEscolinha && !f.EmRisco;
             <estado-vazio icone="ki-people" titulo="@(semFiltro ? "Nenhum aluno ainda" : "Nenhum aluno no filtro")"
                           texto="@(semFiltro ? "Cadastre o primeiro aluno com os responsáveis e a matrícula na turma." : "Mude a busca, a turma ou a situação.")">
                 @if (semFiltro && podeCadastrar)
@@ -114,6 +120,10 @@
                                         @if (trialVencido)
                                         {
                                             <selo-status valor="SinalTela.TrialVencido"></selo-status>
+                                        }
+                                        @if (riscos.TryGetValue(a.Id, out var risco))
+                                        {
+                                            <selo-status valor="SinalTela.RiscoEvasao" texto="@($"Risco: {Formatacao.Percentual(risco.Percentual)}")"></selo-status>
                                         }
                                     </span>
                                 </td>

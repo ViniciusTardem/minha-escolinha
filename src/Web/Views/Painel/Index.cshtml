@@ -60,7 +60,13 @@
                 <div class="kt-card">
                     <div class="kt-card-header">
                         <h3 class="kt-card-title">Próximos treinos</h3>
-                        <a class="kt-link text-sm" href="/Agenda">Agenda completa</a>
+                        <span class="flex items-center gap-3">
+                            @if (Model.FazChamada)
+                            {
+                                <a class="kt-btn kt-btn-sm kt-btn-primary" href="/Chamada"><i class="ki-filled ki-check-squared"></i> Chamada de hoje</a>
+                            }
+                            <a class="kt-link text-sm" href="/Agenda">Agenda completa</a>
+                        </span>
                     </div>
                     <ul class="esc-linhas">
                         @foreach (var t in Model.ProximosTreinos)
@@ -83,6 +89,24 @@
         </div>
 
         <div class="flex flex-col gap-5 lg:gap-7.5">
+        @if (Model.Riscos.Count > 0)
+        {
+            <div class="kt-card">
+                <div class="kt-card-header">
+                    <h3 class="kt-card-title">Risco de evasão</h3>
+                    <a class="kt-link text-sm" href="/Alunos?emRisco=true">Ver todos (@Model.Riscos.Count)</a>
+                </div>
+                <ul class="esc-linhas">
+                    @foreach (var r in Model.Riscos.Take(6))
+                    {
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <a class="text-sm font-medium text-mono hover:text-primary truncate" href="/Alunos/Ficha/@r.AlunoId?aba=presenca">@r.Nome</a>
+                            <selo-status valor="SinalTela.RiscoEvasao" texto="@($"{Formatacao.Percentual(r.Percentual)} · {r.Presentes} de {r.Consideradas}")"></selo-status>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
         @if (Model.TrialsVencendo.Count > 0 || Model.TrialsVencidos.Count > 0)
         {
             <div class="kt-card">

@@ -402,8 +402,9 @@ public class ServicoTurmas(
                 {
                     HorarioTurma_ID = Guid.NewGuid(), Turma_ID = turma.Turma_ID, DiaSemana = h.DiaSemana, Inicio = h.Inicio!.Value, Fim = h.Fim!.Value
                 };
+                // A turma está rastreada: ao incluir o horário, o EF já o põe na coleção. Incluir de novo duplicaria as sessões.
+                if (!turma.Horarios.Contains(novo)) turma.Horarios.Add(novo);
                 repositorio.AdicionarHorario(novo);
-                turma.Horarios.Add(novo);
                 ficam.Add(novo.HorarioTurma_ID);
                 continue;
             }

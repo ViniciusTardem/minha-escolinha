@@ -1,0 +1,17 @@
+@model SessaoDaChamada
+<li>
+    <a class="esc-item-chamada" href="/Chamada/Sessao/@Model.Id" data-esc-chamada-sessao>
+        <span class="flex flex-col gap-0.5 min-w-0">
+            <span class="text-base font-semibold text-mono truncate">@Model.Turma</span>
+            <span class="text-sm text-secondary-foreground">@Formatacao.DiaCurto(Model.Data) · @Formatacao.Horario(Model.Inicio, Model.Fim)</span>
+            <span class="text-xs text-secondary-foreground truncate">@Model.Local · @Model.Professor</span>
+        </span>
+        <span class="flex flex-col items-end gap-1 shrink-0">
+            <selo-status valor="Model.Situacao"></selo-status>
+            @if (Model.Marcados > 0)
+            {
+                <span class="text-xs text-secondary-foreground">@Model.Marcados marcado(s)</span>
+            }
+        </span>
+    </a>
+</li>

@@ -341,6 +341,19 @@ public class Mensagem : IEntidadeDaEscolinha
         Variaveis = Variaveis.Replace(trecho, mascara, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// O aviso do portal que ninguém abriu ainda sai do portal quando a origem deixa de valer (regra de ouro 5: a falta
+    /// que disparou o alerta foi corrigida). O aviso já lido fica, como a mensagem de WhatsApp que já saiu.
+    /// </summary>
+    public bool RecolherDoPortal(string motivo, DateTime agora)
+    {
+        if (Canal != CanalMensagem.Portal || LidaEm is not null || Situacao == SituacaoMensagem.Suprimida) return false;
+        Situacao = SituacaoMensagem.Suprimida;
+        Motivo = TextoHelper.Truncar(motivo, TamanhoMotivo);
+        Registrar(TipoEventoMensagem.Suprimida, agora, motivo);
+        return true;
+    }
+
     /// <summary>Aviso do portal aberto por quem recebeu (captura de leitura pelo portal, BL-M09-07).</summary>
     public bool MarcarLidaNoPortal(DateTime agora)
     {

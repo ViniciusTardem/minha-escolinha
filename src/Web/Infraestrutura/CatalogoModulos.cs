@@ -87,7 +87,7 @@ public static class CatalogoModulos
             "O professor marca presença e falta pelo celular. Faltas que atingem a regra avisam o responsável na hora, e a frequência baixa " +
             "sinaliza risco de evasão.",
             ["Presença em um toque", "Funciona sem sinal", "Alerta de faltas ao responsável", "Risco de evasão"],
-            "S3", SituacaoModulo.Planejado, "/chamada", Recurso.RegistroPresenca),
+            "S3", SituacaoModulo.Disponivel, "/Chamada", Recurso.RegistroPresenca),
 
         new("jogos", "Jogos e convocações", "ki-cup", SecaoOperacao,
             "Os jogos do fim de semana e as convocações em um fluxo só.",

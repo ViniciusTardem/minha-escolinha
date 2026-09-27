@@ -98,8 +98,17 @@ public interface IMensageriaRepositorio
     /// <summary>A mensagem para enviar ou atualizar (rastreada, com os eventos).</summary>
     Task<Mensagem?> ObterMensagemAsync(Guid id, CancellationToken ct = default);
 
-    /// <summary>As mensagens de uma origem que ainda estão na fila (pendentes ou retidas), rastreadas.</summary>
-    Task<IReadOnlyList<Mensagem>> EmFilaDaOrigemAsync(string tipoOrigem, Guid origemId, CancellationToken ct = default);
+    /// <summary>
+    /// As mensagens de uma origem que ainda dá para recolher, rastreadas: o WhatsApp na fila (pendente ou retido) e o aviso do
+    /// portal que ninguém abriu.
+    /// </summary>
+    Task<IReadOnlyList<Mensagem>> CancelaveisDaOrigemAsync(string tipoOrigem, Guid origemId, CancellationToken ct = default);
+
+    /// <summary>Alguma mensagem da origem já chegou à família: WhatsApp enviado (ou além) ou aviso do portal aberto.</summary>
+    Task<bool> AlgumaSaiuDaOrigemAsync(string tipoOrigem, Guid origemId, CancellationToken ct = default);
+
+    /// <summary>As mensagens de várias origens do mesmo tipo, para mostrar (sem rastreio).</summary>
+    Task<IReadOnlyList<Mensagem>> MensagensDasOrigensAsync(string tipoOrigem, IReadOnlyCollection<Guid> origens, CancellationToken ct = default);
 
     /// <summary>A mensagem para mostrar (sem rastreio, com eventos e respostas).</summary>
     Task<Mensagem?> DetalharMensagemAsync(Guid id, CancellationToken ct = default);
@@ -120,6 +129,9 @@ public interface IMensageriaRepositorio
 
     /// <summary>Responsáveis que recebem notificação, dos alunos que treinam na turma (trial e ativo com matrícula ativa).</summary>
     Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisDaTurmaAsync(Guid turmaId, CancellationToken ct = default);
+
+    /// <summary>Responsáveis do aluno que recebem notificação (o vínculo diz quem recebe, BL-M03-03).</summary>
+    Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisDoAlunoAsync(Guid alunoId, CancellationToken ct = default);
 
     Task<IReadOnlyList<TemplateMensagem>> ListarTemplatesAsync(CancellationToken ct = default);
     Task<TemplateMensagem?> ObterTemplateAsync(Guid id, CancellationToken ct = default);

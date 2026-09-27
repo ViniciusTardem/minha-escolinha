@@ -165,7 +165,8 @@ public class ServicoAgenda(
                 s.Turma is { } t ? nomesModalidade.GetValueOrDefault(t.Modalidade_ID) ?? "—" : "—",
                 s.Local_ID, s.Local?.Nome ?? "—", s.Professor_ID, s.Professor?.Nome ?? "—", s.Situacao, s.MotivoCancelamento,
                 Alertas(s, professores.GetValueOrDefault(s.Professor_ID), sobrepostos, localOcupado),
-                podeCancelar && s.PodeCancelar))
+                podeCancelar && s.PodeCancelar,
+                podeCancelar && s.AceitaChamada(hoje)))
             .ToList();
 
         var turmasNoEscopo = (await turmas.ListarTurmasAsync(alcance, incluirEncerradas: false, ct))

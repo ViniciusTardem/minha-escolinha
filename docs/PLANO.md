@@ -8,7 +8,7 @@ Plano vivo, atualizado ao fim de cada fatia. Cada documento responde por uma coi
 | **Como** construir | A herança do AlternativaDepartamentoPessoal ([`HERANCA.md`](HERANCA.md)) |
 | **Em que ordem** e onde estamos | Este plano |
 
-Última atualização: **27/09/2026**. F0, S0, o extra EX-01 e o S1 (com o extra EX-02) estão commitados na `main`. O S2 está pronto no simulador e aguarda a autorização de commit. A prova com um número real espera a conta na Meta (P34). A próxima fatia é o S3.
+Última atualização: **27/09/2026**. F0, S0, o extra EX-01, o S1 (com o extra EX-02) e o S2 estão commitados na `main`. A prova do S2 com um número real espera a conta na Meta (P34). O S3 está pronto e aguarda a autorização de commit. A próxima fatia é o S4.
 
 ---
 
@@ -78,9 +78,9 @@ O registro completo, com data, está em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-AB
 | S0 — Fundação: conta, identidade e permissões | 12 | **Pronto** e commitado (`a444b48`). O parcial (`BL-M02-12`) fechou no S1, com a Turma. | 26/09/2026 |
 | Extra EX-01 — Compra de pacotes de créditos pelo Stripe da LDNA (X08) | — | **Pronto** no modo Simulado e commitado (`3c28d97`); falta configurar as chaves de teste | 26/09/2026 |
 | S1 — Cadastro: turma, sessões, aluno, responsável, equipe | 20 | **Pronto** e commitado (`b6a4c3f`): 19 concluídos e 1 parcial, que depende do S4 (recorrência no desligamento). O `BL-M04-06` fechou no S2. Com o extra EX-02 (alerta de quadra ocupada). | 27/09/2026 |
-| S2 — Mensageria e acesso das famílias | 14 | **Pronto no simulador**, com os 14 concluídos. A prova com um número real espera a conta na Meta (P34). Aguarda autorização de commit. | 27/09/2026 |
-| S3 — Presença e controle de evasão | 6 | Próxima | — |
-| S4 — Financeiro: mensalidade, régua e conciliação | 8 | — | — |
+| S2 — Mensageria e acesso das famílias | 14 | **Pronto no simulador** e commitado (`c642f2f`), com os 14 concluídos. A prova com um número real espera a conta na Meta (P34). | 27/09/2026 |
+| S3 — Presença e controle de evasão | 6 | **Pronto**, com os 6 concluídos. A reabertura da chamada sem sinal pelo service worker espera um navegador que confie no certificado e o teste em aparelho real (P37). Aguarda autorização de commit. | 27/09/2026 |
+| S4 — Financeiro: mensalidade, régua e conciliação | 8 | Próxima | — |
 | S5 — Eventos e convocações | 10 | — | — |
 | S6 — Portal do responsável | 6 | — | — |
 | S7 — Carga inicial da escolinha piloto | 5 | — | — |
@@ -92,7 +92,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
 ## 4. Próximos passos
 
 ### 4.0 Agora
-1. **Autorizar o commit do S2**, direto na `main`, como o S1.
+1. **Autorizar o commit do S3**, direto na `main`, como o S2.
 2. **Provar o S2 com um número real** (P34), assim que a LDNA tiver:
    - a conta WhatsApp Business na Cloud API;
    - a URL pública em HTTPS para o webhook;
@@ -103,28 +103,48 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
    - convide um número de teste;
    - responda pelo celular;
    - confira a resposta e o log em Mensagens.
-3. **S3 — Presença e controle de evasão:** próxima fatia (§4.1).
-4. **Stripe em modo de teste**, quando o responsável quiser sair do simulador:
+3. **S4 — Financeiro:** próxima fatia (§4.1).
+4. **Validar a chamada sem sinal com o service worker** (P37):
+   - confiar o certificado de desenvolvimento (§7) e repetir o roteiro: abrir a lista com sinal, tirar a rede, recarregar a sessão e marcar;
+   - antes do piloto, repetir num Android e num iPhone, no servidor com HTTPS.
+5. **Stripe em modo de teste**, quando o responsável quiser sair do simulador:
    - criar um sandbox próprio no painel do Stripe (P27);
    - gravar em user-secrets `Stripe:Modo = Teste` e `Stripe:ChaveSecreta` (chave de teste, `sk_test_` ou `rk_test_` restrita);
    - para os webhooks em localhost, rodar o Stripe CLI (`stripe listen --forward-to https://localhost:7186/api/v1/webhooks/stripe`) e gravar o `whsec_` que ele mostrar em `Stripe:SegredoWebhook`. Sem isso, a volta do pagamento e a varredura confirmam as compras.
-5. Confiar o certificado de desenvolvimento (§7).
+### 4.1 O que o S4 precisa e ainda não existe
+- **Critério de pronto da spec:** a mensalidade do mês é emitida sozinha, o lembrete sai antes do vencimento, o pagamento é conciliado sem ação humana e a régua para na hora.
+- **Decisões que o S4 toca:**
+  - o cliente Asaas: reaproveitar um dos dois achados na herança (HERANCA §3) ou escrever o próprio, no padrão do DP, com simulador `/dev/asaas` e trava de ambiente;
+  - P17: vencimento, emissão antecipada, pró-rata e pagador sem CPF;
+  - P18: dinheiro em espécie, estorno e chargeback;
+  - P22: limpeza do corpo bruto dos webhooks;
+  - P36: o descadastro pelo WhatsApp diante da mensagem essencial de cobrança.
+- **O que as fatias anteriores deixam pronto:**
+  - a conta Asaas da escolinha, com a chave cifrada, e os parâmetros `financeiro.*` (S0);
+  - a matrícula com o valor próprio e o pagador marcado no vínculo, e o desligamento que encerra as matrículas (S1). É dele que nasce o encerramento da recorrência (`BL-M06-14`, CA-2);
+  - os gatilhos de mensalidade e de pagamento no catálogo, com templates; a revalidação da origem no envio (CA-8), a janela de silêncio e a retenção das essenciais sem crédito (S2);
+  - o padrão de webhook bruto + job + varredura, do Stripe (EX-01) e do WhatsApp (S2).
+- **Maior risco do S4:** o CA-8 ("quem pagou nunca recebe cobrança") e a semântica da Asaas (valor original, data do pagamento, estorno).
 
-### 4.1 O que o S3 precisa e ainda não existe
-- **Decisões que o S3 toca:**
-  - o teste de navegador do CA-21 (D22): `Microsoft.Playwright` nos testes (dependência nova, 12.3) ou roteiro assistido;
-  - a chamada offline (X07): service worker e IndexedDB, desvio a registrar com detalhe;
-  - P04: a falta justificada conta para o alerta?
-  - P09: o alerta na ficha (CA-6);
-  - P32: a meta de frequência da turma no risco;
-  - D18: o `MapStaticAssets` e o desempenho da quadra com sinal ruim.
-- **O que o S2 deixa pronto para o S3:**
-  - o gatilho "Regra de faltas atingida" no catálogo, com os templates cordial e direto. O tom vem do parâmetro `presenca.alerta.tom`, e o emissor só precisa de um método novo;
-  - a mensagem guarda o aluno (`Aluno_ID`): o log por aluno na ficha (CA-6, P09) é uma consulta;
-  - a janela de silêncio, os créditos, a retenção e o log já valem para qualquer gatilho.
-- **Maior risco do S3:** offline no iOS (sem Background Sync).
+### 4.2 O que o S3 entregou (referência)
+- **Chamada na quadra** (`/Chamada`):
+  - o treino do dia e a chamada esquecida dos últimos 7 dias;
+  - P, F ou J num toque, "Todos presentes" e "Concluir chamada" na barra inferior (D58).
+- **Sem sinal** (X07):
+  - fila no aparelho com UUID e sequência por marcação;
+  - o servidor aplica cada marcação uma vez só, e o registro da quadra prevalece (D59);
+  - service worker com as páginas da chamada; a página guardada não traz motivo de saúde (D60).
+- **Alerta de faltas:** no mês ou em sequência, avaliado a cada falta, na mesma gravação; janela anti-duplicidade por aluno; a falta corrigida recolhe o aviso e anula o alerta (D61, D62).
+- **Risco de evasão:** frequência na janela contra o mínimo da escolinha; selo na ficha e na lista, e cartão no painel (D63).
+- **Saúde:** o motivo de saúde fica só na presença, visível para a gestão e o professor da turma (D64).
+- **Ficha do aluno:** aba Presença com a frequência, as presenças e os alertas, com os destinatários e o estado das mensagens (CA-6).
+- **Defeito do S1 corrigido:** o horário novo da turma gerava sessões em dobro (D65).
+- **Testes:** 338 passando, 19 deles novos no S3. Entre eles:
+  - CA-4, CA-5, CA-6 e CA-21, e o CA-3 na chamada;
+  - o consumidor `presenca.*` (CA-18);
+  - a restrição do motivo de saúde.
 
-### 4.2 O que o S2 entregou (referência)
+### 4.3 O que o S2 entregou (referência)
 - **Motor único de mensagens** (R3):
   - catálogo fechado de 11 gatilhos, com uma regra por gatilho;
   - outbox na mesma gravação do negócio, despacho depois do commit e varredura a cada 5 min (D45);
@@ -149,7 +169,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - isolamento A/B das mensagens e dos convites;
   - o teste de arquitetura: só o emissor cria mensagem e só o motor envia.
 
-### 4.3 O que o S1 entregou (referência)
+### 4.4 O que o S1 entregou (referência)
 - **Turmas e agenda:**
   - locais e professores, com disponibilidade semanal e indisponibilidades;
   - turma em etapas, com os valores iniciais do catálogo;
@@ -171,7 +191,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - escopo do professor e isolamento A/B;
   - saúde fora do registro de alterações.
 
-### 4.4 O que o S0 entregou (referência)
+### 4.5 O que o S0 entregou (referência)
 - **Criação da escolinha pela plataforma:** assistente em 3 etapas (escolinha → modalidade → 1º gestor). Grava tudo junto: escolinha, modalidade, os 26 parâmetros, conta de créditos, gestor e auditoria. A senha temporária aparece uma vez.
 - **Acesso:**
   - login com troca obrigatória de senha e bloqueio;
@@ -191,7 +211,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - criação atômica;
   - regras de arquitetura: relógio, `IgnoreQueryFilters`, acesso declarado, binding de coleções.
 
-### 4.5 O que o F0 entregou (referência)
+### 4.6 O que o F0 entregou (referência)
 - **Base do projeto:**
   - solução de 4 camadas + testes, em .NET 9;
   - Central Package Management, com o prefixo `MinhaEscolinha` nas DLLs;
@@ -214,7 +234,6 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
 
 | Fatia | O essencial | Maior risco |
 |---|---|---|
-| S3 | <ul><li>Chamada offline (service worker + IndexedDB, UUID por marcação, a quadra prevalece).</li><li>Alerta avaliado a cada falta, inclusive na sincronização.</li><li>Anti-duplicidade e risco de evasão.</li></ul> | Offline no iOS (sem Background Sync) |
 | S4 | <ul><li>Recorrência própria por matrícula → cobrança prevista → emissão por job → régua por avaliador → webhook + varredura.</li><li>Fila de divergências.</li><li>**Reaproveitar um cliente Asaas existente** (SDK `Projetos\Aplicativos\Asaas API` ou o cliente da AgenciaAzul; ver HERANCA §3).</li></ul> | CA-8 e a semântica da Asaas (valor original, estorno) |
 | S5 | <ul><li>Evento genérico, convocação por convocado, lote com rascunho até o disparo.</li><li>Painel em tempo real (SignalR, padrão do DP).</li><li>Lembretes, cancelamento e adiamento, alertas de conflito.</li></ul> | O fluxo em lote no celular e o limite de envio de um número novo |
 | S6 | <ul><li>`Areas/Portal`: filhos verificados, total do mês por filho.</li><li>Pix obtido antes por job; fatura Asaas para cartão.</li><li>Resposta à convocação.</li></ul> | Dado de menor exposto |
@@ -253,6 +272,7 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
   - as escolinhas "Escolinha Piloto Londrina" (A) e "Escolinha Bola na Rede" (B), cada uma com o seu gestor, criadas na validação do S0. As senhas não ficam em arquivo versionado;
   - em A, desde o S1: as turmas, os alunos e as famílias da validação e da massa de demonstração (`/dev/massa`);
   - em A, desde o S2: a responsável Ana Almeida ativou o acesso sem e-mail (login pelo CPF), e o vínculo com o Arthur foi confirmado. O treino de sábado, 03/10, da Sub-9 foi cancelado na validação, e o log tem as mensagens do convite e do cancelamento;
+  - em A, desde o S3: a turma "Sub-11 · segunda e quarta" tem uma sessão realizada no domingo, 27/09, com a falta da Ana Lima, o alerta disparado e a mensagem à Maria Lima. Para a validação, o limite de faltas foi a 1 e voltou a 4, e um horário de domingo entrou e saiu da turma, tudo com histórico;
   - para validar o escopo do professor com um login real, o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A: a ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL, e o vínculo Professor em A foi criado.
 
 ---
@@ -274,7 +294,8 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | A "Especificação Funcional e Técnica", se existir | Detalhe de campos por módulo | P21 |
 | Revisão jurídica dos termos de consentimento (tratamento de dados e uso de imagem), incluindo o WhatsApp no termo de tratamento de dados | Produção; opt-in da Meta | P29, P15 |
 | Decidir: a mudança de horário da turma avisa as famílias ("Treino remarcado")? A gestão é avisada das respostas livres? "SAIR" desliga o recebimento? | Nada bloqueia; seguem os encaminhamentos provisórios | P33, P35, P36 |
-| Confirmar com a escolinha: desligar direto quem está em pausa; meta de frequência por turma; alerta de quadra ocupada | Nada bloqueia; seguem os encaminhamentos provisórios | P28, P31, P32 |
+| Confirmar com a escolinha: a meta de frequência da turma entra no risco? O risco exige um mínimo de sessões? A quadra usa aparelho compartilhado? | Nada bloqueia; seguem os encaminhamentos provisórios | P32, P38, P39 |
+| Validar a chamada sem sinal com o service worker: certificado de desenvolvimento confiável e, antes do piloto, Android e iPhone no servidor com HTTPS | A reabertura da chamada sem sinal (CA-21) | P37 |
 
 ---
 
@@ -303,3 +324,8 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | 27/09/2026 | **Validação no navegador** (Playwright), com a gestão de A e de B, a responsável que ativou o acesso e a equipe da plataforma: <ul><li>convite na janela de silêncio e reenvio;</li><li>ativação pelo CPF e portal;</li><li>confirmação do vínculo;</li><li>cancelamento do treino, com 32 WhatsApp e 1 aviso no portal;</li><li>entrega, leitura e resposta pelo simulador;</li><li>login pelo CPF e isolamento A/B;</li><li>edição de template.</li></ul> |
 | 27/09/2026 | **Defeitos achados nos testes e na validação, e corrigidos:** <ul><li>Os eventos novos da mensagem eram gravados como UPDATE (id preenchido pela coleção). Agora o banco gera o id (D56).</li><li>A mensagem do convite substituído ou cancelado ficava na fila até o fim da janela de silêncio. Agora é suprimida na hora (D51).</li><li>"A escolinha Escolinha Piloto Londrina" nos templates e na ativação. Agora o nome entra como sujeito (D48).</li><li>O link longo do convite vazava do cartão no simulador. No celular, as listas de mensagens e de convites escondiam a situação e as ações à direita. Agora o dado secundário desce para a célula principal.</li><li>O CPF usado como login ia inteiro para o log. Agora vai mascarado.</li><li>Textos: "Sai às" + data, "resposta ... enviado" e a tela de cancelamento que ainda falava em "próxima etapa do piloto".</li></ul> |
 | 27/09/2026 | **Resultado:** build sem aviso; 319 testes passando (61 novos no S2); 0 classes faltando; nenhuma rolagem horizontal, nem da tabela, em 375 e 320 px nas telas do S2, no claro e no escuro. Aguarda autorização de commit. |
+| 27/09/2026 | **Commit do S2** na `main` (`c642f2f`), autorizado pelo responsável ("continue"), que pediu a lista das pendências no fim de tudo. |
+| 27/09/2026 | **S3 construído** (6 itens), direto na `main`: <ul><li>chamada na quadra, com fila no aparelho e service worker;</li><li>alerta de faltas pelo motor, com janela anti-duplicidade e anulação na correção;</li><li>risco de evasão;</li><li>restrição do motivo de saúde;</li><li>aba Presença na ficha.</li></ul> Decisões D58 a D65; pendências P37 a P39. O teste do CA-21 ficou no roteiro assistido, sem dependência nova (D22). |
+| 27/09/2026 | **Validação no navegador** (Playwright), com o celular emulado sem rede: <ul><li>marcações guardadas no aparelho;</li><li>sincronização ao reconectar;</li><li>o alerta e a mensagem à responsável certa;</li><li>a ficha, o painel e a lista de alunos em risco;</li><li>as telas novas em 375 e 320 px, no claro e no escuro.</li></ul> O service worker não registra nesta máquina: o certificado de desenvolvimento não é confiável (P37). |
+| 27/09/2026 | **Defeitos achados e corrigidos:** <ul><li>Incluir um horário na turma gerava as sessões dele duas vezes, e a gravação falhava (defeito do S1, D65, com teste de regressão).</li><li>O aviso de faltas dizia "1 falta(s)". Agora a quantidade vai flexionada, nos templates e no banco de desenvolvimento.</li></ul> |
+| 27/09/2026 | **Resultado:** build sem aviso; 338 testes passando (19 novos no S3); 0 classes faltando; nenhuma rolagem horizontal em 375 e 320 px nas telas do S3, no claro e no escuro. Aguarda autorização de commit. |

@@ -118,6 +118,19 @@
   window.addEventListener("online", atualizarConexao);
   window.addEventListener("offline", atualizarConexao);
 
+  // ── Chamada sem sinal (S3): o que ficou guardado no aparelho sai no logout e na tela de login ──
+  function limparChamadaGuardada() {
+    if (!("caches" in window)) return;
+    caches.keys().then(function (chaves) {
+      chaves.forEach(function (chave) { if (chave.indexOf("esc-chamada-") === 0) caches.delete(chave); });
+    }).catch(function () { });
+  }
+  document.addEventListener("submit", function (e) {
+    var form = e.target;
+    if (form && /\/Conta\/Sair$/i.test(form.getAttribute("action") || "")) limparChamadaGuardada();
+  }, true);
+  if (document.querySelector("[data-esc-limpar-offline]")) limparChamadaGuardada();
+
   // ── fetch com antiforgery e tratamento de sessão expirada (401) ──
   function tokenAntiforgery() {
     var meta = document.querySelector('meta[name="csrf-token"]');
@@ -126,6 +139,7 @@
 
   window.esc = window.esc || {};
   window.esc.toast = toast;
+  window.esc.atualizarConexao = atualizarConexao;
   window.esc.fetch = function (url, opcoes) {
     opcoes = opcoes || {};
     var cabecalhos = new Headers(opcoes.headers || {});

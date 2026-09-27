@@ -58,7 +58,8 @@ public class ServicoAlunos(
     IValidator<NovoAlunoRequisicao> validadorNovo,
     IValidator<DadosAlunoRequisicao> validadorDados,
     IValidator<SaudeAlunoRequisicao> validadorSaude,
-    IValidator<MudarSituacaoRequisicao> validadorSituacao)
+    IValidator<MudarSituacaoRequisicao> validadorSituacao,
+    Presencas.IRiscoEvasao risco)
 {
     public const string Entidade = nameof(Aluno);
     private static readonly CultureInfo PtBr = new("pt-BR");
@@ -66,7 +67,8 @@ public class ServicoAlunos(
     public async Task<Pagina<AlunoNaLista>> ListarAsync(FiltroAlunos filtro, int pagina, CancellationToken ct = default)
     {
         var alcance = await escopo.TurmasAsync(Recurso.CadastroAlunosResponsaveis, ct);
-        return await repositorio.ListarAsync(filtro, alcance, Pagina<AlunoNaLista>.Normalizar(pagina), Pagina<AlunoNaLista>.TamanhoPadrao, ct);
+        IReadOnlyCollection<Guid>? somente = filtro.EmRisco ? (await risco.AlunosEmRiscoAsync(ct)).Select(r => r.AlunoId).ToList() : null;
+        return await repositorio.ListarAsync(filtro, alcance, somente, Pagina<AlunoNaLista>.Normalizar(pagina), Pagina<AlunoNaLista>.TamanhoPadrao, ct);
     }
 
     /// <summary>Os alunos em trial com prazo vencendo (até o aviso do parâmetro) ou vencido — sinal na tela, sem mensagem (P12).</summary>
