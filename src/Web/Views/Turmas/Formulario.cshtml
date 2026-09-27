@@ -1,0 +1,205 @@
+@model TurmaRequisicao
+@{
+    var nova = Model.Id is null;
+    ViewData["Title"] = nova ? "Nova turma" : $"Editar {Model.Nome}";
+    var opcoes = (OpcoesTurma)ViewData["Opcoes"]!;
+    var conflitos = ViewData["Conflitos"] as IReadOnlyList<ConflitoAgenda>;
+    var mensalidade = ViewData.ModelState[nameof(Model.Mensalidade)]?.AttemptedValue ?? Moeda.ParaCampo(Model.Mensalidade);
+    var voltarAqui = Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString);
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@(nova ? "Nova turma" : Model.Nome)" voltar-href="@(nova ? "/Turmas" : $"/Turmas/Ficha/{Model.Id}")"
+                      voltar-texto="@(nova ? "Turmas" : "Ficha da turma")"
+                      descricao="Horários, local, professor, vagas e mensalidade. Ao salvar, as sessões de treino até o fim do mês seguinte aparecem na agenda."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[900px]">
+        @* Na edição os botões de etapa não existem, e o assistente.js deixa o formulário inteiro à vista. *@
+        <form method="post" asp-action="@(nova ? "Nova" : "Editar")" asp-route-id="@Model.Id" novalidate data-esc-assistente>
+            <input type="hidden" asp-for="Versao" />
+            @if (nova)
+            {
+                <div class="kt-card-header flex-wrap gap-3 py-4">
+                    <h3 class="kt-card-title">Cadastro</h3>
+                    <ol class="esc-passos" data-esc-passos></ol>
+                </div>
+            }
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+
+                <section class="flex flex-col gap-5" data-esc-passo data-esc-passo-titulo="Turma">
+                    <h4 class="esc-passo-cabecalho">Turma</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="flex flex-col gap-1 md:col-span-2">
+                            <label class="kt-form-label" asp-for="Nome">Nome da turma</label>
+                            <input class="kt-input" asp-for="Nome" required maxlength="100" placeholder="Ex.: Sub-9 · terça e quinta" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="ModalidadeId">Modalidade</label>
+                            <select class="kt-select" asp-for="ModalidadeId" required>
+                                <option value="">Selecione</option>
+                                @foreach (var m in opcoes.Modalidades)
+                                {
+                                    <option value="@m.Id">@m.Nome</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Categoria">Categoria ou faixa etária <span class="text-muted-foreground">(opcional)</span></label>
+                            <input class="kt-input" asp-for="Categoria" maxlength="60" placeholder="Ex.: Sub-9 ou 2016 e 2017" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="DataInicio">Início das aulas</label>
+                            <input class="kt-input" asp-for="DataInicio" type="date" required />
+                            <span class="text-xs text-muted-foreground">As sessões começam nesta data (ou hoje, o que vier depois).</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="flex flex-col gap-4" data-esc-passo data-esc-passo-titulo="Horários">
+                    <h4 class="esc-passo-cabecalho">Horários</h4>
+                    <p class="text-sm text-secondary-foreground">Os dias e horários fixos de treino. Cada linha vira uma sessão por semana.</p>
+                    <div class="flex flex-col gap-3" data-esc-linhas data-esc-linhas-prefixo="Horarios">
+                        <ul class="flex flex-col gap-3" data-esc-linhas-lista>
+                            @for (var i = 0; i < Model.Horarios.Count; i++)
+                            {
+                                <li class="esc-linha-horario" data-esc-linha>
+                                    <input type="hidden" asp-for="Horarios[i].Id" data-esc-linhas-id />
+                                    <select class="kt-select" asp-for="Horarios[i].DiaSemana" aria-label="Dia da semana">
+                                        @foreach (var dia in DiasSemana.Ordem)
+                                        {
+                                            <option value="@dia">@DiasSemana.Nome(dia)</option>
+                                        }
+                                    </select>
+                                    <input class="kt-input" asp-for="Horarios[i].Inicio" type="time" aria-label="Início" />
+                                    <input class="kt-input" asp-for="Horarios[i].Fim" type="time" aria-label="Fim" />
+                                    <button class="kt-btn kt-btn-icon kt-btn-ghost" type="button" data-esc-linhas-remover hidden aria-label="Retirar horário"><i class="ki-filled ki-trash"></i></button>
+                                </li>
+                            }
+                        </ul>
+                        <template data-esc-linhas-modelo>
+                            <li class="esc-linha-horario" data-esc-linha>
+                                <input type="hidden" name="Horarios[__i__].Id" data-esc-linhas-id />
+                                <select class="kt-select" name="Horarios[__i__].DiaSemana" aria-label="Dia da semana">
+                                    @foreach (var dia in DiasSemana.Ordem)
+                                    {
+                                        <option value="@dia">@DiasSemana.Nome(dia)</option>
+                                    }
+                                </select>
+                                <input class="kt-input" name="Horarios[__i__].Inicio" type="time" aria-label="Início" />
+                                <input class="kt-input" name="Horarios[__i__].Fim" type="time" aria-label="Fim" />
+                                <button class="kt-btn kt-btn-icon kt-btn-ghost" type="button" data-esc-linhas-remover aria-label="Retirar horário"><i class="ki-filled ki-trash"></i></button>
+                            </li>
+                        </template>
+                        <div>
+                            <button class="kt-btn kt-btn-sm kt-btn-outline" type="button" data-esc-linhas-adicionar hidden><i class="ki-filled ki-plus"></i> Outro horário</button>
+                        </div>
+                        <span class="text-xs text-muted-foreground">Linha sem horário é ignorada. Mudar um horário depois ajusta só as sessões previstas que ainda não aconteceram; as canceladas ficam como estão.@(nova ? "" : " As famílias ainda não são avisadas da mudança pelo sistema.")</span>
+                    </div>
+                </section>
+
+                <section class="flex flex-col gap-5" data-esc-passo data-esc-passo-titulo="Local e professor">
+                    <h4 class="esc-passo-cabecalho">Local e professor</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="LocalId">Local de treino</label>
+                            <select class="kt-select" asp-for="LocalId" required data-esc-selecao-busca data-esc-busca-placeholder="Buscar local…">
+                                <option value="">Selecione</option>
+                                @foreach (var l in opcoes.Locais)
+                                {
+                                    <option value="@l.Id">@l.Nome</option>
+                                }
+                            </select>
+                            <a class="kt-link text-xs" href="/Locais/Novo?voltar=@voltarAqui">Cadastrar outro local</a>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="ProfessorId">Professor responsável</label>
+                            <select class="kt-select" asp-for="ProfessorId" required data-esc-selecao-busca data-esc-busca-placeholder="Buscar professor…">
+                                <option value="">Selecione</option>
+                                @foreach (var p in opcoes.Professores)
+                                {
+                                    <option value="@p.Id">@p.Nome</option>
+                                }
+                            </select>
+                            <a class="kt-link text-xs" href="/Professores/Novo">Cadastrar outro professor</a>
+                        </div>
+                    </div>
+                    <p class="text-xs text-muted-foreground">Ao salvar, o sistema confere a agenda: outra turma do professor ou no mesmo local no mesmo horário, e horário fora da disponibilidade ou numa indisponibilidade do professor, geram alerta (dá para salvar mesmo assim, como na meia quadra).</p>
+                </section>
+
+                <section class="flex flex-col gap-5" data-esc-passo data-esc-passo-titulo="Vagas e valores">
+                    <h4 class="esc-passo-cabecalho">Vagas e valores</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Capacidade">Capacidade</label>
+                            <div class="kt-input-group">
+                                <input class="kt-input" asp-for="Capacidade" type="number" min="1" max="200" required />
+                                <span class="kt-input-addon">vagas</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Mensalidade">Mensalidade</label>
+                            <div class="kt-input-group">
+                                <span class="kt-input-addon">R$</span>
+                                <input class="kt-input" asp-for="Mensalidade" type="text" inputmode="decimal" value="@mensalidade" placeholder="0,00" required />
+                            </div>
+                            <span class="text-xs text-muted-foreground">O valor de cada matrícula nova nesta turma (dá para ajustar por aluno).</span>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="MinimoConfirmados">Mínimo de confirmados por jogo</label>
+                            <div class="kt-input-group">
+                                <input class="kt-input" asp-for="MinimoConfirmados" type="number" min="1" max="30" required />
+                                <span class="kt-input-addon">atletas</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="MetaFrequenciaPercentual">Meta de frequência <span class="text-muted-foreground">(opcional)</span></label>
+                            <div class="kt-input-group">
+                                <input class="kt-input" asp-for="MetaFrequenciaPercentual" type="number" min="10" max="100" />
+                                <span class="kt-input-addon">%</span>
+                            </div>
+                            <span class="text-xs text-muted-foreground">Vazia: vale a frequência mínima da escolinha (Parâmetros › Presença).</span>
+                        </div>
+                    </div>
+
+                    @if (conflitos is { Count: > 0 })
+                    {
+                        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="alert">
+                            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                            <div class="flex flex-col gap-2 text-sm">
+                                <span class="font-medium">Alertas de agenda</span>
+                                <ul class="flex flex-col gap-1 list-disc ps-4">
+                                    @foreach (var c in conflitos)
+                                    {
+                                        <li>@c.Descricao</li>
+                                    }
+                                </ul>
+                                <label class="kt-label">
+                                    <input class="kt-checkbox kt-checkbox-sm" asp-for="ConfirmarConflitos" type="checkbox" />
+                                    <span class="text-sm text-foreground">Vi os alertas e quero salvar mesmo assim</span>
+                                </label>
+                            </div>
+                        </div>
+                    }
+                </section>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="@(nova ? "/Turmas" : $"/Turmas/Ficha/{Model.Id}")">Cancelar</a>
+                @if (nova)
+                {
+                    <button class="kt-btn kt-btn-outline" type="button" data-esc-passo-anterior><i class="ki-filled ki-arrow-left"></i> Voltar</button>
+                    <button class="kt-btn kt-btn-primary" type="button" data-esc-passo-proximo>Continuar <i class="ki-filled ki-arrow-right"></i></button>
+                    <button class="kt-btn kt-btn-primary" type="submit" data-esc-passo-final><i class="ki-filled ki-check"></i> Criar turma</button>
+                }
+                else
+                {
+                    <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Salvar</button>
+                }
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/linhas.js" asp-append-version="true"></script>
+}

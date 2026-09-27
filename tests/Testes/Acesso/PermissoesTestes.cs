@@ -154,13 +154,39 @@ public class AutorizacaoTestes
     }
 
     [Fact]
-    public async Task Sem_cadastros_o_resolvedor_padrao_nega_o_escopo_parcial()
+    public async Task O_resolvedor_real_pergunta_ao_banco_do_professor_e_nega_o_responsavel_ate_o_convite()
     {
-        var contexto = new ContextoEscolinha();
-        contexto.Definir(Escolinha, [PapelAtuacao.Professor]);
-        var professor = new Autorizacao(contexto, new UsuarioDeTeste { Id = Guid.NewGuid() }, new ResolvedorEscopoSemCadastros());
+        var consultas = new ConsultasEscopoFalsas();
+        var resolvedor = new ResolvedorEscopoCadastros(consultas);
+        var pessoa = Guid.NewGuid();
+        var turma = Guid.NewGuid();
+        consultas.TurmasDoProfessor[pessoa] = [turma];
+        consultas.AlunosDoProfessor[pessoa] = [AlunoDaMinhaTurma.Id];
 
-        Assert.False(await professor.PodeAsync(Recurso.RegistroPresenca, Operacao.Alterar, AlunoDaMinhaTurma));
+        Assert.True(await resolvedor.NoEscopoAsync(PapelAtuacao.Professor, new AlvoEscopo(TipoAlvoEscopo.Turma, turma), pessoa));
+        Assert.True(await resolvedor.NoEscopoAsync(PapelAtuacao.Professor, AlunoDaMinhaTurma, pessoa));
+        Assert.False(await resolvedor.NoEscopoAsync(PapelAtuacao.Professor, AlunoDeOutraTurma, pessoa));
+        Assert.False(await resolvedor.NoEscopoAsync(PapelAtuacao.Professor, new AlvoEscopo(TipoAlvoEscopo.Cobranca, Guid.NewGuid()), pessoa));
+        // Responsável: o vínculo verificado nasce com o convite (S2) — até lá, bloqueio total.
+        Assert.False(await resolvedor.NoEscopoAsync(PapelAtuacao.Responsavel, AlunoDaMinhaTurma, pessoa));
+    }
+
+    private sealed class ConsultasEscopoFalsas : IConsultasEscopo
+    {
+        public Dictionary<Guid, List<Guid>> TurmasDoProfessor { get; } = [];
+        public Dictionary<Guid, List<Guid>> AlunosDoProfessor { get; } = [];
+
+        public Task<bool> ProfessorDaTurmaAsync(Guid pessoaId, Guid turmaId, CancellationToken ct = default) =>
+            Task.FromResult(TurmasDoProfessor.GetValueOrDefault(pessoaId)?.Contains(turmaId) == true);
+
+        public Task<bool> ProfessorDoAlunoAsync(Guid pessoaId, Guid alunoId, CancellationToken ct = default) =>
+            Task.FromResult(AlunosDoProfessor.GetValueOrDefault(pessoaId)?.Contains(alunoId) == true);
+
+        public Task<bool> ProfessorDaSessaoAsync(Guid pessoaId, Guid sessaoId, CancellationToken ct = default) => Task.FromResult(false);
+        public Task<bool> ProprioProfessorAsync(Guid pessoaId, Guid professorId, CancellationToken ct = default) => Task.FromResult(false);
+
+        public Task<IReadOnlyList<Guid>> TurmasDoProfessorAsync(Guid pessoaId, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<Guid>>(TurmasDoProfessor.GetValueOrDefault(pessoaId) ?? []);
     }
 
     [Fact]

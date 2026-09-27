@@ -1,0 +1,128 @@
+@inject IAutorizacao Autorizacao
+@model AlunosViewModel
+@{
+    ViewData["Title"] = "Alunos";
+    var f = Model.Filtro;
+    var podeCadastrar = Autorizacao.Pode(Recurso.CadastroAlunosResponsaveis, Operacao.Alterar) && Autorizacao.Pode(Recurso.FinanceiroEscolinha, Operacao.Alterar);
+    var paginacao = PaginacaoViewModel.De(Model.Lista, "aluno(s)", new Dictionary<string, string?>
+    {
+        ["busca"] = f.Busca,
+        ["turmaId"] = f.TurmaId?.ToString(),
+        ["situacao"] = f.Situacao == FiltroSituacaoAluno.NaEscolinha ? null : f.Situacao.ToString()
+    });
+    var situacoes = new (FiltroSituacaoAluno Valor, string Rotulo)[]
+    {
+        (FiltroSituacaoAluno.NaEscolinha, "Na escolinha (trial, ativos e inativos)"),
+        (FiltroSituacaoAluno.Trial, "Trial"),
+        (FiltroSituacaoAluno.Ativo, "Ativos"),
+        (FiltroSituacaoAluno.Inativo, "Inativos"),
+        (FiltroSituacaoAluno.Desistente, "Desistentes"),
+        (FiltroSituacaoAluno.Todos, "Todos")
+    };
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Alunos" descricao="A mesma base de alunos em duas visões: por turma ou a escolinha inteira. Responsável com dois filhos é um cadastro só."
+                      meta="@($"{Model.Lista.Total} aluno(s) no filtro")">
+        <a class="kt-btn kt-btn-outline" href="/Responsaveis"><i class="ki-filled ki-users"></i> Responsáveis</a>
+        @if (podeCadastrar)
+        {
+            <a class="kt-btn kt-btn-primary" asp-action="Novo" asp-route-turmaId="@f.TurmaId"><i class="ki-filled ki-plus"></i> Novo aluno</a>
+        }
+    </cabecalho-pagina>
+
+    <form method="get" class="kt-card mb-5">
+        <div class="kt-card-content grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div class="flex flex-col gap-1 md:col-span-2">
+                <label class="kt-form-label" for="busca">Buscar</label>
+                <div class="kt-input">
+                    <i class="ki-filled ki-magnifier"></i>
+                    <input id="busca" name="busca" type="search" value="@f.Busca" placeholder="Nome do aluno ou do responsável, CPF" />
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label" for="turmaId">Turma</label>
+                <select class="kt-select" id="turmaId" name="turmaId" data-esc-enviar-ao-mudar>
+                    <option value="">Todas as turmas</option>
+                    @foreach (var t in Model.Turmas)
+                    {
+                        <option value="@t.Id" selected="@(t.Id == f.TurmaId)">@t.Nome</option>
+                    }
+                </select>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label" for="situacao">Situação</label>
+                <select class="kt-select" id="situacao" name="situacao" data-esc-enviar-ao-mudar>
+                    @foreach (var (valor, rotulo) in situacoes)
+                    {
+                        <option value="@valor" selected="@(valor == f.Situacao)">@rotulo</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <div class="kt-card">
+        @if (Model.Lista.Itens.Count == 0)
+        {
+            var semFiltro = string.IsNullOrWhiteSpace(f.Busca) && f.TurmaId is null && f.Situacao == FiltroSituacaoAluno.NaEscolinha;
+            <estado-vazio icone="ki-people" titulo="@(semFiltro ? "Nenhum aluno ainda" : "Nenhum aluno no filtro")"
+                          texto="@(semFiltro ? "Cadastre o primeiro aluno com os responsáveis e a matrícula na turma." : "Mude a busca, a turma ou a situação.")">
+                @if (semFiltro && podeCadastrar)
+                {
+                    <a class="kt-btn kt-btn-primary" asp-action="Novo"><i class="ki-filled ki-plus"></i> Novo aluno</a>
+                }
+            </estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[200px]">Aluno</th>
+                            <th class="min-w-[150px] hidden md:table-cell">Turmas</th>
+                            <th class="min-w-[170px] hidden lg:table-cell">Responsáveis</th>
+                            <th class="min-w-[120px]">Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model.Lista.Itens)
+                        {
+                            var trialVencido = a.Situacao == SituacaoAluno.Trial && a.TrialAte is { } ate && ate < Model.Hoje;
+                            <tr>
+                                <td>
+                                    <div class="flex flex-col gap-0.5">
+                                        <a class="font-medium text-mono hover:text-primary" asp-action="Ficha" asp-route-id="@a.Id">@a.Nome</a>
+                                        <span class="text-xs text-secondary-foreground">@Formatacao.Idade(Aluno.IdadeEm(a.DataNascimento, Model.Hoje))@(a.Categoria is null ? "" : $" · {a.Categoria}")</span>
+                                    </div>
+                                </td>
+                                <td class="hidden md:table-cell text-secondary-foreground">
+                                    @if (a.Turmas.Count == 0 && a.Situacao != SituacaoAluno.Desistente)
+                                    {
+                                        <selo-status valor="SinalTela.SemMatricula"></selo-status>
+                                    }
+                                    else
+                                    {
+                                        @(a.Turmas.Count == 0 ? "—" : string.Join(", ", a.Turmas))
+                                    }
+                                </td>
+                                <td class="hidden lg:table-cell text-secondary-foreground">@(a.Responsaveis.Count == 0 ? "—" : string.Join(", ", a.Responsaveis))</td>
+                                <td>
+                                    <span class="flex flex-wrap gap-1.5">
+                                        <selo-status valor="a.Situacao"></selo-status>
+                                        @if (trialVencido)
+                                        {
+                                            <selo-status valor="SinalTela.TrialVencido"></selo-status>
+                                        }
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <partial name="_Paginacao" model="paginacao" />
+        }
+    </div>
+</div>

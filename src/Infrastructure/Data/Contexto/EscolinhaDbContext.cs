@@ -3,12 +3,15 @@ using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Domain.Acesso;
+using MinhaEscolinha.Domain.Alunos;
 using MinhaEscolinha.Domain.Auditoria;
 using MinhaEscolinha.Domain.Comum;
 using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
+using MinhaEscolinha.Domain.Equipe;
 using MinhaEscolinha.Domain.Integracao;
 using MinhaEscolinha.Domain.Plataforma;
+using MinhaEscolinha.Domain.Turmas;
 
 namespace MinhaEscolinha.Infrastructure.Data.Contexto;
 
@@ -50,6 +53,16 @@ public class EscolinhaDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<PacoteCreditos> PacotesCreditos => Set<PacoteCreditos>();
     public DbSet<CompraCreditos> ComprasCreditos => Set<CompraCreditos>();
     public DbSet<WebhookRecebido> WebhooksRecebidos => Set<WebhookRecebido>();
+    public DbSet<Professor> Professores => Set<Professor>();
+    public DbSet<Local> Locais => Set<Local>();
+    public DbSet<Turma> Turmas => Set<Turma>();
+    public DbSet<HorarioTurma> HorariosTurma => Set<HorarioTurma>();
+    public DbSet<SessaoTreino> Sessoes => Set<SessaoTreino>();
+    public DbSet<Aluno> Alunos => Set<Aluno>();
+    public DbSet<Responsavel> Responsaveis => Set<Responsavel>();
+    public DbSet<VinculoAlunoResponsavel> VinculosResponsavel => Set<VinculoAlunoResponsavel>();
+    public DbSet<Matricula> Matriculas => Set<Matricula>();
+    public DbSet<ConsentimentoAluno> Consentimentos => Set<ConsentimentoAluno>();
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -76,5 +89,7 @@ public class EscolinhaDbContext : DbContext, IDataProtectionKeyContext
         // Datas em horário de Brasília com milissegundos (CLAUDE.md §5).
         configurationBuilder.Properties<DateTime>().HaveColumnType("datetime2(3)");
         configurationBuilder.Properties<DateTime?>().HaveColumnType("datetime2(3)");
+        // Horário de treino e faixa de disponibilidade: hora e minuto.
+        configurationBuilder.Properties<TimeOnly>().HaveColumnType("time(0)");
     }
 }

@@ -5,7 +5,7 @@
 > **Stack:** ASP.NET Core MVC (.NET 9) + Razor · Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons (só `ki-filled`).
 > **Prefixo do projeto:** `esc-` (classes), `data-esc-` (atributos), `window.esc` (JS), `esc:*` (eventos).
 >
-> **Como foi verificado (26/09/2026, fatia S0 pronta):** toda classe citada aqui foi conferida no CSS que o navegador recebe (`keenicons-filled.css`, `styles.css`, `css/esc.css` e `custom.css`, em `src/Web/wwwroot`), e todo comportamento, no código. O que ainda não existe está marcado como **planejado** e listado na §14.
+> **Como foi verificado (27/09/2026, fatia S1 pronta):** toda classe citada aqui foi conferida no CSS que o navegador recebe (`keenicons-filled.css`, `styles.css`, `css/esc.css` e `custom.css`, em `src/Web/wwwroot`), e todo comportamento, no código. O que ainda não existe está marcado como **planejado** e listado na §14.
 >
 > **Base:** o guia verificado do Adama/Candeias (`docs/metronic/GUIA-DESIGN-SYSTEM.md`, cópia local fora do git), reescrito para este projeto. O `docs/metronic/GUIA-REFERENCIA-METRONIC-KTUI.md` está superado e tem afirmações erradas: não use.
 >
@@ -13,7 +13,8 @@
 > - D17 (front) e D18 (arquivos estáticos);
 > - D19 e X06 (erro ligado ao campo), D20 (nome de binding);
 > - D22 (validação no navegador);
-> - D23 (toast escapado), D24 (mensagens de validação em pt-BR), D25 (`SinalTela`).
+> - D23 (toast escapado), D24 (mensagens de validação em pt-BR), D25 (`SinalTela`);
+> - do S1: D30 (valor em reais), D37 (ficha em página com abas), D41 (escopo no que vem junto) e D42 (assistente sem botões).
 
 ## Sumário
 
@@ -312,7 +313,7 @@ A utility que falta nasce no `npm run css` quando uma View passa a usá-la; o ve
 | `Primario` | `kt-badge-primary` | azul da paleta, não o token (§3.3) |
 | `Neutro` | `kt-badge-secondary` | cinza |
 
-**Enums mapeados hoje (S0):**
+**Enums mapeados hoje (S0, EX-01 e S1):**
 
 | Enum | Valor → rótulo · variante | Onde aparece |
 |---|---|---|
@@ -323,6 +324,12 @@ A utility que falta nasce no `npm run css` quando uma View passa a usá-la; o ve
 | `SinalTela` (estados sem enum de domínio, definido em `Apresentacao.cs`) | `ContaRecebimentoVinculada` → "Conta vinculada" · Sucesso; `ContaRecebimentoAusente` → "Sem conta" · Alerta; `SaldoCreditosBaixo` → "Saldo baixo" · Alerta; `PacoteAVenda` → "À venda" · Sucesso; `PacoteForaDeVenda` → "Fora de venda" · Neutro | Plataforma › Escolinhas, Conta de recebimento (`texto="Vinculada"`), Créditos (`texto="abaixo de N"`), Pacotes de créditos |
 | `SituacaoCompraCreditos` | `AguardandoPagamento` → "Aguardando pagamento" · Info; `AguardandoConfirmacao` → "Boleto ou Pix emitido" · Alerta; `Paga` · Sucesso; `Expirada` · Neutro; `Falhou` · Perigo | Créditos (compras), Compra de créditos |
 | `SituacaoWebhook` | `Recebido` · Info; `Processado` · Sucesso; `Ignorado` · Neutro; `Falhou` · Perigo | Pacotes de créditos (últimos webhooks) |
+| `SituacaoAluno` | `Trial` · Info; `Ativo` · Sucesso; `Inativo` · Neutro; `Desistente` · Neutro | Alunos, ficha do aluno, mudar situação, ficha da turma e do responsável |
+| `SituacaoMatricula` | `Ativa` · Sucesso; `Encerrada` · Neutro | ficha do aluno (Matrículas) |
+| `SituacaoTurma` | `Ativa` · Sucesso; `Encerrada` · Neutro | Turmas, ficha do professor |
+| `SituacaoSessao` | `Prevista` · Info; `Realizada` · Sucesso; `Cancelada` · Perigo; `Remarcada` · Alerta (sem uso, P11) | Agenda, ficha da turma, Painel (próximos treinos) |
+| `EstadoConsentimento` | `Pendente` · Alerta; `Concedido` → "Autorizado" · Sucesso; `Recusado` · Neutro; `Revogado` · Neutro | ficha do aluno (Consentimentos) |
+| `SinalTela`, valores do S1 | `TrialVencendo` → "Trial vencendo" · Alerta; `TrialVencido` → "Trial vencido" · Alerta; `TurmaLotada` → "Lotada" · Alerta; `SemMatricula` → "Sem turma" · Alerta; `ComAcesso` → "Com acesso" · Sucesso; `SemAcesso` → "Sem acesso ainda" · Neutro; `Pagador` → "Pagador" · Primario | Painel, Alunos, fichas do aluno e da turma, Turmas, Professores e Responsáveis |
 
 Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e sem cor. **Máquina nova entra inteira no mapa, na mesma entrega:**
 
@@ -330,9 +337,9 @@ Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e
 2. os valores no array `selos` da vitrine (`Views/Design/Index.cshtml`);
 3. na View, só `<selo-status>`.
 
-### 4.3 Máquinas das próximas fatias (planejado)
+### 4.3 A tabela do plano (Aluno e Sessão prontos; as demais planejadas)
 
-A tabela da §4.2 do plano, que vale quando cada máquina nascer:
+A tabela da §4.2 do plano. **Aluno e Sessão entraram no mapa no S1, como planejados**; o "trial vencido" é o `SinalTela.TrialVencido`, porque o trial vencido continua em trial (§6 da spec). As outras máquinas valem quando cada uma nascer:
 
 | Máquina | Sucesso | Info | Alerta | Perigo | Neutro |
 |---|---|---|---|---|---|
@@ -687,6 +694,7 @@ Na carga, o `app.js` mostra o sucesso com a variante `success` e o erro com `des
 - **Continuar valida só os campos da etapa**, com as restrições do HTML (`required`, `maxlength`, `type="email"`) por `checkValidity()` e `reportValidity()`, mesmo com `novalidate` no form. Voltar é livre; clicar numa etapa à frente valida o caminho. Enter num `<input>` avança em vez de enviar antes da hora. O envio final vai para o servidor, que é quem valida de verdade.
 - **Onde ele abre:** na etapa de `?passo=N` (contando de 1); senão, na primeira etapa com `[data-esc-passo-erro]` ou com campo `aria-invalid="true"` (§7); senão, na primeira. E põe o foco no campo com erro.
 - **Sem JS**, todas as etapas aparecem, e a lista e os botões Voltar e Continuar ficam ocultos (`form:not(.esc-assistente-ativo)` no `custom.css`); o submit continua visível.
+- **Assistente no cadastro, página inteira na edição** (Turma): o `<form>` sempre leva `data-esc-assistente`, mas só o cadastro tem Continuar e o envio final. Sem esses dois botões o JS não divide o formulário (D42), e cada etapa mostra o próprio título, `<h4 class="esc-passo-cabecalho">`, que some quando o assistente está ativo (§6.24).
 - Só carrega no `_Layout` (§2.2).
 
 ### 6.7 Select dependente (`js/assistente.js`)
@@ -973,6 +981,68 @@ Fica em `Views/Parametros/_CampoParametro.cshtml` (não em `Shared`). Cada parâ
 
 As parciais que o plano previa para essas peças (`_StatusConexao`, `_LinhaChamada`, `_BarraAcaoInferior`, `_AbasPortal`) não foram criadas: o selo e as abas moram nos layouts, a barra é a seção `BarraAcao`, e a linha da chamada é markup com as classes acima (§14).
 
+### 6.19 Linhas repetíveis (`js/linhas.js`)
+
+Horários da turma e faixas de disponibilidade do professor: uma lista que ganha e perde linhas, com o model binding recebendo a lista inteira.
+
+```cshtml
+<div class="flex flex-col gap-3" data-esc-linhas data-esc-linhas-prefixo="Horarios">
+    <ul class="flex flex-col gap-3" data-esc-linhas-lista>
+        <li class="esc-linha-horario" data-esc-linha>
+            <input type="hidden" asp-for="Horarios[i].Id" data-esc-linhas-id />
+            <select class="kt-select" asp-for="Horarios[i].DiaSemana" aria-label="Dia da semana"> ... </select>
+            <input class="kt-input" asp-for="Horarios[i].Inicio" type="time" aria-label="Início" />
+            <input class="kt-input" asp-for="Horarios[i].Fim" type="time" aria-label="Fim" />
+            <button class="kt-btn kt-btn-icon kt-btn-ghost" type="button" data-esc-linhas-remover hidden aria-label="Retirar horário"><i class="ki-filled ki-trash"></i></button>
+        </li>
+    </ul>
+    <template data-esc-linhas-modelo> <li class="esc-linha-horario" data-esc-linha> ... name="Horarios[__i__].Inicio" ... </li> </template>
+    <div><button class="kt-btn kt-btn-sm kt-btn-outline" type="button" data-esc-linhas-adicionar hidden><i class="ki-filled ki-plus"></i> Outro horário</button></div>
+</div>
+```
+
+- **A linha nova sai do `<template>`** desenhado pelo servidor, com `__i__` no lugar do índice; o JS não monta HTML.
+- **A cada mudança, o JS renumera** `name`, `id`, `label[for]` e o valor do oculto `__Invariant`, que o ASP.NET põe nos campos de data e hora (armadilha 26).
+- **Retirar a última linha** só a limpa, e o id escondido (`data-esc-linhas-id`) é zerado: a lista nunca some.
+- **Sem JS**, as linhas que o servidor desenhou funcionam, inclusive uma linha em branco extra; os botões ficam ocultos. Linha sem horário é ignorada no servidor.
+- **`esc-linha-horario`** (`custom.css`): grade de dia, início, fim e botão; abaixo de 480 px, o dia ocupa a linha de cima.
+
+### 6.20 Busca de responsável (`js/busca-responsavel.js`) e `_ResponsavelDoAluno`
+
+O cadastro do aluno e o "vincular responsável" usam a parcial `Shared/_ResponsavelDoAluno` (`<partial name="_ResponsavelDoAluno" for="Responsaveis[i]" view-data="..." />`). Ela junta três coisas:
+- **a busca** de quem já é responsável na escolinha (nome, CPF ou celular), por `esc.fetch` em `/Responsaveis/Buscar`; o resultado mostra o CPF mascarado e os filhos;
+- **o cadastro novo**, quando ninguém foi escolhido;
+- **as marcas do vínculo:** parentesco, pagador, recebe cobrança e recebe notificação.
+
+**Sugestão de cadastro parecido** (mesmo celular ou mesmo nome, D33): o servidor devolve a tela com um alerta e as opções:
+- cada candidato tem um botão **"Usar este cadastro"**, um `type="submit"` com `name` = o campo do id e `value` = o candidato. Enquanto a sugestão está na tela, o oculto do id fica `disabled` para não disputar o valor;
+- a caixa **"É outra pessoa"** (`ConfirmarNovo`) cria um cadastro novo.
+
+Enter na busca não envia o formulário. **Sem JS**, a busca não aparece: o CPF igual reaproveita sozinho no servidor, e celular ou nome igual viram sugestão.
+
+### 6.21 Endereço: `_CamposEndereco`
+
+`<partial name="_CamposEndereco" model="Model" />` desenha rua, número, complemento, bairro, cidade, UF e CEP para qualquer modelo que implemente `IComEndereco` (local, aluno, responsável). Os nomes ficam na raiz do formulário. No aluno novo, o endereço vem recolhido num `<details class="rounded-xl border border-border">` com "(opcional)" no `<summary>`.
+
+### 6.22 Ocupação de vagas: `progress.esc-ocupacao`
+
+```cshtml
+<progress class="esc-ocupacao" value="@Math.Min(t.Ocupadas, t.Capacidade)" max="@t.Capacidade" aria-label="@($"{t.Ocupadas} de {t.Capacidade} vagas ocupadas")"></progress>
+```
+
+`<progress>` nativo, porque a CSP não deixa `style=` para uma barra de largura variável. A barra usa `--primary` sobre `--muted`; a turma cheia ganha o selo `SinalTela.TurmaLotada` ao lado, e a barra não muda de cor. Onde: Turmas e ficha da turma.
+
+### 6.23 Item de agenda: `esc-item-agenda`
+
+Uma linha por sessão: a hora numa coluna fixa (`esc-item-agenda-hora`, com números tabulares), a turma com local, professor e alertas no meio, e o selo e as ações à direita. Abaixo de 640 px, a hora sobe para uma linha própria. Onde: Agenda (agrupada por dia, com `Formatacao.DiaPorExtenso`) e Painel (próximos treinos).
+
+Os alertas de agenda são texto com `ki-information-2 text-warning`, um por linha, e não selos: podem ser vários na mesma sessão, e cada um explica o conflito.
+
+### 6.24 Cabeçalho de etapa e filtros recolhidos
+
+- **`esc-passo-cabecalho`:** o título de uma etapa quando o formulário aparece inteiro (edição da turma, ou sem JS). Com o assistente ativo, ele some, porque o nome da etapa já está na lista `esc-passos` (§6.6).
+- **Filtros secundários em `<details>`** (Agenda): no celular, os filtros tomavam a primeira tela. Recorte e mês ficam à vista; período, situação e modalidade ficam num `<details>` com `<summary class="cursor-pointer text-sm font-medium text-mono">`, que abre sozinho quando algum desses filtros está em uso.
+
 ---
 
 ## 7. Erro de formulário: o padrão do projeto
@@ -1066,7 +1136,13 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 
 | Helper | Entrada → saída |
 |---|---|
-| `Formatacao.Data(DateTime?)` | `dd/MM/yyyy`; nulo → "—" |
+| `Formatacao.Data(DateTime?)` e `Formatacao.Data(DateOnly?)` | `dd/MM/yyyy`; nulo → "—" |
+| `Formatacao.DiaCurto(DateOnly)` | "01/10 (qui)" |
+| `Formatacao.DiaPorExtenso(DateOnly)` | "Quinta-feira, 1 de outubro": só a primeira letra maiúscula (armadilha 27) |
+| `Formatacao.Mes(DateOnly)` | "Outubro de 2026" |
+| `Formatacao.Horario(inicio, fim)` | "18:00–19:00", para `DateTime` ou `TimeOnly` |
+| `Formatacao.Cpf(digitos)` | 11 dígitos → "000.000.000-00" |
+| `Formatacao.Idade(anos)` | "1 ano", "9 anos" |
 | `Formatacao.DataHora(DateTime?)` | `dd/MM/yyyy HH:mm` (relógio de 24 h); nulo → "—" |
 | `Formatacao.TempoRelativo(quando, agora)` | "agora", "há 5 min", "há 3 h", "ontem", "há 4 dias" e, a partir de 7 dias, `dd/MM/yyyy`. Os dois em horário de Brasília. Ainda sem uso em tela |
 | `Formatacao.Telefone(e164)` | "+5543987654321" → "(43) 98765-4321"; com 10 dígitos, "(43) 3333-4444"; outro formato volta como veio |
@@ -1085,7 +1161,7 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 
 É o mesmo texto no editor e no histórico ("antes → depois").
 
-**Moeda:** ainda não há helper. O formato alvo é "R$ 1.234,56". Crie `Formatacao.Moeda` quando a primeira tela precisar (S4), em vez de formatar na View.
+**Valor em reais digitado** (mensalidade, D30): o campo é `type="text" inputmode="decimal"` dentro de um `kt-input-group` com o addon "R$", e mostra `Moeda.ParaCampo(valor)` ("1.500,00"). Em erro, volta com o que foi digitado (`ModelState[...].AttemptedValue`). Quem lê é o `DecimalBrasileiroModelBinder`, que aceita "150", "150,50", "1.500,00", "R$ 1.500,00" e "150.50". Nunca use `type="number"` para dinheiro.
 
 ---
 
@@ -1170,7 +1246,9 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 | mostrar senha | `ki-eye` | | ocultar senha | `ki-eye-slash` |
 | sair | `ki-exit-right` | | entrar como equipe | `ki-entrance-left` |
 | modo escuro | `ki-moon` | | acesso negado | `ki-lock-2` |
-| aviso, erro, estado vazio padrão | `ki-information-2` | | | |
+| aviso, erro, estado vazio padrão | `ki-information-2` | | filtrar (Agenda) | `ki-filter` |
+| encerrar turma | `ki-archive` | | cancelar sessão | `ki-cross-circle` |
+| trocar o responsável escolhido | `ki-arrows-circle` | | revogar consentimento | `ki-shield-cross` |
 
 ### 9.4 Não existem (conferidos no CSS servido; não usar)
 
@@ -1385,11 +1463,19 @@ Achadas neste projeto:
 24. **O tipo de parâmetro `Hora` não tem editor** (§6.16).
 25. **Prefixo `me-`** colide com o margin-end do Tailwind. O prefixo do projeto é `esc-`.
 
+Achadas no S1:
+
+26. **O ASP.NET põe um oculto `__Invariant` nos campos de data e hora**, com o nome do campo no valor. Ao clonar ou renumerar linhas, renumere também esse valor; senão o binding deixa de ler aquele campo no formato invariável do navegador (§6.19).
+27. **`capitalize` (CSS) põe maiúscula em toda palavra:** "Quinta-Feira, 1 De Outubro". Use os helpers de `Formatacao`, que só sobem a primeira letra.
+28. **O binder padrão de `decimal` em pt-BR lê "150.50" como 15.050.** O `DecimalBrasileiroModelBinder` já está registrado para `decimal` e `decimal?` (D30).
+29. **O assistente sem Continuar e sem envio final escondia as etapas** e deixava o formulário sem saída; hoje o JS não liga (D42).
+30. **Dado que vem junto também passa pelo escopo:** irmão de outra turma, outros filhos do responsável, pagador e valores (D41). Filtrar só a lista principal não basta.
+
 ---
 
 ## 14. Diferenças entre o plano e o construído
 
-Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código da fatia S0 em 26/09/2026.
+Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita na fatia S0 (26/09/2026) e revista na S1 (27/09/2026).
 
 ### 14.1 Previsto no plano e diferente, parcial ou ainda não construído
 
@@ -1405,15 +1491,15 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código da fati
 | 8 | Quadra: "a chamada funciona offline" (4.3) | só a CSP pronta (`worker-src`); o selo de conexão lê `data-pendentes`, mas a função que o atualiza não é pública | Planejado (S3) |
 | 9 | Portal: alvos de 48 px (4.3) | botões Sim/Não com 48 px (`esc-resposta`), abas com 64 px; **chips dos filhos com 36 px** | Chips abaixo do mínimo |
 | 10 | Portal em `Areas/Portal` (3.1, 4.3) | `_LayoutPortal` em `Views/Shared`; as abas apontam para `#`; a área não existe | Planejado (S6); o build já varre `Areas/` |
-| 11 | Componentes do DP: ficha lateral única (drawer com versão e resposta 409) (4.4) | não construída | Planejado (S1) |
-| 12 | Menu de ações ⋮ (4.4) | não construído; a vitrine mostra só o botão com `ki-dots-vertical` | Planejado |
-| 13 | Modal de confirmação com motivo (4.4) | a confirmação é `window.confirm` (`data-esc-confirmar`) | Planejado |
+| 11 | Componentes do DP: ficha lateral única (drawer com versão e resposta 409) (4.4) | **não adotada no S1:** a ficha é página com abas, com URL própria; a versão de linha vai num campo do formulário, e o conflito vira mensagem | Decisão D37 |
+| 12 | Menu de ações ⋮ (4.4) | não construído; a vitrine mostra só o botão com `ki-dots-vertical`. No S1, as ações ficam no cabeçalho da ficha | Planejado |
+| 13 | Modal de confirmação com motivo (4.4) | a confirmação é `window.confirm` (`data-esc-confirmar`). No S1, desligar, encerrar e cancelar são páginas próprias, com o motivo no formulário e os efeitos explicados | Planejado |
 | 14 | Seleção com busca (com painel maior no celular) e select dependente (4.4) | construídos no JS e no CSS; nenhuma tela usa, e a vitrine não mostra | Prontos, sem uso |
 | 15 | `_CampoParametro` (4.4) | construído em `Views/Parametros/`, não em `Shared` | Pronto; o tipo `Hora` não tem editor |
 | 16 | Quadra: `_StatusConexao`, `_LinhaChamada`, `_BarraAcaoInferior` (4.4) | não são parciais: selo no `_LayoutQuadra`, classes `esc-linha-chamada*`, seção `BarraAcao` | Forma diferente, mesma função |
 | 17 | Convocação: `_CartaoJogo`, `_SelecaoConvocados`, `_PainelConfirmacoes` (4.4) | não existem; a vitrine do portal mostra a forma do cartão de jogo | Planejado (S5) |
 | 18 | Portal: `_CartaoFilho`, `_CartaoConvocacao`, `_CartaoCobranca`, `_AbasPortal` (4.4) | não são parciais: abas no layout; os cartões só como markup na vitrine | Planejado (S6) |
-| 19 | Vitrine com "os selos de todas as máquinas" e "as 4 superfícies" (4.4) | selos só dos 4 enums mapeados (as máquinas ainda não existem); quadra, portal e autenticação em páginas próprias; o painel aparece só como miolo (`_LayoutVitrine`, sem sidebar e header, porque a vitrine não exige login); o ícone `ki-timer` não está na vitrine | Parcial, por construção |
+| 19 | Vitrine com "os selos de todas as máquinas" e "as 4 superfícies" (4.4) | selos de todos os enums do mapa central (S0, EX-01 e S1, por `Enum.GetValues`); quadra, portal e autenticação em páginas próprias; o painel aparece só como miolo (`_LayoutVitrine`, sem sidebar e header, porque a vitrine não exige login); o ícone `ki-timer` não está na vitrine | Parcial, por construção |
 | 20 | Nova escolinha em etapas: dados → modalidade → 1º gestor → **revisão** (4.5) | três etapas, sem revisão | Sem a etapa de revisão |
 | 21 | Mapa de status com a coluna "secondary / mono" (4.2) | `VarianteSelo` tem `Neutro` (`kt-badge-secondary`) e **`Primario`**, que o plano não previa (usado no papel Gestor); não tem Mono | Diferença de variantes |
 | 22 | "Cor de status nunca é escolhida na View" (4.2) | cumprido: os três estados sem enum de domínio ("Conta vinculada"/"Sem conta", "Vinculada", "abaixo de N") passam pelo `SinalTela` do mapa central | Resolvido em 26/09/2026 |
@@ -1440,6 +1526,11 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código da fati
 | Ponte `--color-success`, `--color-warning` e `--color-info` no `esc.src.css` | §2.3 |
 | Ícones de estrutura (`home-3`, `medal-star`, `bank`, `grid`, `timer`) e de interface | §9.2 e §9.3 |
 | Classes `esc-amostra-cor` e `esc-moldura-celular` (vitrine) | §6.18 |
+| Linhas repetíveis (`linhas.js`, `esc-linha-horario`) | §6.19 |
+| Busca de responsável (`busca-responsavel.js`) e a parcial `_ResponsavelDoAluno`, com a sugestão de cadastro parecido | §6.20 |
+| `_CamposEndereco` | §6.21 |
+| `progress.esc-ocupacao`, `esc-item-agenda`, `esc-passo-cabecalho` e filtros em `<details>` | §6.22 a §6.24 |
+| Helpers `Formatacao` de dia, mês, horário, CPF e idade; `DecimalBrasileiroModelBinder` | §8 |
 
 ### 14.3 Achados técnicos da revisão do guia
 

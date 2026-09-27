@@ -1,0 +1,114 @@
+@model ResponsavelDoAlunoRequisicao
+@*
+    Um responsável no cadastro do aluno (e em "adicionar responsável"): a busca de quem já existe (js/busca-responsavel.js),
+    o cadastro novo e as permissões do vínculo. Use com for: <partial name="_ResponsavelDoAluno" for="Responsaveis[i]" view-data="..." />.
+    ViewData: Indice (int), Titulo (string), Escolhido (ResponsavelEncontrado, quando já escolhido), Sugestao (DuplicidadeResponsavel).
+*@
+@{
+    var indice = ViewData["Indice"] as int? ?? 0;
+    var titulo = ViewData["Titulo"] as string ?? "Responsável";
+    var escolhido = ViewData["Escolhido"] as ResponsavelEncontrado;
+    var sugestao = ViewData["Sugestao"] as DuplicidadeResponsavel;
+    var obrigatorio = indice == 0;
+
+    string Detalhe(ResponsavelEncontrado r)
+    {
+        var partes = new List<string>();
+        if (r.Telefone is not null) partes.Add(Formatacao.Telefone(r.Telefone));
+        if (r.Cpf is not null) partes.Add($"CPF {r.Cpf}");
+        if (r.Alunos.Count > 0) partes.Add($"responsável por {string.Join(", ", r.Alunos)}");
+        return string.Join(" · ", partes);
+    }
+}
+<fieldset class="flex flex-col gap-4 rounded-xl border border-border p-4" data-esc-responsavel data-esc-busca-url="/Responsaveis/Buscar">
+    <legend class="px-1 text-sm font-semibold text-mono">@titulo</legend>
+
+    @if (sugestao is not null)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="alert">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <div class="flex flex-col gap-2 text-sm min-w-0">
+                <span class="font-medium">Cadastro parecido (mesmo celular ou mesmo nome). É a mesma pessoa?</span>
+                @foreach (var c in sugestao.Candidatos)
+                {
+                    <div class="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
+                        <span class="flex flex-col min-w-0">
+                            <span class="font-medium text-mono">@c.Nome</span>
+                            <span class="text-xs text-secondary-foreground">@Detalhe(c)</span>
+                        </span>
+                        <button class="kt-btn kt-btn-sm kt-btn-primary" type="submit" name="@Html.NameFor(m => m.ResponsavelId)" value="@c.Id" formnovalidate>
+                            <i class="ki-filled ki-user-tick"></i> Usar este cadastro
+                        </button>
+                    </div>
+                }
+                <label class="kt-label">
+                    <input class="kt-checkbox kt-checkbox-sm" asp-for="ConfirmarNovo" type="checkbox" />
+                    <span class="text-sm text-foreground">É outra pessoa: criar um cadastro novo</span>
+                </label>
+            </div>
+        </div>
+    }
+
+    @* Com sugestão, o id vem do botão "Usar este cadastro": o campo oculto não disputa o valor (a busca o reativa). *@
+    <input type="hidden" asp-for="ResponsavelId" data-esc-responsavel-id disabled="@(sugestao is not null)" />
+
+    <div class="flex flex-col gap-1" data-esc-responsavel-busca hidden>
+        <label class="kt-form-label" for="busca_responsavel_@indice">Já é responsável na escolinha?</label>
+        <input class="kt-input" id="busca_responsavel_@indice" type="search" data-esc-busca-termo autocomplete="off"
+               placeholder="Buscar por nome, CPF ou celular (irmão já matriculado)" />
+        <ul class="flex flex-col gap-1" data-esc-busca-resultados aria-live="polite"></ul>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2" data-esc-responsavel-escolhido hidden="@(escolhido is null)">
+        <span class="flex flex-col min-w-0">
+            <span class="text-sm font-medium text-mono" data-esc-escolhido-nome>@escolhido?.Nome</span>
+            <span class="text-xs text-secondary-foreground" data-esc-escolhido-detalhe>@(escolhido is null ? "" : Detalhe(escolhido))</span>
+        </span>
+        <button class="kt-btn kt-btn-sm kt-btn-ghost" type="button" data-esc-responsavel-trocar hidden><i class="ki-filled ki-arrows-circle"></i> Trocar</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" data-esc-responsavel-novo hidden="@(escolhido is not null)">
+        <div class="flex flex-col gap-1 md:col-span-2">
+            <label class="kt-form-label" asp-for="Nome">Nome</label>
+            <input class="kt-input" asp-for="Nome" maxlength="150" required="@obrigatorio" autocomplete="off" />
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="kt-form-label" asp-for="Telefone">Celular (WhatsApp)</label>
+            <input class="kt-input" asp-for="Telefone" type="tel" inputmode="tel" placeholder="(43) 99999-9999" required="@obrigatorio" />
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="kt-form-label" asp-for="Cpf">CPF <span class="text-muted-foreground">(recomendado)</span></label>
+            <input class="kt-input" asp-for="Cpf" inputmode="numeric" placeholder="000.000.000-00" />
+        </div>
+        <div class="flex flex-col gap-1 md:col-span-2">
+            <label class="kt-form-label" asp-for="Email">E-mail <span class="text-muted-foreground">(opcional)</span></label>
+            <input class="kt-input" asp-for="Email" type="email" maxlength="150" />
+            <span class="text-xs text-muted-foreground">Para recuperar o acesso e receber recibo. Não é canal de aviso.</span>
+        </div>
+        <span class="text-xs text-muted-foreground md:col-span-2">Sem CPF não há cobrança pela Asaas nem acesso ao portal. Com o CPF, um responsável que já existe é reaproveitado sozinho.</span>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        <div class="flex flex-col gap-1">
+            <label class="kt-form-label" asp-for="Parentesco">Parentesco</label>
+            <select class="kt-select" asp-for="Parentesco">
+                @foreach (var p in Enum.GetValues<Parentesco>())
+                {
+                    <option value="@p">@VinculoAlunoResponsavel.Rotulo(p)</option>
+                }
+            </select>
+        </div>
+        <label class="kt-label">
+            <input class="kt-checkbox kt-checkbox-sm" asp-for="Pagador" type="checkbox" />
+            <span class="text-sm text-foreground">É quem paga</span>
+        </label>
+        <label class="kt-label">
+            <input class="kt-checkbox kt-checkbox-sm" asp-for="RecebeCobranca" type="checkbox" />
+            <span class="text-sm text-foreground">Recebe a cobrança</span>
+        </label>
+        <label class="kt-label">
+            <input class="kt-checkbox kt-checkbox-sm" asp-for="RecebeNotificacao" type="checkbox" />
+            <span class="text-sm text-foreground">Recebe avisos e convocações</span>
+        </label>
+    </div>
+</fieldset>

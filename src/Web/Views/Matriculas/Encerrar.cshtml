@@ -1,0 +1,31 @@
+@model EncerrarMatriculaRequisicao
+@{
+    var (matricula, aluno) = ((MinhaEscolinha.Domain.Alunos.Matricula, string))ViewData["Matricula"]!;
+    ViewData["Title"] = $"Encerrar matrícula · {aluno}";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Encerrar matrícula" meta="@($"{aluno} · {matricula.Turma?.Nome}")" voltar-href="/Alunos/Ficha/@matricula.Aluno_ID?aba=matriculas"
+                      voltar-texto="Ficha do aluno"
+                      descricao="Mudou de turma ou parou esta modalidade: a vaga é liberada e o período fica no histórico. A situação do aluno não muda sozinha; para tirá-lo da escolinha, use Desligar."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[640px]">
+        <form asp-action="Encerrar" asp-route-id="@matricula.Matricula_ID" method="post" novalidate>
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <div class="flex flex-col gap-1 max-w-[260px]">
+                    <label class="kt-form-label" asp-for="Data">Último dia na turma</label>
+                    <input class="kt-input" asp-for="Data" type="date" required />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="kt-form-label" asp-for="Motivo">Motivo</label>
+                    <textarea class="kt-textarea" asp-for="Motivo" rows="2" maxlength="300" required placeholder="Ex.: mudou para a turma de sábado"></textarea>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="/Alunos/Ficha/@matricula.Aluno_ID?aba=matriculas">Cancelar</a>
+                <button class="kt-btn kt-btn-destructive" type="submit"><i class="ki-filled ki-exit-right"></i> Encerrar matrícula</button>
+            </div>
+        </form>
+    </div>
+</div>

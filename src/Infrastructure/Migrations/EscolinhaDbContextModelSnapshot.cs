@@ -196,6 +196,477 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.ToTable("VinculoAtuacao", (string)null);
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.Aluno", b =>
+                {
+                    b.Property<Guid>("Aluno_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("Alergias")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Categoria")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("ContatoEmergenciaNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("ContatoEmergenciaParentesco")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("ContatoEmergenciaTelefone")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Cpf")
+                        .HasMaxLength(11)
+                        .IsUnicode(false)
+                        .HasColumnType("char(11)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateOnly?>("DataDesligamento")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("DataMatricula")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("DataNascimento")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MotivoDesligamento")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NomeBusca")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("ObservacoesMedicas")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Restricoes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("SituacaoDesde")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("TrialAte")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Versao")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.ComplexProperty<Dictionary<string, object>>("Endereco", "MinhaEscolinha.Domain.Alunos.Aluno.Endereco#Endereco", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<string>("Bairro")
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)")
+                                .HasColumnName("Bairro");
+
+                            b1.Property<string>("Cep")
+                                .HasMaxLength(8)
+                                .IsUnicode(false)
+                                .HasColumnType("char(8)")
+                                .HasColumnName("Cep")
+                                .IsFixedLength();
+
+                            b1.Property<string>("Cidade")
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)")
+                                .HasColumnName("Cidade");
+
+                            b1.Property<string>("Complemento")
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)")
+                                .HasColumnName("Complemento");
+
+                            b1.Property<string>("Logradouro")
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)")
+                                .HasColumnName("Logradouro");
+
+                            b1.Property<string>("Numero")
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)")
+                                .HasColumnName("Numero");
+
+                            b1.Property<string>("Uf")
+                                .HasMaxLength(2)
+                                .IsUnicode(false)
+                                .HasColumnType("char(2)")
+                                .HasColumnName("Uf")
+                                .IsFixedLength();
+                        });
+
+                    b.HasKey("Aluno_ID")
+                        .HasName("PK_Aluno");
+
+                    b.HasIndex("Escolinha_ID", "Cpf")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Aluno_Escolinha_Cpf")
+                        .HasFilter("[Cpf] IS NOT NULL");
+
+                    b.HasIndex("Escolinha_ID", "NomeBusca")
+                        .HasDatabaseName("IX_Aluno_Escolinha_NomeBusca");
+
+                    b.HasIndex("Escolinha_ID", "Situacao")
+                        .HasDatabaseName("IX_Aluno_Escolinha_Situacao");
+
+                    b.ToTable("Aluno", (string)null);
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.ConsentimentoAluno", b =>
+                {
+                    b.Property<Guid>("ConsentimentoAluno_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Aluno_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Concedido")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Finalidade")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MotivoRevogacao")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("Origem")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RegistradoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("RegistradoPorNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("RegistradoPor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Responsavel_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RevogadoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("RevogadoPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("RevogadoPor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("VersaoTermo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.HasKey("ConsentimentoAluno_ID")
+                        .HasName("PK_ConsentimentoAluno");
+
+                    b.HasIndex("Aluno_ID");
+
+                    b.HasIndex("Responsavel_ID");
+
+                    b.HasIndex("Escolinha_ID", "Aluno_ID", "Finalidade", "RegistradoEm")
+                        .HasDatabaseName("IX_ConsentimentoAluno_Escolinha_Aluno_Finalidade_Em");
+
+                    b.ToTable("ConsentimentoAluno", (string)null);
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.Matricula", b =>
+                {
+                    b.Property<Guid>("Matricula_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Aluno_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateOnly?>("DataFim")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("DataInicio")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Mensalidade")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("MotivoEncerramento")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Turma_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Matricula_ID")
+                        .HasName("PK_Matricula");
+
+                    b.HasIndex("Aluno_ID");
+
+                    b.HasIndex("Turma_ID");
+
+                    b.HasIndex("Escolinha_ID", "Aluno_ID", "Turma_ID")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Matricula_Escolinha_Aluno_Turma_Ativa")
+                        .HasFilter("[Situacao] = 10");
+
+                    b.HasIndex("Escolinha_ID", "Turma_ID", "Situacao")
+                        .HasDatabaseName("IX_Matricula_Escolinha_Turma_Situacao");
+
+                    b.ToTable("Matricula", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Matricula_Mensalidade", "[Mensalidade] >= 0");
+
+                            t.HasCheckConstraint("CK_Matricula_Periodo", "[DataFim] IS NULL OR [DataFim] >= [DataInicio]");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.Responsavel", b =>
+                {
+                    b.Property<Guid>("Responsavel_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("Cpf")
+                        .HasMaxLength(11)
+                        .IsUnicode(false)
+                        .HasColumnType("char(11)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NomeBusca")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("Pessoa_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Telefone")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.ComplexProperty<Dictionary<string, object>>("Endereco", "MinhaEscolinha.Domain.Alunos.Responsavel.Endereco#Endereco", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<string>("Bairro")
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)")
+                                .HasColumnName("Bairro");
+
+                            b1.Property<string>("Cep")
+                                .HasMaxLength(8)
+                                .IsUnicode(false)
+                                .HasColumnType("char(8)")
+                                .HasColumnName("Cep")
+                                .IsFixedLength();
+
+                            b1.Property<string>("Cidade")
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)")
+                                .HasColumnName("Cidade");
+
+                            b1.Property<string>("Complemento")
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)")
+                                .HasColumnName("Complemento");
+
+                            b1.Property<string>("Logradouro")
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)")
+                                .HasColumnName("Logradouro");
+
+                            b1.Property<string>("Numero")
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)")
+                                .HasColumnName("Numero");
+
+                            b1.Property<string>("Uf")
+                                .HasMaxLength(2)
+                                .IsUnicode(false)
+                                .HasColumnType("char(2)")
+                                .HasColumnName("Uf")
+                                .IsFixedLength();
+                        });
+
+                    b.HasKey("Responsavel_ID")
+                        .HasName("PK_Responsavel");
+
+                    b.HasIndex("Pessoa_ID");
+
+                    b.HasIndex("Escolinha_ID", "Cpf")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Responsavel_Escolinha_Cpf")
+                        .HasFilter("[Cpf] IS NOT NULL");
+
+                    b.HasIndex("Escolinha_ID", "NomeBusca")
+                        .HasDatabaseName("IX_Responsavel_Escolinha_NomeBusca");
+
+                    b.HasIndex("Escolinha_ID", "Pessoa_ID")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Responsavel_Escolinha_Pessoa")
+                        .HasFilter("[Pessoa_ID] IS NOT NULL");
+
+                    b.HasIndex("Escolinha_ID", "Telefone")
+                        .HasDatabaseName("IX_Responsavel_Escolinha_Telefone");
+
+                    b.ToTable("Responsavel", (string)null);
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.VinculoAlunoResponsavel", b =>
+                {
+                    b.Property<Guid>("VinculoAlunoResponsavel_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Aluno_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Pagador")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Parentesco")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("RecebeCobranca")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("RecebeNotificacao")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("Responsavel_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("VinculoAlunoResponsavel_ID")
+                        .HasName("PK_VinculoAlunoResponsavel");
+
+                    b.HasIndex("Aluno_ID");
+
+                    b.HasIndex("Responsavel_ID");
+
+                    b.HasIndex("Escolinha_ID", "Responsavel_ID")
+                        .HasDatabaseName("IX_VinculoAlunoResponsavel_Escolinha_Responsavel");
+
+                    b.HasIndex("Escolinha_ID", "Aluno_ID", "Responsavel_ID")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_VinculoAlunoResponsavel_Escolinha_Aluno_Responsavel");
+
+                    b.ToTable("VinculoAlunoResponsavel", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_VinculoAlunoResponsavel_Pagador", "[Pagador] = 0 OR [RecebeCobranca] = 1");
+                        });
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Auditoria.RegistroAlteracao", b =>
                 {
                     b.Property<Guid>("RegistroAlteracao_ID")
@@ -603,6 +1074,158 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.ToTable("ParametroEscolinha", (string)null);
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Equipe.FaixaDisponibilidade", b =>
+                {
+                    b.Property<Guid>("FaixaDisponibilidade_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<int>("DiaSemana")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly>("Fim")
+                        .HasColumnType("time(0)");
+
+                    b.Property<TimeOnly>("Inicio")
+                        .HasColumnType("time(0)");
+
+                    b.Property<Guid>("Professor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("FaixaDisponibilidade_ID")
+                        .HasName("PK_FaixaDisponibilidade");
+
+                    b.HasIndex("Professor_ID");
+
+                    b.HasIndex("Escolinha_ID", "Professor_ID")
+                        .HasDatabaseName("IX_FaixaDisponibilidade_Escolinha_Professor");
+
+                    b.ToTable("FaixaDisponibilidade", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FaixaDisponibilidade_Horario", "[Fim] > [Inicio]");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Equipe.IndisponibilidadeProfessor", b =>
+                {
+                    b.Property<Guid>("IndisponibilidadeProfessor_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Fim")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("Inicio")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Motivo")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("Professor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("RegistradaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("RegistradaPorNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("IndisponibilidadeProfessor_ID")
+                        .HasName("PK_IndisponibilidadeProfessor");
+
+                    b.HasIndex("Professor_ID");
+
+                    b.HasIndex("Escolinha_ID", "Professor_ID", "Inicio")
+                        .HasDatabaseName("IX_IndisponibilidadeProfessor_Escolinha_Professor_Inicio");
+
+                    b.ToTable("IndisponibilidadeProfessor", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_IndisponibilidadeProfessor_Periodo", "[Fim] > [Inicio]");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Equipe.Professor", b =>
+                {
+                    b.Property<Guid>("Professor_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("Cpf")
+                        .HasMaxLength(11)
+                        .IsUnicode(false)
+                        .HasColumnType("char(11)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("NomeBusca")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("Pessoa_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Telefone")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Professor_ID")
+                        .HasName("PK_Professor");
+
+                    b.HasIndex("Pessoa_ID");
+
+                    b.HasIndex("Escolinha_ID", "Cpf")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Professor_Escolinha_Cpf")
+                        .HasFilter("[Cpf] IS NOT NULL");
+
+                    b.HasIndex("Escolinha_ID", "NomeBusca")
+                        .HasDatabaseName("IX_Professor_Escolinha_NomeBusca");
+
+                    b.HasIndex("Escolinha_ID", "Pessoa_ID")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Professor_Escolinha_Pessoa")
+                        .HasFilter("[Pessoa_ID] IS NOT NULL");
+
+                    b.ToTable("Professor", (string)null);
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Integracao.WebhookRecebido", b =>
                 {
                     b.Property<Guid>("WebhookRecebido_ID")
@@ -822,6 +1445,325 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.HorarioTurma", b =>
+                {
+                    b.Property<Guid>("HorarioTurma_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<int>("DiaSemana")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly>("Fim")
+                        .HasColumnType("time(0)");
+
+                    b.Property<TimeOnly>("Inicio")
+                        .HasColumnType("time(0)");
+
+                    b.Property<Guid>("Turma_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("HorarioTurma_ID")
+                        .HasName("PK_HorarioTurma");
+
+                    b.HasIndex("Turma_ID");
+
+                    b.HasIndex("Escolinha_ID", "Turma_ID")
+                        .HasDatabaseName("IX_HorarioTurma_Escolinha_Turma");
+
+                    b.ToTable("HorarioTurma", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_HorarioTurma_Horario", "[Fim] > [Inicio]");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.Local", b =>
+                {
+                    b.Property<Guid>("Local_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<int?>("Capacidade")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Observacao")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.ComplexProperty<Dictionary<string, object>>("Endereco", "MinhaEscolinha.Domain.Turmas.Local.Endereco#Endereco", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<string>("Bairro")
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)")
+                                .HasColumnName("Bairro");
+
+                            b1.Property<string>("Cep")
+                                .HasMaxLength(8)
+                                .IsUnicode(false)
+                                .HasColumnType("char(8)")
+                                .HasColumnName("Cep")
+                                .IsFixedLength();
+
+                            b1.Property<string>("Cidade")
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)")
+                                .HasColumnName("Cidade");
+
+                            b1.Property<string>("Complemento")
+                                .HasMaxLength(80)
+                                .HasColumnType("nvarchar(80)")
+                                .HasColumnName("Complemento");
+
+                            b1.Property<string>("Logradouro")
+                                .HasMaxLength(150)
+                                .HasColumnType("nvarchar(150)")
+                                .HasColumnName("Logradouro");
+
+                            b1.Property<string>("Numero")
+                                .HasMaxLength(20)
+                                .HasColumnType("nvarchar(20)")
+                                .HasColumnName("Numero");
+
+                            b1.Property<string>("Uf")
+                                .HasMaxLength(2)
+                                .IsUnicode(false)
+                                .HasColumnType("char(2)")
+                                .HasColumnName("Uf")
+                                .IsFixedLength();
+                        });
+
+                    b.HasKey("Local_ID")
+                        .HasName("PK_Local");
+
+                    b.HasIndex("Escolinha_ID", "Nome")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Local_Escolinha_Nome");
+
+                    b.ToTable("Local", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Local_Capacidade", "[Capacidade] IS NULL OR [Capacidade] > 0");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.SessaoTreino", b =>
+                {
+                    b.Property<Guid>("SessaoTreino_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<DateTime?>("CanceladaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("CanceladaPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("CanceladaPor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("Data")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Fim")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid?>("HorarioTurma_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Inicio")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Local_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MotivoCancelamento")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid>("Professor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Turma_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("SessaoTreino_ID")
+                        .HasName("PK_SessaoTreino");
+
+                    b.HasIndex("HorarioTurma_ID");
+
+                    b.HasIndex("Local_ID");
+
+                    b.HasIndex("Professor_ID");
+
+                    b.HasIndex("Turma_ID");
+
+                    b.HasIndex("Escolinha_ID", "HorarioTurma_ID", "Data")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_SessaoTreino_Escolinha_Horario_Data")
+                        .HasFilter("[HorarioTurma_ID] IS NOT NULL");
+
+                    b.HasIndex("Escolinha_ID", "Local_ID", "Inicio")
+                        .HasDatabaseName("IX_SessaoTreino_Escolinha_Local_Inicio");
+
+                    b.HasIndex("Escolinha_ID", "Professor_ID", "Inicio")
+                        .HasDatabaseName("IX_SessaoTreino_Escolinha_Professor_Inicio");
+
+                    b.HasIndex("Escolinha_ID", "Turma_ID", "Data")
+                        .HasDatabaseName("IX_SessaoTreino_Escolinha_Turma_Data");
+
+                    b.ToTable("SessaoTreino", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SessaoTreino_Horario", "[Fim] > [Inicio]");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.Turma", b =>
+                {
+                    b.Property<Guid>("Turma_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<int>("Capacidade")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Categoria")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateOnly>("DataInicio")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("EncerradaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Local_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Mensalidade")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int?>("MetaFrequenciaPercentual")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinimoConfirmados")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Modalidade_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MotivoEncerramento")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("Professor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Versao")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Turma_ID")
+                        .HasName("PK_Turma");
+
+                    b.HasIndex("Local_ID");
+
+                    b.HasIndex("Modalidade_ID");
+
+                    b.HasIndex("Professor_ID");
+
+                    b.HasIndex("Escolinha_ID", "Nome")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Turma_Escolinha_Nome_Ativa")
+                        .HasFilter("[Situacao] = 10");
+
+                    b.HasIndex("Escolinha_ID", "Professor_ID")
+                        .HasDatabaseName("IX_Turma_Escolinha_Professor");
+
+                    b.ToTable("Turma", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Turma_Capacidade", "[Capacidade] > 0");
+
+                            t.HasCheckConstraint("CK_Turma_Mensalidade", "[Mensalidade] >= 0");
+
+                            t.HasCheckConstraint("CK_Turma_MetaFrequencia", "[MetaFrequenciaPercentual] IS NULL OR [MetaFrequenciaPercentual] BETWEEN 1 AND 100");
+
+                            t.HasCheckConstraint("CK_Turma_MinimoConfirmados", "[MinimoConfirmados] > 0");
+                        });
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Acesso.Credencial", b =>
                 {
                     b.HasOne("MinhaEscolinha.Domain.Acesso.Pessoa", "Pessoa")
@@ -851,6 +1793,114 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasConstraintName("FK_VinculoAtuacao_Pessoa");
 
                     b.Navigation("Pessoa");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.Aluno", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Aluno_Escolinha");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.ConsentimentoAluno", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Aluno", null)
+                        .WithMany()
+                        .HasForeignKey("Aluno_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ConsentimentoAluno_Aluno");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ConsentimentoAluno_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Responsavel", "Responsavel")
+                        .WithMany()
+                        .HasForeignKey("Responsavel_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ConsentimentoAluno_Responsavel");
+
+                    b.Navigation("Responsavel");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.Matricula", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Aluno", "Aluno")
+                        .WithMany()
+                        .HasForeignKey("Aluno_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Matricula_Aluno");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Matricula_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Turma", "Turma")
+                        .WithMany()
+                        .HasForeignKey("Turma_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Matricula_Turma");
+
+                    b.Navigation("Aluno");
+
+                    b.Navigation("Turma");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.Responsavel", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Responsavel_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Acesso.Pessoa", null)
+                        .WithMany()
+                        .HasForeignKey("Pessoa_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_Responsavel_Pessoa");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.VinculoAlunoResponsavel", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Aluno", "Aluno")
+                        .WithMany()
+                        .HasForeignKey("Aluno_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_VinculoAlunoResponsavel_Aluno");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_VinculoAlunoResponsavel_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Responsavel", "Responsavel")
+                        .WithMany("Vinculos")
+                        .HasForeignKey("Responsavel_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_VinculoAlunoResponsavel_Responsavel");
+
+                    b.Navigation("Aluno");
+
+                    b.Navigation("Responsavel");
                 });
 
             modelBuilder.Entity("MinhaEscolinha.Domain.Auditoria.RegistroAlteracao", b =>
@@ -913,6 +1963,56 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasConstraintName("FK_ParametroEscolinha_Escolinha");
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Equipe.FaixaDisponibilidade", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_FaixaDisponibilidade_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Equipe.Professor", null)
+                        .WithMany("Disponibilidade")
+                        .HasForeignKey("Professor_ID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_FaixaDisponibilidade_Professor");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Equipe.IndisponibilidadeProfessor", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_IndisponibilidadeProfessor_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Equipe.Professor", null)
+                        .WithMany("Indisponibilidades")
+                        .HasForeignKey("Professor_ID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_IndisponibilidadeProfessor_Professor");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Equipe.Professor", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Professor_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Acesso.Pessoa", null)
+                        .WithMany()
+                        .HasForeignKey("Pessoa_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_Professor_Pessoa");
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Plataforma.CompraCreditos", b =>
                 {
                     b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
@@ -930,9 +2030,131 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasConstraintName("FK_CompraCreditos_PacoteCreditos");
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.HorarioTurma", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_HorarioTurma_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Turma", null)
+                        .WithMany("Horarios")
+                        .HasForeignKey("Turma_ID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_HorarioTurma_Turma");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.Local", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Local_Escolinha");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.SessaoTreino", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SessaoTreino_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.HorarioTurma", null)
+                        .WithMany()
+                        .HasForeignKey("HorarioTurma_ID")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_SessaoTreino_HorarioTurma");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Local", "Local")
+                        .WithMany()
+                        .HasForeignKey("Local_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SessaoTreino_Local");
+
+                    b.HasOne("MinhaEscolinha.Domain.Equipe.Professor", "Professor")
+                        .WithMany()
+                        .HasForeignKey("Professor_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SessaoTreino_Professor");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Turma", "Turma")
+                        .WithMany()
+                        .HasForeignKey("Turma_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_SessaoTreino_Turma");
+
+                    b.Navigation("Local");
+
+                    b.Navigation("Professor");
+
+                    b.Navigation("Turma");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.Turma", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Turma_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Local", "Local")
+                        .WithMany()
+                        .HasForeignKey("Local_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Turma_Local");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Modalidade", null)
+                        .WithMany()
+                        .HasForeignKey("Modalidade_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Turma_Modalidade");
+
+                    b.HasOne("MinhaEscolinha.Domain.Equipe.Professor", "Professor")
+                        .WithMany()
+                        .HasForeignKey("Professor_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Turma_Professor");
+
+                    b.Navigation("Local");
+
+                    b.Navigation("Professor");
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Acesso.Pessoa", b =>
                 {
                     b.Navigation("Credencial");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.Responsavel", b =>
+                {
+                    b.Navigation("Vinculos");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Equipe.Professor", b =>
+                {
+                    b.Navigation("Disponibilidade");
+
+                    b.Navigation("Indisponibilidades");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.Turma", b =>
+                {
+                    b.Navigation("Horarios");
                 });
 #pragma warning restore 612, 618
         }

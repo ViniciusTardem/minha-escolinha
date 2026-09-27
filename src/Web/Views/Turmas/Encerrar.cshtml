@@ -1,0 +1,36 @@
+@model EncerrarTurmaRequisicao
+@{
+    var ficha = (FichaTurma)ViewData["Ficha"]!;
+    ViewData["Title"] = $"Encerrar {ficha.Nome}";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Encerrar turma" meta="@ficha.Nome" voltar-href="/Turmas/Ficha/@ficha.Id" voltar-texto="Ficha da turma"
+                      descricao="A turma encerrada não recebe matrícula nem gera sessão. Ela fica no histórico, com as sessões e as matrículas que teve."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[640px]">
+        <form method="post" asp-action="Encerrar" asp-route-id="@ficha.Id" novalidate data-esc-confirmar="@($"Encerrar a turma {ficha.Nome}?")">
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                @if (ficha.Ocupadas > 0)
+                {
+                    <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="status">
+                        <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                        <span class="text-sm">A turma tem @ficha.Ocupadas matrícula(s) ativa(s). Encerre ou transfira cada matrícula na ficha do aluno antes de encerrar a turma.</span>
+                    </div>
+                }
+                <p class="text-sm text-secondary-foreground">
+                    As sessões previstas que ainda não aconteceram saem da agenda. As canceladas e as já realizadas ficam no histórico.
+                </p>
+                <div class="flex flex-col gap-1">
+                    <label class="kt-form-label" asp-for="Motivo">Motivo</label>
+                    <textarea class="kt-textarea" asp-for="Motivo" rows="2" maxlength="300" required placeholder="Ex.: fim do projeto no colégio"></textarea>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="/Turmas/Ficha/@ficha.Id">Cancelar</a>
+                <button class="kt-btn kt-btn-destructive" type="submit"><i class="ki-filled ki-archive"></i> Encerrar turma</button>
+            </div>
+        </form>
+    </div>
+</div>

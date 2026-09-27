@@ -30,7 +30,7 @@ Públicos:
 ```
 EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 ├── global.json · Directory.Build.props (prefixo MinhaEscolinha) · Directory.Packages.props (versões fixas)
-├── .config/dotnet-tools.json      (dotnet-ef 10)
+├── .config/dotnet-tools.json      (dotnet-ef 9.0.20)
 ├── docs/  PLANO · HERANCA · BACKLOG · DECISOES-EM-ABERTO · especificacao/ · design/
 │          metronic/ (referência local do Metronic, FORA do git: 61 MB, licença comercial)
 ├── src/
@@ -47,8 +47,12 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - `Infrastructure` implementa essas interfaces;
   - `Web` depende de `Application` e `Infrastructure`.
 - **Módulos:** a mesma pasta aparece nas camadas.
-  - Hoje: `Comum`, `Acesso` (M01), `Configuracao` (M02), `Eventos` e `Auditoria`.
-  - Próximos: `Turmas`, `Alunos`, `Equipe`, `Mensageria`, `Presenca`, `Financeiro`, `Carga`, `Integracao`.
+  - Hoje:
+    - `Comum`, `Acesso` (M01), `Configuracao` (M02), `Eventos` e `Auditoria`;
+    - `Turmas` (M04), `Alunos` (M03) e `Equipe` (M08), do S1; `Agenda`, só no domínio: compromisso datado e conflitos;
+    - `Plataforma` e `Integracao` (Stripe, EX-01).
+    - Na `Infrastructure`, os repositórios do cadastro ficam juntos em `Cadastro/`.
+  - Próximos: `Mensageria`, `Presenca`, `Financeiro` e `Carga`.
 
 ---
 
@@ -62,7 +66,9 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - datas `datetime2(3)` no horário de Brasília;
   - tabelas no singular; índices nomeados `IX_`/`UQ_`;
   - configuração EF em `Data/Configuracoes`;
-  - `rowversion` onde há concorrência (ex.: saldo de créditos).
+  - `rowversion` onde há concorrência: saldo de créditos, compra, turma e aluno;
+  - `TimeOnly` como `time(0)` (horários de turma e de disponibilidade).
+- **Armadilha do EF com filho novo:** entidade nova ganha a chave `Guid.NewGuid()` já na criação e entra por `DbSet.Add` explícito. Com a chave preenchida, a descoberta pelo grafo trata o filho como existente e gera `UPDATE`, que falha por concorrência.
 - **Multi-escolinha (X01):**
   - toda entidade de escolinha implementa `IEntidadeDaEscolinha` (`Escolinha_ID`), e todo índice único começa por `Escolinha_ID`;
   - o filtro global de escolinha é fechado por padrão: sem contexto, a consulta devolve zero linhas. No EF Core 9 cada entidade tem **um** filtro e `IgnoreQueryFilters()` ignora todos; outro filtro futuro (ex.: exclusão lógica) entra na mesma expressão;
@@ -112,7 +118,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 5. ✅ **Quando o evento chega, cancele o que ficou pendente.** Pagamento confirmado para a régua na hora.
 6. ✅ **Webhook: gravar o corpo bruto antes de interpretar**, responder `200` na hora e processar por job.
 7. ✅ **Segredo nunca em arquivo versionado.**
-8. ✅ **Distinguir erro retentável (5xx, timeout, 429) de definitivo.** O `FalhaIntegracao` do DP será portado com a primeira integração (S2).
+8. ✅ **Distinguir erro retentável (5xx, timeout, 429) de definitivo.** O `FalhaIntegracao` do DP (`Application/Comum`) entrou com o Stripe (EX-01) e vale para a Asaas e o WhatsApp.
 9. ✅ **Nunca truncar em silêncio.** O que for cortado vai para o log.
 10. ✅ **Toda ação sensível registra quem, quando e o valor anterior** (`RegistroAlteracao`).
 
@@ -142,12 +148,15 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 - **Usuário e contexto:**
   - `IUsuarioAtual.Id` é o `Pessoa_ID`;
   - `IContextoEscolinha` diz a escolinha da requisição e se a pessoa é da plataforma;
-  - `IAutorizacao.Pode(recurso, operacao)` decide o acesso; `PodeAsync(recurso, operacao, alvo)` decide sobre um alvo, com escopo por `IResolvedorEscopo`.
+  - `IAutorizacao.Pode(recurso, operacao)` decide o acesso; `PodeAsync(recurso, operacao, alvo)` decide sobre um alvo, com escopo por `IResolvedorEscopo` (`ResolvedorEscopoCadastros`: turma, aluno, sessão e professor);
+  - **listas filtram na consulta** pelas turmas de `IEscopoDeLeitura.TurmasAsync(recurso)`. A ficha confere `PodeAsync` e devolve 404 fora do escopo. O que vem junto (irmãos, outros filhos, marcas financeiras, CPF, valores) passa pelo mesmo escopo (D41);
+  - dado de saúde pela `PoliticaSaude` (completo, treino ou nada), aplicada no view model. O registro de alterações nunca guarda o conteúdo (D36).
 - **Dados e integrações:**
   - datas de auditoria por `IEntidadeAuditavel` + interceptor;
   - ação sensível via `RegistroDeAlteracoes.SeMudou/Registrar`;
   - segredo de negócio (chave Asaas da escolinha) com `IProtetorSegredos` (Data Protection); nunca em texto puro;
-  - cliente HTTP externo sempre com `Microsoft.Extensions.Http.Resilience`.
+  - cliente HTTP externo sempre com `Microsoft.Extensions.Http.Resilience`;
+  - valor em reais digitado: `decimal` com o binder `DecimalBrasileiroModelBinder` (`Moeda.TentarLer`) e campo mostrado com `Moeda.ParaCampo` (D30).
 - **Testes:**
   - xUnit + `FakeTimeProvider`;
   - com banco, `[FatoComBanco]` e a coleção `BancoDeTestes`, com `AmbienteAplicacao.ComoPlataformaAsync`, `NaEscolinhaAsync` e `SemContextoAsync`;
@@ -230,5 +239,11 @@ dotnet dev-certs https --trust
   - em produção, cadastre no painel do Stripe o endpoint `https://<site>/api/v1/webhooks/stripe` com os 4 eventos de Checkout (a tela Plataforma › Pacotes de créditos mostra a URL e a lista).
 - **`docs/metronic/` não está no git.** Para rodar `npm run metronic` em outra máquina, copie de `Projetos\SaaS\Adama\docs\metronic`. O recorte servido (`wwwroot/assets`) já está versionado.
 - **SQL Express:** teto de 10 GB por banco (P22). O banco de desenvolvimento está com `AUTO_CLOSE` desligado, porque o Hangfire consulta o banco sem parar.
-- **O banco de desenvolvimento tem dados de validação:** as escolinhas A e B com os seus gestores. Não use esses dados em demonstração ao cliente sem limpar.
-- **`/dev/design`** (vitrine) só existe em Development; fora dele responde 404.
+- **O banco de desenvolvimento tem dados de validação.** Não use esses dados em demonstração ao cliente sem limpar:
+  - as escolinhas A e B, com os seus gestores;
+  - em A, os cadastros do S1 e a massa de demonstração;
+  - o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A, para validar o escopo do professor com login real. A ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL.
+- **Jobs recorrentes** (horário de Brasília, registrados no startup):
+  - `sessoes-gerar-horizonte`, às 03:15: gera as sessões de treino até o fim do mês seguinte, uma escolinha por vez (D31);
+  - `stripe-varredura-compras`, a cada 20 minutos: confere as compras de créditos pendentes. Sai quando o Stripe está desligado (`Stripe:Habilitado = false`).
+- **`/dev/design`** (vitrine) e **`/dev/massa`** (massa de demonstração: 3 turmas e 60 alunos em 38 famílias na escolinha ativa, uma vez por escolinha, D40) só existem em Development; fora dele respondem 404.

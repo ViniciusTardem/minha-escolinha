@@ -1,0 +1,362 @@
+@model FichaAluno
+@{
+    ViewData["Title"] = Model.Nome;
+    var aba = Context.Request.Query["aba"].ToString();
+    var abas = new List<(string Chave, string Rotulo, int? Contador)>
+    {
+        ("resumo", "Resumo", null),
+        ("responsaveis", "Responsáveis", Model.Responsaveis.Count),
+        ("matriculas", "Matrículas", Model.Matriculas.Count(m => m.Situacao == SituacaoMatricula.Ativa)),
+        ("saude", "Saúde", null),
+        ("consentimentos", "Consentimentos", null)
+    };
+    if (Model.Pode.VerHistorico) abas.Add(("historico", "Histórico", null));
+    if (abas.All(a => a.Chave != aba)) aba = "resumo";
+    string Ou(string? valor) => string.IsNullOrWhiteSpace(valor) ? "—" : valor;
+    var endereco = Model.Endereco.Resumo();
+    var consentimentoDados = Model.EstadoConsentimentos[FinalidadeConsentimento.TratamentoDados];
+    var alertas = new List<string>();
+    if (!Model.TemMatriculaAtiva && Model.Situacao != SituacaoAluno.Desistente) alertas.Add("Sem matrícula ativa: o aluno não está em nenhuma turma.");
+    if (!Model.TemPagador && Model.Situacao != SituacaoAluno.Desistente && Model.Pode.VerValores) alertas.Add("Nenhum responsável marcado como pagador: a cobrança não sai sem ele.");
+    if (!Model.AlguemRecebeNotificacao) alertas.Add("Nenhum responsável recebe os avisos e as convocações.");
+    if (consentimentoDados == EstadoConsentimento.Pendente) alertas.Add("Consentimento de tratamento de dados ainda não registrado.");
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@Model.Nome" voltar-href="/Alunos" voltar-texto="Alunos"
+                      descricao="@($"{Formatacao.Idade(Model.Idade)} · {string.Join(", ", Model.Matriculas.Where(m => m.Situacao == SituacaoMatricula.Ativa).Select(m => m.Turma).DefaultIfEmpty("sem turma"))}")">
+        @if (Model.Pode.MudarSituacao)
+        {
+            @foreach (var destino in MaquinaSituacaoAluno.Destinos(Model.Situacao))
+            {
+                var perigo = destino == SituacaoAluno.Desistente;
+                <a class="kt-btn @(perigo ? "kt-btn-ghost" : "kt-btn-outline")" asp-action="Situacao" asp-route-id="@Model.Id" asp-route-para="@destino">
+                    <i class="ki-filled @(perigo ? "ki-exit-right" : destino == SituacaoAluno.Inativo ? "ki-timer" : "ki-check-circle")"></i>
+                    @MaquinaSituacaoAluno.Acao(Model.Situacao, destino)
+                </a>
+            }
+        }
+        @if (Model.Pode.EditarDados)
+        {
+            <a class="kt-btn kt-btn-primary" asp-action="Editar" asp-route-id="@Model.Id"><i class="ki-filled ki-pencil"></i> Editar dados</a>
+        }
+    </cabecalho-pagina>
+
+    <div class="flex flex-wrap items-center gap-2 mb-5">
+        <selo-status valor="Model.Situacao" texto="@($"{MaquinaSituacaoAluno.Rotulo(Model.Situacao)} desde {Formatacao.Data(Model.SituacaoDesde)}")"></selo-status>
+        @if (Model.TrialVencido)
+        {
+            <selo-status valor="SinalTela.TrialVencido" texto="@($"Trial vencido em {Formatacao.Data(Model.TrialAte)}")"></selo-status>
+        }
+        else if (Model.DiasParaFimDoTrial is { } dias)
+        {
+            <selo-status valor="SinalTela.TrialVencendo" texto="@(dias == 0 ? "Trial vence hoje" : $"Trial até {Formatacao.Data(Model.TrialAte)} ({dias} dia(s))")"></selo-status>
+        }
+        @if (Model.Situacao == SituacaoAluno.Trial && Model.Pode.MudarSituacao)
+        {
+            <a class="kt-link text-xs" asp-action="Situacao" asp-route-id="@Model.Id" asp-route-para="@SituacaoAluno.Trial">Ajustar o prazo do trial</a>
+        }
+    </div>
+
+    @if (alertas.Count > 0)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3 mb-5" role="status">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <div class="flex flex-col gap-1 text-sm">
+                @foreach (var a in alertas)
+                {
+                    <span>@a</span>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="esc-abas mb-5" role="tablist" aria-label="Ficha do aluno">
+        @foreach (var (chave, rotulo, contador) in abas)
+        {
+            <button class="esc-aba" type="button" role="tab" id="aba_@chave" aria-selected="@(chave == aba ? "true" : "false")" aria-controls="painel_@chave" data-esc-aba="#painel_@chave">
+                @rotulo
+                @if (contador is { } n)
+                {
+                    <span class="esc-aba-contador">@n</span>
+                }
+            </button>
+        }
+    </div>
+
+    @* ── Resumo ── *@
+    <section id="painel_resumo" role="tabpanel" aria-labelledby="aba_resumo" hidden="@(aba != "resumo")">
+        <div class="kt-card">
+            <div class="kt-card-header"><h3 class="kt-card-title">Dados do aluno</h3></div>
+            <div class="kt-card-content">
+                <dl class="esc-dados">
+                    <dt>Nascimento</dt>
+                    <dd>@Formatacao.Data(Model.DataNascimento) (@Formatacao.Idade(Model.Idade))</dd>
+                    @if (Model.Pode.VerDocumentos)
+                    {
+                        <dt>CPF</dt>
+                        <dd>@Ou(Formatacao.Cpf(Model.Cpf))</dd>
+                    }
+                    <dt>Categoria</dt>
+                    <dd>@Ou(Model.Categoria)</dd>
+                    <dt>Endereço</dt>
+                    <dd>@Ou(endereco)</dd>
+                    <dt>Na escolinha desde</dt>
+                    <dd>@Formatacao.Data(Model.DataMatricula)</dd>
+                    @if (Model.TrialAte is not null)
+                    {
+                        <dt>Trial até</dt>
+                        <dd>@Formatacao.Data(Model.TrialAte)</dd>
+                    }
+                    @if (Model.DataDesligamento is not null)
+                    {
+                        <dt>Desligamento</dt>
+                        <dd>@Formatacao.Data(Model.DataDesligamento) — @Model.MotivoDesligamento</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+    </section>
+
+    @* ── Responsáveis ── *@
+    <section id="painel_responsaveis" role="tabpanel" aria-labelledby="aba_responsaveis" hidden="@(aba != "responsaveis")">
+        <div class="kt-card">
+            <div class="kt-card-header">
+                <h3 class="kt-card-title">Responsáveis</h3>
+                @if (Model.Pode.EditarVinculos)
+                {
+                    <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Responsaveis/Vincular?alunoId=@Model.Id"><i class="ki-filled ki-plus"></i> Adicionar responsável</a>
+                }
+            </div>
+            <ul class="esc-linhas">
+                @foreach (var r in Model.Responsaveis)
+                {
+                    var marcas = new List<string>();
+                    if (r.RecebeCobranca && Model.Pode.VerValores) marcas.Add("recebe a cobrança");
+                    if (r.RecebeNotificacao) marcas.Add("recebe avisos e convocações");
+                    <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4">
+                        <span class="flex flex-col gap-1 min-w-0">
+                            <span class="flex flex-wrap items-center gap-2">
+                                <a class="text-sm font-semibold text-mono hover:text-primary" href="/Responsaveis/Ficha/@r.ResponsavelId">@r.Nome</a>
+                                <span class="text-xs text-secondary-foreground">@VinculoAlunoResponsavel.Rotulo(r.Parentesco)</span>
+                                @if (r.Pagador && Model.Pode.VerValores)
+                                {
+                                    <selo-status valor="SinalTela.Pagador"></selo-status>
+                                }
+                            </span>
+                            <span class="text-xs text-secondary-foreground">
+                                @Ou(Formatacao.Telefone(r.Telefone))@(r.Email is null ? "" : $" · {r.Email}")@(r.Cpf is null ? "" : $" · CPF {Formatacao.Cpf(r.Cpf)}")
+                            </span>
+                            <span class="text-xs text-muted-foreground">@(marcas.Count == 0 ? "Não recebe mensagens" : string.Join(" · ", marcas))</span>
+                            @if (r.OutrosAlunos.Count > 0)
+                            {
+                                <span class="text-xs text-muted-foreground">Também responsável por @string.Join(", ", r.OutrosAlunos)</span>
+                            }
+                        </span>
+                        @if (Model.Pode.EditarVinculos)
+                        {
+                            <span class="flex items-center gap-2 shrink-0">
+                                <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Responsaveis/Vinculo/@r.VinculoId"><i class="ki-filled ki-pencil"></i> Vínculo</a>
+                                @if (Model.Responsaveis.Count > 1)
+                                {
+                                    <form action="/Responsaveis/Desvincular/@r.VinculoId" method="post" data-esc-confirmar="@($"{r.Nome} deixa de ser responsável por {Model.Nome}. Continuar?")">
+                                        @Html.AntiForgeryToken()
+                                        <button class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" type="submit" aria-label="@($"Desvincular {r.Nome}")"><i class="ki-filled ki-trash"></i></button>
+                                    </form>
+                                }
+                            </span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    </section>
+
+    @* ── Matrículas ── *@
+    <section id="painel_matriculas" role="tabpanel" aria-labelledby="aba_matriculas" hidden="@(aba != "matriculas")">
+        <div class="kt-card">
+            <div class="kt-card-header">
+                <h3 class="kt-card-title">Matrículas</h3>
+                @if (Model.Pode.Matricular && Model.Situacao != SituacaoAluno.Desistente)
+                {
+                    <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Matriculas/Nova?alunoId=@Model.Id"><i class="ki-filled ki-plus"></i> Matricular em outra turma</a>
+                }
+            </div>
+            @if (Model.Matriculas.Count == 0)
+            {
+                <estado-vazio icone="ki-category" titulo="Nenhuma matrícula" texto="A matrícula liga o aluno a uma turma, com valor e datas próprias."></estado-vazio>
+            }
+            else
+            {
+                <ul class="esc-linhas">
+                    @foreach (var m in Model.Matriculas)
+                    {
+                        <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4">
+                            <span class="flex flex-col gap-1 min-w-0">
+                                <span class="flex flex-wrap items-center gap-2">
+                                    <a class="text-sm font-semibold text-mono hover:text-primary" href="/Turmas/Ficha/@m.TurmaId">@m.Turma</a>
+                                    <selo-status valor="m.Situacao"></selo-status>
+                                </span>
+                                <span class="text-xs text-secondary-foreground">
+                                    @(m.Fim is null ? $"Desde {Formatacao.Data(m.Inicio)}" : $"{Formatacao.Data(m.Inicio)} a {Formatacao.Data(m.Fim)}")@(m.Mensalidade is { } valor ? $" · {Formatacao.Moeda(valor)} por mês" : "")
+                                </span>
+                                @if (m.Motivo is not null)
+                                {
+                                    <span class="text-xs text-muted-foreground">@m.Motivo</span>
+                                }
+                            </span>
+                            @if (Model.Pode.Matricular && m.Situacao == SituacaoMatricula.Ativa)
+                            {
+                                <span class="flex items-center gap-2 shrink-0">
+                                    <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Matriculas/Mensalidade/@m.Id"><i class="ki-filled ki-dollar"></i> Valor</a>
+                                    <a class="kt-btn kt-btn-sm kt-btn-ghost" href="/Matriculas/Encerrar/@m.Id"><i class="ki-filled ki-exit-right"></i> Encerrar</a>
+                                </span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </section>
+
+    @* ── Saúde (R5: o campo só sai do banco para quem pode ver) ── *@
+    <section id="painel_saude" role="tabpanel" aria-labelledby="aba_saude" hidden="@(aba != "saude")">
+        <div class="kt-card">
+            <div class="kt-card-header">
+                <h3 class="kt-card-title flex items-center gap-2"><i class="ki-filled ki-heart text-primary"></i> Saúde e emergência</h3>
+                @if (Model.Pode.EditarSaude)
+                {
+                    <a class="kt-btn kt-btn-sm kt-btn-outline" asp-action="Saude" asp-route-id="@Model.Id"><i class="ki-filled ki-pencil"></i> Editar</a>
+                }
+            </div>
+            <div class="kt-card-content flex flex-col gap-3">
+                @if (Model.Saude is { } s)
+                {
+                    <dl class="esc-dados">
+                        <dt>Alergias</dt>
+                        <dd>@Ou(s.Alergias)</dd>
+                        <dt>Restrições</dt>
+                        <dd>@Ou(s.Restricoes)</dd>
+                        @if (Model.AcessoSaude == AcessoSaude.Completo)
+                        {
+                            <dt>Observações médicas</dt>
+                            <dd>@Ou(s.ObservacoesMedicas)</dd>
+                        }
+                        <dt>Contato de emergência</dt>
+                        <dd>@(s.ContatoEmergenciaNome is null ? "—" : $"{s.ContatoEmergenciaNome}{(s.ContatoEmergenciaParentesco is null ? "" : $" ({s.ContatoEmergenciaParentesco})")} · {Ou(Formatacao.Telefone(s.ContatoEmergenciaTelefone))}")</dd>
+                    </dl>
+                    @if (Model.AcessoSaude == AcessoSaude.Treino)
+                    {
+                        <p class="text-xs text-muted-foreground">Você vê o necessário ao treino. As observações médicas ficam com o gestor e os responsáveis.</p>
+                    }
+                }
+                else
+                {
+                    <p class="text-sm text-secondary-foreground">Dado de saúde restrito ao gestor, ao professor da turma e aos responsáveis do aluno.</p>
+                }
+            </div>
+        </div>
+    </section>
+
+    @* ── Consentimentos ── *@
+    <section id="painel_consentimentos" role="tabpanel" aria-labelledby="aba_consentimentos" hidden="@(aba != "consentimentos")">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+            @foreach (var termo in TermosConsentimento.Todos)
+            {
+                var estado = Model.EstadoConsentimentos[termo.Finalidade];
+                var vigente = Model.Consentimentos.FirstOrDefault(c => c.Finalidade == termo.Finalidade);
+                <div class="kt-card">
+                    <div class="kt-card-header">
+                        <h3 class="kt-card-title flex items-center gap-2"><i class="ki-filled ki-shield-tick text-primary"></i> @termo.Titulo</h3>
+                        <selo-status valor="estado"></selo-status>
+                    </div>
+                    <div class="kt-card-content flex flex-col gap-3">
+                        @if (vigente is not null)
+                        {
+                            <span class="text-sm text-secondary-foreground">
+                                @(vigente.Estado == EstadoConsentimento.Revogado ? $"Revogado em {Formatacao.DataHora(vigente.RevogadoEm)} por {vigente.RevogadoPorNome}." : $"{ApresentacaoStatus.Selo(vigente.Estado).Rotulo} por {vigente.Responsavel} em {Formatacao.DataHora(vigente.RegistradoEm)}.")
+                            </span>
+                        }
+                        @if (Model.Pode.Consentimentos)
+                        {
+                            <div class="flex flex-wrap gap-2">
+                                @if (estado == EstadoConsentimento.Concedido && vigente is not null)
+                                {
+                                    <a class="kt-btn kt-btn-sm kt-btn-ghost" href="/Consentimentos/Revogar/@vigente.Id"><i class="ki-filled ki-shield-cross"></i> Revogar</a>
+                                }
+                                else
+                                {
+                                    <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Consentimentos/Registrar?alunoId=@Model.Id&finalidade=@termo.Finalidade"><i class="ki-filled ki-notepad-edit"></i> Registrar resposta</a>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        @if (Model.Consentimentos.Count > 0)
+        {
+            <div class="kt-card">
+                <div class="kt-card-header"><h3 class="kt-card-title">Registro</h3></div>
+                <ul class="esc-linhas">
+                    @foreach (var c in Model.Consentimentos)
+                    {
+                        <li class="flex flex-col gap-1 px-5 py-3 text-sm">
+                            <span class="flex flex-wrap items-center gap-2">
+                                <span class="font-medium text-mono">@TermosConsentimento.Rotulo(c.Finalidade)</span>
+                                <selo-status valor="c.Estado"></selo-status>
+                            </span>
+                            <span class="text-xs text-secondary-foreground">
+                                @c.Responsavel · @TermosConsentimento.Rotulo(c.Origem) · texto @c.VersaoTermo · registrado por @c.RegistradoPorNome em @Formatacao.DataHora(c.RegistradoEm)
+                            </span>
+                            @if (c.RevogadoEm is not null)
+                            {
+                                <span class="text-xs text-secondary-foreground">Revogado em @Formatacao.DataHora(c.RevogadoEm) por @c.RevogadoPorNome@(c.MotivoRevogacao is null ? "" : $": {c.MotivoRevogacao}")</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </section>
+
+    @* ── Histórico (auditoria: só o gestor) ── *@
+    @if (Model.Pode.VerHistorico)
+    {
+        <section id="painel_historico" role="tabpanel" aria-labelledby="aba_historico" hidden="@(aba != "historico")">
+            <div class="kt-card">
+                <div class="kt-card-header"><h3 class="kt-card-title">Histórico</h3></div>
+                @if (Model.Historico.Count == 0)
+                {
+                    <estado-vazio icone="ki-time" titulo="Sem alterações registradas" texto="Matrícula, situação, vínculos e mudanças de valor aparecem aqui, com autor e data."></estado-vazio>
+                }
+                else
+                {
+                    <ul class="esc-linhas">
+                        @foreach (var h in Model.Historico)
+                        {
+                            <li class="flex flex-col gap-1 px-5 py-3 text-sm">
+                                <span class="flex flex-wrap items-center gap-2">
+                                    <span class="font-medium text-mono">@h.Campo</span>
+                                    <span class="text-xs text-secondary-foreground">@Formatacao.DataHora(h.Em) · @h.AutorNome</span>
+                                </span>
+                                @if (h.ValorAnterior is not null)
+                                {
+                                    <span class="text-xs text-secondary-foreground">Antes: @h.ValorAnterior</span>
+                                }
+                                @if (h.ValorNovo is not null)
+                                {
+                                    <span class="text-xs text-foreground">@(h.ValorAnterior is null ? "" : "Depois: ")@h.ValorNovo</span>
+                                }
+                                @if (h.Motivo is not null)
+                                {
+                                    <span class="text-xs text-muted-foreground">Motivo: @h.Motivo</span>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </section>
+    }
+</div>

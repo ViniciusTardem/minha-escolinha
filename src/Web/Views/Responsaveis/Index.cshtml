@@ -1,0 +1,57 @@
+@model ResponsaveisViewModel
+@{
+    ViewData["Title"] = "Responsáveis";
+    var paginacao = PaginacaoViewModel.De(Model.Lista, "responsável(is)", new Dictionary<string, string?> { ["busca"] = Model.Busca });
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Responsáveis" descricao="Um cadastro por pessoa na escolinha, reaproveitado entre irmãos. Novos responsáveis entram pelo cadastro do aluno."
+                      meta="@($"{Model.Lista.Total} responsável(is)")">
+        <a class="kt-btn kt-btn-outline" href="/Alunos"><i class="ki-filled ki-people"></i> Alunos</a>
+    </cabecalho-pagina>
+
+    <form method="get" class="mb-5 max-w-[520px]">
+        <label class="kt-form-label" for="busca">Buscar</label>
+        <div class="kt-input mt-1">
+            <i class="ki-filled ki-magnifier"></i>
+            <input id="busca" name="busca" type="search" value="@Model.Busca" placeholder="Nome ou celular" />
+        </div>
+    </form>
+
+    <div class="kt-card">
+        @if (Model.Lista.Itens.Count == 0)
+        {
+            <estado-vazio icone="ki-users" titulo="Nenhum responsável" texto="Os responsáveis entram com o cadastro do aluno."></estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[200px]">Responsável</th>
+                            <th class="min-w-[180px] hidden md:table-cell">Alunos</th>
+                            <th class="min-w-[130px]">Acesso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.Lista.Itens)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="flex flex-col gap-0.5">
+                                        <a class="font-medium text-mono hover:text-primary" asp-action="Ficha" asp-route-id="@r.Id">@r.Nome</a>
+                                        <span class="text-xs text-secondary-foreground">@(r.Telefone is null ? "Sem celular" : Formatacao.Telefone(r.Telefone))</span>
+                                    </div>
+                                </td>
+                                <td class="hidden md:table-cell text-secondary-foreground">@(r.Alunos.Count == 0 ? "—" : string.Join(", ", r.Alunos))</td>
+                                <td><selo-status valor="r.TemAcesso ? SinalTela.ComAcesso : SinalTela.SemAcesso"></selo-status></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <partial name="_Paginacao" model="paginacao" />
+        }
+    </div>
+</div>

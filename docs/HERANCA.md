@@ -44,6 +44,20 @@ Portado com o prefixo trocado; ajustes anotados.
 | Web | <ul><li>Pipeline: `Program.cs`; `Infraestrutura/Autenticacao` (cookie, carimbo, revalidação a cada 5 min), `UsuarioAtualHttp`, `CatalogoModulos`, `Formatacao`, `ChavesTempData`, `Saude`.</li><li>`Filters/ExigirTrocaSenhaFilter`; `Middleware/CabecalhosSegurancaMiddleware` (CSP sem `https:` em img/media, com `worker-src 'self'` e `manifest-src 'self'`) e `ExceptionLoggingMiddleware`.</li><li>Controllers `Conta`, `Erro` e `Modulos`; views `_Layout`, `_LayoutAutenticacao`, `_Sidebar`, `_Header`, `_Mensagens` e `_ErrosFormulario`.</li><li>Front: `wwwroot/js/tema.js`, `app.js`, `assistente.js` e `selecao-busca.js`; `package.json`; `scripts/copiar-fontes`, `copiar-bibliotecas` e `verificar-classes`.</li></ul> |
 | Testes | `BancoDeTestes` (fixture, `[FatoComBanco]`), regras de ouro (relógio), guarda de ambiente, `DataHoraBrasil` |
 
+### 2.1 O que o S1 acrescentou (27/09/2026)
+
+O S1 não trouxe dependência nova: NuGet e npm continuam iguais aos do S0. As peças abaixo são novas e não têm equivalente direto no DP.
+
+| Peça | Onde | Por quê |
+|---|---|---|
+| Linhas repetíveis | `wwwroot/js/linhas.js` | Horários da turma e faixas de disponibilidade do professor. <ul><li>Adicionar e retirar linhas renumera `name`, `id` e o oculto `__Invariant` que o ASP.NET põe nos campos de hora.</li><li>A linha nova sai de um `<template>` do servidor; o JS não monta HTML.</li><li>Sem JS, as linhas desenhadas pelo servidor funcionam, inclusive uma linha em branco extra.</li></ul> |
+| Busca de responsável | `wwwroot/js/busca-responsavel.js` | CA-1: achar o responsável já cadastrado dentro do cadastro do aluno. Usa `esc.fetch` e mostra o CPF mascarado. Sem JS, o CPF igual reaproveita sozinho no servidor, e celular ou nome igual viram sugestão. |
+| Valor em reais | `Domain/Comum/Moeda`, `Web/Infraestrutura/DecimalBrasileiro` | D30: o binder padrão em pt-BR leria "150.50" como 15.050. |
+| Dias e horários da semana | `Domain/Comum/DiasSemana` (`HorarioSemanal`) | Semana começando na segunda, nomes em pt-BR ("na terça", "no sábado") e sobreposição de horários. |
+| `TimeOnly` como `time(0)` | `EscolinhaDbContext.ConfigureConventions` | Convenção nova, ao lado do `datetime2(3)` herdado. |
+| Versão de linha no formulário | `Application/Comum/Cadastros` (`Versao`, `LerVersao`, `MensagemConflito`) | D37. No DP, a versão vai pelo drawer (`ficha.js`); aqui vai num campo escondido do formulário, e o conflito vira mensagem. |
+| Massa de demonstração | `Web/Infraestrutura/Desenvolvimento/MassaDemonstracao`, página `/dev/massa` | D40. Segue a ideia das páginas `/dev` do DP: só em Development. |
+
 ## 3. Integrações existentes nos projetos locais
 
 Varredura por **conteúdo** em todo `C:\Users\vinic\Documents\Projetos`, em 26/09/2026:

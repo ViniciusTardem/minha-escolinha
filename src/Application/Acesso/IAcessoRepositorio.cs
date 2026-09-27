@@ -28,6 +28,9 @@ public interface IAcessoRepositorio
     /// <summary>Vínculos da pessoa na escolinha do contexto (ativos e revogados).</summary>
     Task<IReadOnlyList<VinculoAtuacao>> VinculosNaEscolinhaAsync(Guid pessoaId, CancellationToken ct = default);
 
+    /// <summary>As pessoas com vínculo ativo na escolinha do contexto, com os papéis (para reaproveitar o cadastro, BL-M08-01).</summary>
+    Task<IReadOnlyList<PessoaDaEscolinha>> PessoasDaEscolinhaAsync(CancellationToken ct = default);
+
     void AdicionarPessoa(Pessoa pessoa);
 
     void AdicionarVinculo(VinculoAtuacao vinculo);

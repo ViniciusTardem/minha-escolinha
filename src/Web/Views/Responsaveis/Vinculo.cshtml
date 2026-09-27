@@ -1,0 +1,55 @@
+@model VinculoRequisicao
+@{
+    var (vinculo, aluno) = ((VinculoAlunoResponsavel, string))ViewData["Vinculo"]!;
+    var nome = vinculo.Responsavel?.Nome ?? "Responsável";
+    ViewData["Title"] = $"Vínculo · {nome}";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Vínculo com o aluno" meta="@($"{nome} · {aluno}")" voltar-href="/Alunos/Ficha/@vinculo.Aluno_ID?aba=responsaveis" voltar-texto="Ficha do aluno"
+                      descricao="É no vínculo que mora a permissão: quem paga, quem recebe a cobrança e quem recebe avisos e convocações deste aluno."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[640px]">
+        <form asp-action="Vinculo" asp-route-id="@Model.VinculoId" method="post" novalidate>
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <div class="flex flex-col gap-1 max-w-[280px]">
+                    <label class="kt-form-label" asp-for="Parentesco">Parentesco</label>
+                    <select class="kt-select" asp-for="Parentesco">
+                        @foreach (var p in Enum.GetValues<Parentesco>())
+                        {
+                            <option value="@p">@VinculoAlunoResponsavel.Rotulo(p)</option>
+                        }
+                    </select>
+                </div>
+                <div class="esc-linhas flex flex-col">
+                    <label class="flex items-start justify-between gap-4 py-3">
+                        <span class="flex flex-col gap-0.5">
+                            <span class="text-sm font-medium text-mono">É quem paga</span>
+                            <span class="text-xs text-secondary-foreground">A cobrança da Asaas sai em nome dele (precisa de CPF). Marcar aqui tira a marca de outro responsável.</span>
+                        </span>
+                        <input class="kt-switch shrink-0" asp-for="Pagador" type="checkbox" />
+                    </label>
+                    <label class="flex items-start justify-between gap-4 py-3">
+                        <span class="flex flex-col gap-0.5">
+                            <span class="text-sm font-medium text-mono">Recebe a cobrança</span>
+                            <span class="text-xs text-secondary-foreground">Lembretes de vencimento e avisos de atraso (quem paga sempre recebe).</span>
+                        </span>
+                        <input class="kt-switch shrink-0" asp-for="RecebeCobranca" type="checkbox" />
+                    </label>
+                    <label class="flex items-start justify-between gap-4 py-3">
+                        <span class="flex flex-col gap-0.5">
+                            <span class="text-sm font-medium text-mono">Recebe avisos e convocações</span>
+                            <span class="text-xs text-secondary-foreground">Alerta de faltas, treino cancelado e convocação para jogos.</span>
+                        </span>
+                        <input class="kt-switch shrink-0" asp-for="RecebeNotificacao" type="checkbox" />
+                    </label>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="/Alunos/Ficha/@vinculo.Aluno_ID?aba=responsaveis">Cancelar</a>
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>

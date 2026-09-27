@@ -50,6 +50,21 @@ public class AcessoRepositorio(EscolinhaDbContext contexto) : IAcessoRepositorio
     public async Task<IReadOnlyList<VinculoAtuacao>> VinculosNaEscolinhaAsync(Guid pessoaId, CancellationToken ct = default) =>
         await contexto.VinculosAtuacao.Where(v => v.Pessoa_ID == pessoaId).ToListAsync(ct);
 
+    public async Task<IReadOnlyList<PessoaDaEscolinha>> PessoasDaEscolinhaAsync(CancellationToken ct = default)
+    {
+        // Os vínculos passam pelo filtro (só a escolinha do contexto); a Pessoa é global e vem pela junção.
+        var linhas = await contexto.VinculosAtuacao.AsNoTracking()
+            .Where(v => v.Situacao == SituacaoVinculo.Ativo)
+            .Select(v => new { v.Pessoa_ID, v.Pessoa!.Nome, v.Pessoa.Cpf, v.Papel })
+            .ToListAsync(ct);
+
+        return linhas
+            .GroupBy(l => new { l.Pessoa_ID, l.Nome, l.Cpf })
+            .OrderBy(g => g.Key.Nome)
+            .Select(g => new PessoaDaEscolinha(g.Key.Pessoa_ID, g.Key.Nome, g.Key.Cpf, g.Select(l => l.Papel).Distinct().OrderBy(p => p).ToList()))
+            .ToList();
+    }
+
     public void AdicionarPessoa(Pessoa pessoa) => contexto.Pessoas.Add(pessoa);
 
     public void AdicionarVinculo(VinculoAtuacao vinculo) => contexto.VinculosAtuacao.Add(vinculo);

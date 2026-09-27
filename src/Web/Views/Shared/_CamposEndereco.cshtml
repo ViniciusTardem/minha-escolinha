@@ -1,0 +1,32 @@
+@model MinhaEscolinha.Application.Comum.IComEndereco
+@* Campos de endereço de um cadastro (local, aluno, responsável). Os nomes ficam na raiz do formulário. *@
+<div class="grid grid-cols-1 md:grid-cols-6 gap-5">
+    <div class="flex flex-col gap-1 md:col-span-4">
+        <label class="kt-form-label" asp-for="Logradouro">Rua <span class="text-muted-foreground">(opcional)</span></label>
+        <input class="kt-input" asp-for="Logradouro" maxlength="150" autocomplete="address-line1" />
+    </div>
+    <div class="flex flex-col gap-1 md:col-span-2">
+        <label class="kt-form-label" asp-for="Numero">Número</label>
+        <input class="kt-input" asp-for="Numero" maxlength="20" />
+    </div>
+    <div class="flex flex-col gap-1 md:col-span-3">
+        <label class="kt-form-label" asp-for="Complemento">Complemento</label>
+        <input class="kt-input" asp-for="Complemento" maxlength="80" autocomplete="address-line2" />
+    </div>
+    <div class="flex flex-col gap-1 md:col-span-3">
+        <label class="kt-form-label" asp-for="Bairro">Bairro</label>
+        <input class="kt-input" asp-for="Bairro" maxlength="80" />
+    </div>
+    <div class="flex flex-col gap-1 md:col-span-3">
+        <label class="kt-form-label" asp-for="Cidade">Cidade</label>
+        <input class="kt-input" asp-for="Cidade" maxlength="80" placeholder="Londrina" autocomplete="address-level2" />
+    </div>
+    <div class="flex flex-col gap-1 md:col-span-1">
+        <label class="kt-form-label" asp-for="Uf">UF</label>
+        <input class="kt-input" asp-for="Uf" maxlength="2" placeholder="PR" autocomplete="address-level1" />
+    </div>
+    <div class="flex flex-col gap-1 md:col-span-2">
+        <label class="kt-form-label" asp-for="Cep">CEP</label>
+        <input class="kt-input" asp-for="Cep" inputmode="numeric" maxlength="9" placeholder="00000-000" autocomplete="postal-code" />
+    </div>
+</div>

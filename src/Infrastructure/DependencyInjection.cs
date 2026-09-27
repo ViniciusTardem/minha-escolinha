@@ -4,10 +4,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MinhaEscolinha.Application.Acesso;
+using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
+using MinhaEscolinha.Application.Equipe;
 using MinhaEscolinha.Application.Plataforma;
+using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Infrastructure.Acesso;
+using MinhaEscolinha.Infrastructure.Cadastro;
 using MinhaEscolinha.Infrastructure.Comum;
 using MinhaEscolinha.Infrastructure.Configuracao;
 using MinhaEscolinha.Infrastructure.Data.Contexto;
@@ -51,6 +55,13 @@ public static class DependencyInjection
         services.AddScoped<IAcessoRepositorio, AcessoRepositorio>();
         services.AddScoped<IConfiguracaoRepositorio, ConfiguracaoRepositorio>();
         services.AddScoped<IConsultasPlataforma, ConsultasPlataforma>();
+
+        // S1 — cadastro
+        services.AddScoped<IEquipeRepositorio, EquipeRepositorio>();
+        services.AddScoped<ITurmasRepositorio, TurmasRepositorio>();
+        services.AddScoped<IAlunosRepositorio, AlunosRepositorio>();
+        services.AddScoped<IConsultasEscopo, ConsultasEscopo>();
+        services.AddScoped<JobsTurmas>();
 
         // Plataforma: pacotes de créditos vendidos pelo Stripe da LDNA
         services.AddScoped<IPlataformaRepositorio, PlataformaRepositorio>();

@@ -1,0 +1,44 @@
+@model CancelarSessaoRequisicao
+@{
+    var sessao = (SessaoResposta)ViewData["Sessao"]!;
+    ViewData["Title"] = "Cancelar treino";
+    var voltar = Context.Request.Query["voltar"].ToString();
+    var destino = Url.IsLocalUrl(voltar) ? voltar : $"/Turmas/Ficha/{sessao.TurmaId}";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Cancelar treino" meta="@($"{sessao.Turma} · {Formatacao.DiaCurto(sessao.Data)} · {Formatacao.Horario(sessao.Inicio, sessao.Fim)}")"
+                      voltar-href="@destino" voltar-texto="Voltar"
+                      descricao="O cancelamento fica registrado com o motivo e quem cancelou. As famílias da turma serão avisadas pelo motor de mensagens assim que ele entrar (próxima etapa do piloto)."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[640px]">
+        <form method="post" asp-action="Cancelar" asp-route-id="@sessao.Id" novalidate>
+            @if (Url.IsLocalUrl(voltar))
+            {
+                <input type="hidden" name="voltar" value="@voltar" />
+            }
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <dl class="esc-dados">
+                    <dt>Turma</dt>
+                    <dd>@sessao.Turma</dd>
+                    <dt>Quando</dt>
+                    <dd>@Formatacao.DiaPorExtenso(sessao.Data), @Formatacao.Horario(sessao.Inicio, sessao.Fim)</dd>
+                    <dt>Onde</dt>
+                    <dd>@sessao.Local</dd>
+                    <dt>Professor</dt>
+                    <dd>@sessao.Professor</dd>
+                </dl>
+                <div class="flex flex-col gap-1">
+                    <label class="kt-form-label" asp-for="Motivo">Motivo</label>
+                    <textarea class="kt-textarea" asp-for="Motivo" rows="2" maxlength="300" required placeholder="Ex.: chuva forte, quadra interditada"></textarea>
+                    <span class="text-xs text-muted-foreground">O motivo vai no aviso às famílias.</span>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="@destino">Voltar</a>
+                <button class="kt-btn kt-btn-destructive" type="submit"><i class="ki-filled ki-cross-circle"></i> Cancelar este treino</button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,167 @@
+@inject IAutorizacao Autorizacao
+@model FichaProfessorViewModel
+@{
+    var p = Model.Ficha;
+    ViewData["Title"] = p.Nome;
+    var podeAlterar = Autorizacao.Pode(Recurso.CadastroProfessores, Operacao.Alterar);
+    string Ou(string? valor) => string.IsNullOrWhiteSpace(valor) ? "—" : valor;
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@p.Nome" voltar-href="/Professores" voltar-texto="Professores"
+                      descricao="Dados, turmas e disponibilidade. Treino marcado fora da disponibilidade, num horário já ocupado ou numa indisponibilidade gera alerta.">
+        @if (podeAlterar)
+        {
+            <a class="kt-btn kt-btn-outline" asp-action="Editar" asp-route-id="@p.Id"><i class="ki-filled ki-pencil"></i> Editar</a>
+        }
+    </cabecalho-pagina>
+
+    <partial name="_ErrosFormulario" />
+
+    @if (p.Conflitos.Count > 0)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3 mb-5" role="status">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <div class="flex flex-col gap-1 text-sm">
+                <span class="font-medium">Alertas de agenda nas próximas sessões</span>
+                @foreach (var c in p.Conflitos)
+                {
+                    <span>@c.Descricao</span>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="kt-card">
+            <div class="kt-card-header">
+                <h3 class="kt-card-title">Dados</h3>
+                <selo-status valor="p.TemAcesso ? SinalTela.ComAcesso : SinalTela.SemAcesso"></selo-status>
+            </div>
+            <div class="kt-card-content flex flex-col gap-3">
+                <dl class="esc-dados">
+                    <dt>CPF</dt>
+                    <dd>@Ou(Formatacao.Cpf(p.Cpf))</dd>
+                    <dt>Celular</dt>
+                    <dd>@Ou(Formatacao.Telefone(p.Telefone))</dd>
+                    <dt>E-mail</dt>
+                    <dd>@Ou(p.Email)</dd>
+                </dl>
+                @if (!p.TemAcesso)
+                {
+                    <p class="text-xs text-muted-foreground">Ainda sem acesso ao sistema: o convite de acesso pelo WhatsApp chega na próxima etapa do piloto.</p>
+                }
+            </div>
+        </div>
+
+        <div class="kt-card">
+            <div class="kt-card-header">
+                <h3 class="kt-card-title">Turmas</h3>
+                <a class="kt-link text-sm" href="/Agenda?recorte=Professor&id=@p.Id"><i class="ki-filled ki-calendar"></i> Agenda</a>
+            </div>
+            @if (p.Turmas.Count == 0)
+            {
+                <estado-vazio icone="ki-category" titulo="Nenhuma turma" texto="Aqui aparecem as turmas em que esta pessoa é o professor responsável."></estado-vazio>
+            }
+            else
+            {
+                <ul class="esc-linhas">
+                    @foreach (var t in p.Turmas)
+                    {
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <span class="flex flex-col gap-0.5 min-w-0">
+                                <a class="text-sm font-medium text-mono hover:text-primary" href="/Turmas/Ficha/@t.Id">@t.Nome</a>
+                                <span class="text-xs text-secondary-foreground">@t.Horarios</span>
+                            </span>
+                            <selo-status valor="t.Situacao"></selo-status>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="kt-card">
+            <div class="kt-card-header">
+                <h3 class="kt-card-title">Disponibilidade semanal</h3>
+                @if (podeAlterar)
+                {
+                    <a class="kt-btn kt-btn-sm kt-btn-outline" asp-action="Disponibilidade" asp-route-id="@p.Id"><i class="ki-filled ki-time"></i> Ajustar</a>
+                }
+            </div>
+            @if (p.Disponibilidade.Count == 0)
+            {
+                <div class="kt-card-content">
+                    <p class="text-sm text-secondary-foreground">Não informada: nenhum horário fica "fora da disponibilidade". Informe as faixas para o sistema alertar treino marcado fora delas.</p>
+                </div>
+            }
+            else
+            {
+                <ul class="esc-linhas">
+                    @foreach (var f in p.Disponibilidade)
+                    {
+                        <li class="flex items-center justify-between gap-3 px-5 py-3 text-sm">
+                            <span class="font-medium text-mono">@DiasSemana.Nome(f.DiaSemana)</span>
+                            <span class="text-secondary-foreground">@Formatacao.Horario(f.Inicio, f.Fim)</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="kt-card">
+            <div class="kt-card-header">
+                <h3 class="kt-card-title">Indisponibilidades</h3>
+            </div>
+            @if (p.Indisponibilidades.Count > 0)
+            {
+                <ul class="esc-linhas">
+                    @foreach (var i in p.Indisponibilidades)
+                    {
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <span class="flex flex-col gap-0.5 min-w-0 text-sm">
+                                <span class="font-medium text-mono">@Formatacao.DataHora(i.Inicio) a @Formatacao.DataHora(i.Fim)</span>
+                                <span class="text-xs text-secondary-foreground">@(i.Motivo ?? "Sem motivo informado") · registrada por @i.RegistradaPorNome</span>
+                            </span>
+                            @if (podeAlterar)
+                            {
+                                <form asp-action="RemoverIndisponibilidade" asp-route-id="@p.Id" method="post" data-esc-confirmar="Retirar esta indisponibilidade?">
+                                    <input type="hidden" name="indisponibilidadeId" value="@i.IndisponibilidadeProfessor_ID" />
+                                    <button class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" type="submit" aria-label="Retirar indisponibilidade"><i class="ki-filled ki-trash"></i></button>
+                                </form>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+            @if (podeAlterar)
+            {
+                <form asp-action="Indisponibilidade" asp-route-id="@p.Id" method="post" novalidate class="@(p.Indisponibilidades.Count > 0 ? "border-t border-border" : "")">
+                    <div class="kt-card-content flex flex-col gap-4">
+                        <p class="text-sm text-secondary-foreground">Viagem, consulta, férias: o treino que cair no período aparece com alerta na agenda.</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="flex flex-col gap-1">
+                                <label class="kt-form-label" asp-for="Nova.Inicio">De</label>
+                                <input class="kt-input" asp-for="Nova.Inicio" type="datetime-local" required />
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="kt-form-label" asp-for="Nova.Fim">Até</label>
+                                <input class="kt-input" asp-for="Nova.Fim" type="datetime-local" required />
+                            </div>
+                            <div class="flex flex-col gap-1 sm:col-span-2">
+                                <label class="kt-form-label" asp-for="Nova.Motivo">Motivo <span class="text-muted-foreground">(opcional)</span></label>
+                                <input class="kt-input" asp-for="Nova.Motivo" maxlength="200" placeholder="Ex.: viagem com a seleção" />
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-plus"></i> Registrar indisponibilidade</button>
+                        </div>
+                    </div>
+                </form>
+            }
+            else if (p.Indisponibilidades.Count == 0)
+            {
+                <div class="kt-card-content"><p class="text-sm text-secondary-foreground">Nenhuma indisponibilidade registrada.</p></div>
+            }
+        </div>
+    </div>
+</div>

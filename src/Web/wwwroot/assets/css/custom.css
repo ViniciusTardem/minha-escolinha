@@ -405,6 +405,62 @@ form:not(.esc-assistente-ativo) [data-esc-passo-proximo] {
 }
 
 /* ============================================
+   CADASTRO (S1) — linha de horário, ocupação de vagas e item da agenda
+   ============================================ */
+/* Título de seção de um formulário que é assistente no cadastro e página inteira na edição: só aparece fora do assistente
+   (no assistente, o nome da etapa já está na lista de etapas). */
+.esc-passo-cabecalho {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mono, var(--foreground));
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+.esc-assistente-ativo .esc-passo-cabecalho { display: none; }
+
+/* Linha repetível de horário (turma) e de faixa de disponibilidade (professor): dia, início, fim e o botão de retirar. */
+.esc-linha-horario {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+}
+.esc-linha-horario > input[type="hidden"] { display: none; }
+@media (max-width: 479.98px) {
+    .esc-linha-horario { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+    .esc-linha-horario > select { grid-column: 1 / -1; }
+}
+
+/* Ocupação de vagas: <progress> nativo (sem style inline, CSP). A turma cheia é sinalizada pelo selo "Lotada" ao lado. */
+progress.esc-ocupacao {
+    appearance: none;
+    width: 100%;
+    max-width: 12rem;
+    height: 0.375rem;
+    border: 0;
+    border-radius: 9999px;
+    overflow: hidden;
+    background-color: var(--muted);
+    color: var(--primary);
+}
+progress.esc-ocupacao::-webkit-progress-bar { background-color: var(--muted); border-radius: 9999px; }
+progress.esc-ocupacao::-webkit-progress-value { background-color: var(--primary); border-radius: 9999px; }
+progress.esc-ocupacao::-moz-progress-bar { background-color: var(--primary); border-radius: 9999px; }
+
+/* Item da agenda e dos próximos treinos: a hora numa coluna fixa, a turma e as ações. */
+.esc-item-agenda {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem 1rem;
+}
+.esc-item-agenda-hora { font-variant-numeric: tabular-nums; }
+@media (max-width: 639.98px) {
+    .esc-item-agenda { grid-template-columns: minmax(0, 1fr) auto; }
+    .esc-item-agenda-hora { grid-column: 1 / -1; }
+}
+
+/* ============================================
    TOQUE — só nas superfícies de celular (quadra e portal). O KTUI é pequeno para uma mão:
    botão e input de 34 px e texto de 13 px (o iOS dá zoom em input com menos de 16 px).
    ============================================ */

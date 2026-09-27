@@ -1,0 +1,67 @@
+@inject IAutorizacao Autorizacao
+@model IReadOnlyList<LocalResposta>
+@{
+    ViewData["Title"] = "Locais de treino";
+    var podeAlterar = Autorizacao.Pode(Recurso.ConfiguracaoEscolinha, Operacao.Alterar);
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Locais de treino" descricao="Quadras e locais onde as turmas treinam e jogam. A agenda mostra a ocupação de cada um e alerta dois treinos no mesmo horário."
+                      meta="@($"{Model.Count} local(is)")">
+        @if (podeAlterar)
+        {
+            <a class="kt-btn kt-btn-primary" asp-action="Novo"><i class="ki-filled ki-plus"></i> Novo local</a>
+        }
+    </cabecalho-pagina>
+
+    <div class="kt-card">
+        @if (Model.Count == 0)
+        {
+            <estado-vazio icone="ki-geolocation" titulo="Nenhum local cadastrado" texto="Cadastre a quadra onde as turmas treinam: a turma precisa de um local.">
+                @if (podeAlterar)
+                {
+                    <a class="kt-btn kt-btn-primary" asp-action="Novo"><i class="ki-filled ki-plus"></i> Novo local</a>
+                }
+            </estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[220px]">Local</th>
+                            <th class="min-w-[100px] hidden md:table-cell">Capacidade</th>
+                            <th class="min-w-[110px]">Turmas</th>
+                            <th class="w-[1%] text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var l in Model)
+                        {
+                            var endereco = l.Endereco.Resumo();
+                            <tr>
+                                <td>
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="font-medium text-mono">@l.Nome</span>
+                                        <span class="text-xs text-secondary-foreground">@(string.IsNullOrEmpty(endereco) ? "Endereço não informado" : endereco)</span>
+                                    </div>
+                                </td>
+                                <td class="hidden md:table-cell text-secondary-foreground">@(l.Capacidade is { } c ? $"{c} pessoas" : "—")</td>
+                                <td>
+                                    <a class="kt-link" href="/Agenda?recorte=Local&id=@l.Id">@(l.TurmasAtivas == 1 ? "1 turma" : $"{l.TurmasAtivas} turmas")</a>
+                                </td>
+                                <td class="text-end">
+                                    @if (podeAlterar)
+                                    {
+                                        <a class="kt-btn kt-btn-sm kt-btn-outline" asp-action="Editar" asp-route-id="@l.Id"><i class="ki-filled ki-pencil"></i> Editar</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

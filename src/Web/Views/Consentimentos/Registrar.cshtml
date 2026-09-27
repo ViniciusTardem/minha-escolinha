@@ -1,0 +1,57 @@
+@model RegistrarConsentimentoRequisicao
+@{
+    var ficha = (FichaAluno)ViewData["Ficha"]!;
+    var termo = TermosConsentimento.Obter(Model.Finalidade);
+    ViewData["Title"] = $"{termo.Titulo} · {ficha.Nome}";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@termo.Titulo" meta="@ficha.Nome" voltar-href="/Alunos/Ficha/@ficha.Id?aba=consentimentos" voltar-texto="Ficha do aluno"
+                      descricao="Fica registrado com data e hora, o texto apresentado, quem autorizou e como. Nada é apagado: uma nova resposta é outro registro."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[720px]">
+        <form asp-action="Registrar" method="post" novalidate>
+            <input type="hidden" asp-for="AlunoId" />
+            <input type="hidden" asp-for="Finalidade" />
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <div class="rounded-xl border border-border p-4 flex flex-col gap-2">
+                    <p class="text-sm text-foreground">@termo.Texto</p>
+                    <span class="text-xs text-muted-foreground">Texto versão @termo.Versao (provisório, em revisão jurídica).</span>
+                </div>
+                <div class="flex flex-wrap gap-x-5 gap-y-2" role="radiogroup" aria-label="Resposta">
+                    <label class="kt-label">
+                        <input class="kt-radio kt-radio-sm" asp-for="Resposta" type="radio" value="@RespostaConsentimento.Concedido" />
+                        <span class="text-sm text-foreground">Autorizou</span>
+                    </label>
+                    <label class="kt-label">
+                        <input class="kt-radio kt-radio-sm" asp-for="Resposta" type="radio" value="@RespostaConsentimento.Recusado" />
+                        <span class="text-sm text-foreground">Recusou</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="ResponsavelId">Quem respondeu</label>
+                        <select class="kt-select" asp-for="ResponsavelId" required>
+                            @foreach (var r in ficha.Responsaveis)
+                            {
+                                <option value="@r.ResponsavelId">@r.Nome (@VinculoAlunoResponsavel.Rotulo(r.Parentesco).ToLowerInvariant())</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Origem">Como</label>
+                        <select class="kt-select" asp-for="Origem">
+                            <option value="@OrigemConsentimento.TermoEmPapel">@TermosConsentimento.Rotulo(OrigemConsentimento.TermoEmPapel)</option>
+                            <option value="@OrigemConsentimento.DeclaracaoAoGestor">@TermosConsentimento.Rotulo(OrigemConsentimento.DeclaracaoAoGestor)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="/Alunos/Ficha/@ficha.Id?aba=consentimentos">Cancelar</a>
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Registrar</button>
+            </div>
+        </form>
+    </div>
+</div>

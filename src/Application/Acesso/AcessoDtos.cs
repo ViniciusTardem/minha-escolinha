@@ -20,6 +20,9 @@ public class TrocarSenhaRequisicao
 /// <summary>Uma escolinha em que a pessoa atua, com os papéis ativos nela.</summary>
 public record EscolinhaDaPessoa(Guid EscolinhaId, string Nome, IReadOnlyList<PapelAtuacao> Papeis);
 
+/// <summary>Uma pessoa com acesso à escolinha do contexto e os papéis ativos dela.</summary>
+public record PessoaDaEscolinha(Guid PessoaId, string Nome, string? Cpf, IReadOnlyList<PapelAtuacao> Papeis);
+
 /// <summary>O que o login precisa para montar a sessão (claims do cookie).</summary>
 public record CredencialAutenticada(
     Guid PessoaId,

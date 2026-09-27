@@ -1,0 +1,20 @@
+@{
+    ViewData["Title"] = "Massa de demonstração";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Massa de demonstração" meta="Só em Development"
+                      descricao="Gera nesta escolinha o cenário do piloto para testar e demonstrar: 3 turmas e 60 alunos em 38 famílias, com irmãos, famílias com dois responsáveis, responsável sem CPF, trials (alguns vencidos), inativos e um desligado."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[720px]">
+        <form method="post" asp-controller="DevMassa" asp-action="Gerar" data-esc-confirmar="Gerar a massa de demonstração nesta escolinha? Ela não é apagada depois.">
+            <div class="kt-card-content flex flex-col gap-3 text-sm text-secondary-foreground">
+                <p>Tudo passa pelos serviços de verdade: validação, deduplicação de responsáveis (pelo CPF e pela sugestão de cadastro parecido) e registro de alterações.</p>
+                <p>Cria os professores Rafael Martins e Juliana Prado se não existirem, usa o primeiro local de treino e roda uma vez só por escolinha.</p>
+            </div>
+            <div class="kt-card-footer justify-end">
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-people"></i> Gerar a massa</button>
+            </div>
+        </form>
+    </div>
+</div>

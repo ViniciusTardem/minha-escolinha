@@ -8,7 +8,7 @@ Plano vivo, atualizado ao fim de cada fatia. Cada documento responde por uma coi
 | **Como** construir | A herança do AlternativaDepartamentoPessoal ([`HERANCA.md`](HERANCA.md)) |
 | **Em que ordem** e onde estamos | Este plano |
 
-Última atualização: **26/09/2026**. F0 e S0 prontos; o commit aguarda autorização.
+Última atualização: **27/09/2026**. F0, S0, o extra EX-01 e o S1 (com o extra EX-02) commitados na `main`; a próxima fatia é o S2.
 
 ---
 
@@ -75,10 +75,10 @@ O registro completo, com data, está em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-AB
 | Arranque (spec §0): herança inventariada; sem credenciais de Asaas e WhatsApp, então as integrações nascem em modo Simulado; plano publicado | — | **Pronto** | 26/09/2026 |
 | F0 — Esqueleto vivo (template §13) | — | **Pronto** | 26/09/2026 |
 | Design system (4 superfícies + vitrine `/dev/design`) | — | **Pronto** | 26/09/2026 |
-| S0 — Fundação: conta, identidade e permissões | 12 | **Pronto**: 11 concluídos + 1 parcial que depende da Turma (S1); aguardando commit | 26/09/2026 |
-| Extra EX-01 — Compra de pacotes de créditos pelo Stripe da LDNA (X08) | — | **Pronto** no modo Simulado; falta configurar as chaves de teste | 26/09/2026 |
-| S1 — Cadastro: turma, sessões, aluno, responsável, equipe | 20 | Próxima | — |
-| S2 — Mensageria e acesso das famílias | 14 | — | — |
+| S0 — Fundação: conta, identidade e permissões | 12 | **Pronto** e commitado (`a444b48`). O parcial (`BL-M02-12`) fechou no S1, com a Turma. | 26/09/2026 |
+| Extra EX-01 — Compra de pacotes de créditos pelo Stripe da LDNA (X08) | — | **Pronto** no modo Simulado e commitado (`3c28d97`); falta configurar as chaves de teste | 26/09/2026 |
+| S1 — Cadastro: turma, sessões, aluno, responsável, equipe | 20 | **Pronto** e commitado: 18 concluídos + 2 parciais, que dependem do S2 (aviso de treino cancelado) e do S4 (recorrência no desligamento). Com o extra EX-02 (alerta de quadra ocupada). | 27/09/2026 |
+| S2 — Mensageria e acesso das famílias | 14 | Próxima | — |
 | S3 — Presença e controle de evasão | 6 | — | — |
 | S4 — Financeiro: mensalidade, régua e conciliação | 8 | — | — |
 | S5 — Eventos e convocações | 10 | — | — |
@@ -92,22 +92,55 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
 ## 4. Próximos passos
 
 ### 4.0 Agora
-1. O S0 foi commitado na `main` (`a444b48`, 26/09/2026). A compra de créditos pelo Stripe (EX-01) aguarda autorização de commit; daí em diante, uma branch por fatia (`fatia/s1-cadastro` etc.), com os IDs `BL-` nas mensagens.
+1. **S2 — Mensageria e acesso das famílias:** próxima fatia (§4.1). O commit do S1 foi autorizado em 27/09/2026, direto na `main`.
 2. **Stripe em modo de teste**, quando o responsável quiser sair do simulador:
    - criar um sandbox próprio no painel do Stripe (P27);
    - gravar em user-secrets `Stripe:Modo = Teste` e `Stripe:ChaveSecreta` (chave de teste, `sk_test_` ou `rk_test_` restrita);
    - para os webhooks em localhost, rodar o Stripe CLI (`stripe listen --forward-to https://localhost:7186/api/v1/webhooks/stripe`) e gravar o `whsec_` que ele mostrar em `Stripe:SegredoWebhook`. Sem isso, a volta do pagamento e a varredura confirmam as compras.
 3. Confiar o certificado de desenvolvimento (§7).
 
-### 4.1 O que o S1 precisa e ainda não existe
-- **A planilha real da escolinha piloto** (P21). Ela orienta os campos do cadastro e a deduplicação desde já, não só no S7.
-- Decisões que o S1 toca: P07 (retenção), P08 (16–17 anos), P12 (alertas de trial), P15 (opt-in no consentimento), P20 (o que o professor vê).
-- O resolvedor de escopo real (`IResolvedorEscopo`): turmas do professor e filhos com vínculo verificado. No S0 ele sempre nega.
-- A Turma, que completa o `BL-M02-12`: mensalidade, capacidade e mínimo de confirmados por turma, com o valor inicial vindo do catálogo.
-- O 1º job recorrente: geração das sessões num horizonte rolante, regenerando só as futuras em "prevista".
-- **Maior risco do S1:** celular compartilhado na deduplicação. Só o CPF deduplica sozinho; telefone e nome viram sugestão.
+### 4.1 O que o S2 precisa e ainda não existe
+- **Dependências da Meta** (P14, P21), que o "pronto" do S2 exige (resposta real):
+  - o número de WhatsApp e o app na Cloud API oficial; o número de teste da Meta aceita até 5 destinatários;
+  - um endereço HTTPS público para o webhook (túnel no desenvolvimento);
+  - os templates submetidos cedo, com a categoria validada pelo responsável (P02).
+- **Decisões que o S2 toca:**
+  - P06: créditos zerados;
+  - P16: ativação do acesso;
+  - P22: retenção do corpo dos webhooks;
+  - P23: login de quem é só responsável;
+  - P30: preferência de notificação;
+  - P33: aviso de mudança de horário da turma.
+- **O que o S1 deixa pronto para o S2:**
+  - os destinatários: vínculo com "recebe notificação", "recebe cobrança" e pagador; telefone do responsável normalizado (E.164);
+  - a ficha de responsável com `Pessoa_ID` vazio, para ligar na ativação do convite (D32);
+  - a sessão cancelada, com motivo e autoria, à espera do gatilho "Treino cancelado" (fecha o `BL-M04-06`);
+  - o escopo do responsável, que hoje nega e passa a valer com o vínculo verificado.
+- **Maior risco do S2:** os prazos da Meta.
 
-### 4.2 O que o S0 entregou (referência)
+### 4.2 O que o S1 entregou (referência)
+- **Turmas e agenda:**
+  - locais e professores, com disponibilidade semanal e indisponibilidades;
+  - turma em etapas, com os valores iniciais do catálogo;
+  - sessões num horizonte rolante, geradas na gravação e pelo job diário das 03:15 (D31);
+  - agenda por turma, professor ou local, com os alertas de conflito do professor e de quadra ocupada (R9: sinaliza e não bloqueia; D44).
+- **Alunos e famílias:**
+  - aluno novo em 5 etapas, com deduplicação de responsável (CPF reaproveita; celular e nome sugerem) e de aluno;
+  - vínculos com "recebe cobrança", "recebe notificação" e um pagador por aluno;
+  - matrícula por turma, com valor e datas próprios;
+  - situação pela máquina da §6, mais o atalho inativo → desistente (D43), com o trial vencido só sinalizado;
+  - desligamento com data e motivo, que encerra as matrículas e preserva o histórico;
+  - consentimentos separados, com versão do termo e revogação;
+  - saúde restrita por papel (R5).
+- **Escopo do professor** em menu, listas, fichas, busca e agenda, inclusive irmãos e marcas financeiras (D41).
+- **Massa de demonstração** em `/dev/massa` (D40): 3 turmas e 60 alunos em 38 famílias.
+- **Testes:** 258 passando, 73 deles do cadastro (domínio e banco). Entre eles:
+  - CA-1, e CA-2 e CA-3 na parte do S1;
+  - o consumidor de parâmetro de turma (CA-18);
+  - escopo do professor e isolamento A/B;
+  - saúde fora do registro de alterações.
+
+### 4.3 O que o S0 entregou (referência)
 - **Criação da escolinha pela plataforma:** assistente em 3 etapas (escolinha → modalidade → 1º gestor). Grava tudo junto: escolinha, modalidade, os 26 parâmetros, conta de créditos, gestor e auditoria. A senha temporária aparece uma vez.
 - **Acesso:**
   - login com troca obrigatória de senha e bloqueio;
@@ -127,7 +160,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - criação atômica;
   - regras de arquitetura: relógio, `IgnoreQueryFilters`, acesso declarado, binding de coleções.
 
-### 4.3 O que o F0 entregou (referência)
+### 4.4 O que o F0 entregou (referência)
 - **Base do projeto:**
   - solução de 4 camadas + testes, em .NET 9;
   - Central Package Management, com o prefixo `MinhaEscolinha` nas DLLs;
@@ -157,7 +190,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
 | S6 | <ul><li>`Areas/Portal`: filhos verificados, total do mês por filho.</li><li>Pix obtido antes por job; fatura Asaas para cartão.</li><li>Resposta à convocação.</li></ul> | Dado de menor exposto |
 | S7 | <ul><li>Planilha → mapear → validar e classificar → conferência (saúde mascarada) → gravação única.</li><li>ClosedXML (dependência nova, registrar em 12.3).</li></ul> | O formato real da planilha |
 
-**Massa de demonstração**, construída aos poucos (spec §13): 1 escolinha, 3 turmas, cerca de 60 alunos, irmãos, alunos com 2 responsáveis, 4 jogos no fim de semana com 12 convocados cada, e mensalidades pagas, vencidas, isentas e parciais.
+**Massa de demonstração**, construída aos poucos (spec §13): 1 escolinha, 3 turmas, cerca de 60 alunos, irmãos, alunos com 2 responsáveis, 4 jogos no fim de semana com 12 convocados cada, e mensalidades pagas, vencidas, isentas e parciais. **O S1 montou a base** (turmas, alunos e famílias, em `/dev/massa`); os jogos entram no S5 e as mensalidades no S4.
 
 ---
 
@@ -170,9 +203,9 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | Integração: opções Simulado/Api, trava de ambiente, simulador com página `/dev`, contrato HTTP com handler falso | ZapSign e GoHighLevel | S2, S4 |
 | Outbox + varredura de lembretes | `docs/integrador/08-MOTOR-LEMBRETES.md` | S2, S4, S5 |
 | Webhook: gravar o corpo bruto, responder 200, processar por job | ZapSign | S2, S4 |
-| Agendador em memória nos testes | `AgendadorDeTeste` | S1+ |
+| Agendador em memória nos testes | `AgendadorDeTeste` | S2+ (o job do S1 foi testado chamando o serviço) |
 | Tempo real: o servidor empurra `{id, versão}`; recuperação com `?desde=` | `AdmissoesHub` | S5 |
-| Ficha lateral: drawer com versão e resposta 409 no conflito | `ficha.js` | S1 |
+| Ficha lateral: drawer com versão e resposta 409 no conflito | `ficha.js` | Não adotado no S1: a ficha é página com abas; a versão de linha entrou sem o drawer (D37) |
 
 ---
 
@@ -186,7 +219,10 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
   - testes em `escolinhaesporte_Testes`, recriado a cada execução, com autenticação do Windows ou a conexão em `ESC_TESTES_SQL`.
 - **Segredos** (user-secrets `minha-escolinha-web`): `ConnectionStrings:ConexaoPadrao`, `Seed:Administrador:Login`, `Seed:Administrador:Nome` e `Seed:Administrador:Senha`.
 - **Endereços:** https://localhost:7186 (e http://localhost:5186); vitrine em `/dev/design`; Hangfire em `/jobs`; saúde em `/health`.
-- **Dados de validação no banco de desenvolvimento:** as escolinhas "Escolinha Piloto Londrina" (A) e "Escolinha Bola na Rede" (B), cada uma com o seu gestor, criadas na validação do S0. As senhas não ficam em arquivo versionado.
+- **Dados de validação no banco de desenvolvimento:**
+  - as escolinhas "Escolinha Piloto Londrina" (A) e "Escolinha Bola na Rede" (B), cada uma com o seu gestor, criadas na validação do S0. As senhas não ficam em arquivo versionado;
+  - em A, desde o S1: as turmas, os alunos e as famílias da validação e da massa de demonstração (`/dev/massa`);
+  - para validar o escopo do professor com um login real, o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A: a ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL, e o vínculo Professor em A foi criado.
 
 ---
 
@@ -194,7 +230,7 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 
 | O que | Bloqueia | Ref. |
 |---|---|---|
-| A planilha real da escolinha piloto | Campos e deduplicação (S1); importação (S7) | P21 |
+| A planilha real da escolinha piloto | Importação (S7). O S1 seguiu com os campos da §5 da spec; conferir se a planilha traz algo a mais. | P21 |
 | Número de WhatsApp: da LDNA ou da escolinha? Provedor (Cloud API oficial)? | S2 | P14 |
 | Validar a categoria de WhatsApp de cada gatilho | Submissão dos templates (S2) | P02 |
 | Conta Asaas da escolinha piloto (sandbox e produção) | "Pronto" do S4 | P21 |
@@ -205,6 +241,8 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | Chaves de teste do Stripe (sandbox próprio) e, para produção, chave de produção + segredo do webhook | Sair do simulador (EX-01) | P27 |
 | Definir o plano recorrente (preço, periodicidade, créditos incluídos) e os pacotes à venda | Cobrança do plano pelo Stripe; venda real dos pacotes | P25, P26 |
 | A "Especificação Funcional e Técnica", se existir | Detalhe de campos por módulo | P21 |
+| Revisão jurídica dos termos de consentimento (tratamento de dados e uso de imagem) | Produção | P29 |
+| Confirmar com a escolinha: desligar direto quem está em pausa; meta de frequência por turma; alerta de quadra ocupada | Nada bloqueia; seguem os encaminhamentos provisórios | P28, P31, P32 |
 
 ---
 
@@ -222,3 +260,9 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | 26/09/2026 | **Resultado:** build sem aviso; 132 testes passando; 0 classes faltando; nenhum elemento fora da tela em 375 e 320 px nas 19 telas, no claro e no escuro. |
 | 26/09/2026 | **Commit do S0** na `main` (`a444b48`), autorizado pelo responsável. |
 | 26/09/2026 | **Extra EX-01, Stripe da LDNA** (decisão do responsável: só a LDNA cobra as escolinhas; a mensalidade do aluno continua na Asaas). Pacotes de créditos com compra pelo Checkout (cartão, boleto ou Pix), webhook assinado, job de conferência e varredura, no padrão de integração do DP, sem SDK. <ul><li>Validado no navegador com o simulador: compra por cartão (créditos na hora) e por boleto (créditos na confirmação).</li><li>Achado e tratado: o webhook e a volta do pagamento conferem a mesma compra ao mesmo tempo; a versão de linha já impedia o crédito em dobro, e agora a segunda conferência relê em vez de falhar (D27).</li></ul> 184 testes passando. |
+| 27/09/2026 | **Commit do EX-01** na `main` (`3c28d97`), autorizado pelo responsável. |
+| 27/09/2026 | **S1 construído** (20 itens), direto na `main` por decisão do responsável e sem a planilha real ("seguir sem ela"): os campos são os da §5 da spec, e o que ela não diz foi registrado como provisório (D30 a D42, P28 a P33). |
+| 27/09/2026 | **Validação no navegador** (Playwright), com o login de gestão de A e com o de gestão de B atuando como professor em A: locais, professores, turma em etapas com alerta de conflito, agenda, aluno em etapas com CA-1 pela busca, desligamento, escopo do professor (404 e 403) e massa de demonstração. |
+| 27/09/2026 | **Defeitos achados na validação e corrigidos:** <ul><li>O professor via o irmão de outra turma e as marcas financeiras na ficha e nas listas (D41, com teste de regressão).</li><li>A sugestão de cadastro parecido mostrava o CPF inteiro; agora mascarado.</li><li>A edição da turma abria com as etapas escondidas (D42).</li><li>A massa falhava com duas modalidades: a turma nascia sem modalidade. Agora escolhe o futsal, com teste.</li><li>As linhas repetíveis não renumeravam o campo invariável escondido (`linhas.js`).</li><li>A data por extenso saía "Quinta-Feira, 1 De Outubro"; agora só a primeira letra é maiúscula.</li><li>Textos com gênero ("matriculado", "Ele já entra") passaram a ser neutros.</li><li>A idade de quem nasceu em 29/02 segue o Código Civil (art. 132, §3º).</li></ul> |
+| 27/09/2026 | **Resultado:** build sem aviso; 254 testes passando (69 do cadastro); 0 classes faltando; nenhuma rolagem horizontal da página em 375 e 320 px nas 28 telas do S1, no claro e no escuro. Aguarda autorização de commit. |
+| 27/09/2026 | **Respostas do responsável:** commit do S1 autorizado; P28 → atalho inativo → desistente (D43); P31 → alerta de quadra ocupada (D44, EX-02); P29 → a LDNA revisa os termos antes da produção. P28 e P31 implementados antes do commit, com testes e conferidos no navegador. 258 testes passando. |

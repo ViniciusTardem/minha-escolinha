@@ -2,9 +2,12 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MinhaEscolinha.Application.Acesso;
+using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
+using MinhaEscolinha.Application.Equipe;
 using MinhaEscolinha.Application.Plataforma;
+using MinhaEscolinha.Application.Turmas;
 
 namespace MinhaEscolinha.Application;
 
@@ -17,8 +20,9 @@ public static class DependencyInjection
         // Contexto da escolinha: um por escopo (requisição, job, execução da plataforma).
         services.AddScoped<IContextoEscolinha, ContextoEscolinha>();
         services.AddScoped<IAutorizacao, Autorizacao>();
-        // Cada fatia que cria entidade com escopo (turma, aluno) registra o resolvedor real antes; até lá, nega.
-        services.TryAddScoped<IResolvedorEscopo, ResolvedorEscopoSemCadastros>();
+        // Escopo próprio: turmas, alunos e sessões do professor (S1); filhos verificados do responsável (S2).
+        services.TryAddScoped<IResolvedorEscopo, ResolvedorEscopoCadastros>();
+        services.AddScoped<IEscopoDeLeitura, EscopoDeLeitura>();
 
         // M01 — acesso
         services.AddScoped<IServicoAutenticacao, ServicoAutenticacao>();
@@ -34,6 +38,19 @@ public static class DependencyInjection
         services.AddScoped<ReconciliadorParametros>();
         services.AddScoped<ServicoContaAsaas>();
         services.AddScoped<ServicoCreditos>();
+
+        // S1 — cadastro: equipe (M08), turmas e sessões (M04), alunos e responsáveis (M03)
+        services.AddScoped<ServicoProfessores>();
+        services.AddScoped<ServicoLocais>();
+        services.AddScoped<ServicoSessoes>();
+        services.AddScoped<ServicoTurmas>();
+        services.AddScoped<ServicoAgenda>();
+        services.AddScoped<IOcupacaoAgenda>(sp => sp.GetRequiredService<ServicoAgenda>());
+        services.AddScoped<PoliticaSaude>();
+        services.AddScoped<ServicoAlunos>();
+        services.AddScoped<ServicoMatriculas>();
+        services.AddScoped<ServicoResponsaveis>();
+        services.AddScoped<ServicoConsentimentos>();
 
         // Plataforma — a LDNA vende pacotes de créditos às escolinhas (Stripe da LDNA; mensalidade de aluno segue na Asaas)
         services.AddScoped<ServicoPacotesCreditos>();

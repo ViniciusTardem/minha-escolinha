@@ -14,6 +14,7 @@ using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Integracao.Stripe;
 using MinhaEscolinha.Domain.Comum;
 using MinhaEscolinha.Infrastructure;
+using MinhaEscolinha.Infrastructure.Cadastro;
 using MinhaEscolinha.Infrastructure.Data.Contexto;
 using MinhaEscolinha.Infrastructure.Data.Seed;
 using MinhaEscolinha.Infrastructure.Plataforma;
@@ -90,6 +91,8 @@ try
     }
 
     builder.Services.AddScoped<EventosCookieEscolinha>();
+    // Massa de demonstração (/dev/massa, só em Development).
+    builder.Services.AddScoped<MinhaEscolinha.Web.Infraestrutura.Desenvolvimento.MassaDemonstracao>();
     builder.Services.AddAuthentication(ClaimsEscolinha.Esquema)
         .AddCookie(ClaimsEscolinha.Esquema, opcoes =>
         {
@@ -129,6 +132,8 @@ try
         // [Required] implícito e a tela mostra "The X field is required." junto com a mensagem do validador.
         opcoes.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
         opcoes.ModelBindingMessageProvider.EmPortugues();
+        // Valor em reais como o gestor digita ("1.500,00" e também "150.50"), D30.
+        opcoes.ModelBinderProviders.Insert(0, new DecimalBrasileiroModelBinderProvider());
     });
 
     builder.Services.AddSignalR();
@@ -169,6 +174,8 @@ try
         // Varredura das compras de créditos pendentes no Stripe (cobre o webhook perdido)
         JobsPlataforma.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>(),
             escopo.ServiceProvider.GetRequiredService<OpcoesStripe>());
+        // Sessões de treino: todo dia, o horizonte até o fim do mês seguinte (BL-M04-04)
+        JobsTurmas.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
     }
 
     // ── Pipeline ──

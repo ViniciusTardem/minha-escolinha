@@ -1,0 +1,105 @@
+@model MudarSituacaoRequisicao
+@{
+    var ficha = (FichaAluno)ViewData["Ficha"]!;
+    var turmas = ViewData["Turmas"] as IReadOnlyList<TurmaResumo> ?? [];
+    var soPrazo = Model.Para == ficha.Situacao && ficha.Situacao == SituacaoAluno.Trial;
+    var desligar = Model.Para == SituacaoAluno.Desistente;
+    var rematricular = Model.Para == SituacaoAluno.Ativo && ficha.Situacao == SituacaoAluno.Desistente;
+    var acao = soPrazo ? "Prazo do trial" : MaquinaSituacaoAluno.Acao(ficha.Situacao, Model.Para);
+    ViewData["Title"] = $"{acao} · {ficha.Nome}";
+    var mensalidade = ViewData.ModelState[nameof(Model.Mensalidade)]?.AttemptedValue ?? Moeda.ParaCampo(Model.Mensalidade);
+    var ativas = ficha.Matriculas.Where(m => m.Situacao == SituacaoMatricula.Ativa).ToList();
+    var explicacao = (ficha.Situacao, Model.Para) switch
+    {
+        (SituacaoAluno.Trial, SituacaoAluno.Ativo) => "O trial acaba e o aluno passa a ativo: a mensalidade começa a contar a partir desta data.",
+        (SituacaoAluno.Ativo, SituacaoAluno.Inativo) => "Pausa temporária: o aluno sai da chamada e da cobrança, mas continua matriculado e com a vaga.",
+        (SituacaoAluno.Inativo, SituacaoAluno.Ativo) => "O aluno volta da pausa: entra de novo na chamada e na cobrança.",
+        (SituacaoAluno.Desistente, SituacaoAluno.Ativo) => "O aluno volta com uma nova data de matrícula. O histórico anterior fica preservado.",
+        (SituacaoAluno.Inativo, SituacaoAluno.Desistente) => "O aluno em pausa sai de vez, sem precisar reativar antes: encerra as matrículas, libera as vagas e sai das listas de chamada e de convocação. O histórico fica.",
+        (_, SituacaoAluno.Desistente) => "Encerra as matrículas (a recorrência de cobrança para), libera as vagas e tira o aluno das listas de chamada e de convocação. O histórico fica.",
+        _ => "Ajuste do prazo do trial: nada muda na situação."
+    };
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@acao" meta="@ficha.Nome" voltar-href="/Alunos/Ficha/@ficha.Id" voltar-texto="Ficha do aluno" descricao="@explicacao"></cabecalho-pagina>
+
+    <div class="kt-card max-w-[720px]">
+        <form asp-action="Situacao" asp-route-id="@ficha.Id" method="post" novalidate
+              data-esc-confirmar="@(desligar ? $"Desligar {ficha.Nome}? As matrículas ativas serão encerradas." : null)">
+            <input type="hidden" asp-for="Para" />
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <div class="flex flex-wrap items-center gap-2 text-sm">
+                    <span class="text-secondary-foreground">Situação atual:</span>
+                    <selo-status valor="ficha.Situacao"></selo-status>
+                    @if (!soPrazo)
+                    {
+                        <i class="ki-filled ki-arrow-right text-muted-foreground"></i>
+                        <selo-status valor="Model.Para"></selo-status>
+                    }
+                </div>
+
+                @if (desligar && ativas.Count > 0)
+                {
+                    <div class="flex flex-col gap-1 text-sm">
+                        <span class="font-medium text-mono">Matrículas que serão encerradas</span>
+                        @foreach (var m in ativas)
+                        {
+                            <span class="text-secondary-foreground">@m.Turma · desde @Formatacao.Data(m.Inicio)</span>
+                        }
+                    </div>
+                }
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    @if (soPrazo)
+                    {
+                        <input type="hidden" asp-for="Data" />
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="TrialAte">Trial até</label>
+                            <input class="kt-input" asp-for="TrialAte" type="date" required />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Data">@(desligar ? "Data do desligamento" : rematricular ? "Data da nova matrícula" : "A partir de")</label>
+                            <input class="kt-input" asp-for="Data" type="date" required />
+                        </div>
+                    }
+                    @if (rematricular)
+                    {
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="TurmaId">Turma</label>
+                            <select class="kt-select" asp-for="TurmaId" required>
+                                <option value="">Selecione</option>
+                                @foreach (var t in turmas)
+                                {
+                                    <option value="@t.Id">@t.Nome · @t.Ocupadas/@t.Capacidade vagas@(t.Mensalidade is { } m ? $" · {Formatacao.Moeda(m)}" : "")</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Mensalidade">Mensalidade <span class="text-muted-foreground">(vazio = a da turma)</span></label>
+                            <div class="kt-input-group">
+                                <span class="kt-input-addon">R$</span>
+                                <input class="kt-input" asp-for="Mensalidade" type="text" inputmode="decimal" value="@mensalidade" placeholder="a da turma" />
+                            </div>
+                        </div>
+                    }
+                    <div class="flex flex-col gap-1 md:col-span-2">
+                        <label class="kt-form-label" asp-for="Motivo">Motivo @(desligar ? "" : "(opcional)")</label>
+                        <textarea class="kt-textarea" asp-for="Motivo" rows="2" maxlength="300" required="@desligar"
+                                  placeholder="@(desligar ? "Ex.: mudou de cidade, horário não encaixou" : "")"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="/Alunos/Ficha/@ficha.Id">Cancelar</a>
+                <button class="kt-btn @(desligar ? "kt-btn-destructive" : "kt-btn-primary")" type="submit">
+                    <i class="ki-filled @(desligar ? "ki-exit-right" : "ki-check")"></i> @acao
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

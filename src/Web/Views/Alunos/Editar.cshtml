@@ -1,0 +1,42 @@
+@model DadosAlunoRequisicao
+@{
+    ViewData["Title"] = $"Editar {Model.Nome}";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Dados do aluno" meta="@Model.Nome" voltar-href="/Alunos/Ficha/@Model.Id" voltar-texto="Ficha do aluno"
+                      descricao="Identificação e endereço. Saúde, responsáveis e matrículas têm as próprias telas na ficha."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[820px]">
+        <form asp-action="Editar" asp-route-id="@Model.Id" method="post" novalidate>
+            <input type="hidden" asp-for="Versao" />
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1 md:col-span-2">
+                        <label class="kt-form-label" asp-for="Nome">Nome do aluno</label>
+                        <input class="kt-input" asp-for="Nome" required maxlength="150" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="DataNascimento">Data de nascimento</label>
+                        <input class="kt-input" asp-for="DataNascimento" type="date" required />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Cpf">CPF <span class="text-muted-foreground">(se tiver)</span></label>
+                        <input class="kt-input" asp-for="Cpf" inputmode="numeric" placeholder="000.000.000-00" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Categoria">Categoria <span class="text-muted-foreground">(opcional)</span></label>
+                        <input class="kt-input" asp-for="Categoria" maxlength="60" />
+                    </div>
+                </div>
+                <div class="border-t border-border"></div>
+                <partial name="_CamposEndereco" model="Model" />
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="/Alunos/Ficha/@Model.Id">Cancelar</a>
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>

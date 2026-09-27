@@ -1,0 +1,120 @@
+@inject IAutorizacao Autorizacao
+@model IReadOnlyList<TurmaResumo>
+@{
+    ViewData["Title"] = "Turmas";
+    var podeCriar = Autorizacao.Pode(Recurso.ConfiguracaoEscolinha, Operacao.Alterar);
+    var encerradas = ViewData["Encerradas"] as bool? ?? false;
+    var modalidade = ViewData["Modalidade"] as Guid?;
+    var opcoes = (OpcoesTurma)ViewData["Opcoes"]!;
+    var verValores = Model.Any(t => t.Mensalidade is not null);
+    var ocupadas = Model.Where(t => t.Situacao == SituacaoTurma.Ativa).Sum(t => t.Ocupadas);
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Turmas" descricao="Cada turma tem horários, local, professor, vagas e mensalidade. As sessões de treino do mês saem dos horários."
+                      meta="@($"{Model.Count(t => t.Situacao == SituacaoTurma.Ativa)} turma(s) ativa(s) · {ocupadas} matrícula(s)")">
+        <a class="kt-btn kt-btn-outline" href="/Agenda"><i class="ki-filled ki-calendar"></i> Agenda</a>
+        @if (podeCriar)
+        {
+            <a class="kt-btn kt-btn-primary" asp-action="Nova"><i class="ki-filled ki-plus"></i> Nova turma</a>
+        }
+    </cabecalho-pagina>
+
+    <form method="get" class="flex flex-wrap items-end gap-3 mb-5">
+        @if (opcoes.Modalidades.Count > 1)
+        {
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label" for="modalidade">Modalidade</label>
+                <select class="kt-select" id="modalidade" name="modalidade" data-esc-enviar-ao-mudar>
+                    <option value="">Todas</option>
+                    @foreach (var m in opcoes.Modalidades)
+                    {
+                        <option value="@m.Id" selected="@(m.Id == modalidade)">@m.Nome</option>
+                    }
+                </select>
+            </div>
+        }
+        <label class="kt-label">
+            <input class="kt-checkbox kt-checkbox-sm" type="checkbox" name="encerradas" value="true" checked="@encerradas" data-esc-enviar-ao-mudar />
+            <span class="text-sm text-foreground">Mostrar as encerradas</span>
+        </label>
+        <noscript><button class="kt-btn kt-btn-sm kt-btn-outline" type="submit">Filtrar</button></noscript>
+    </form>
+
+    <div class="kt-card">
+        @if (Model.Count == 0)
+        {
+            <estado-vazio icone="ki-category" titulo="Nenhuma turma" texto="@(podeCriar ? "Crie a primeira turma: antes, cadastre o local de treino e o professor." : "Você ainda não é o professor responsável por nenhuma turma.")">
+                @if (podeCriar)
+                {
+                    <a class="kt-btn kt-btn-primary" asp-action="Nova"><i class="ki-filled ki-plus"></i> Nova turma</a>
+                }
+            </estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[200px]">Turma</th>
+                            <th class="min-w-[170px] hidden md:table-cell">Horários</th>
+                            <th class="min-w-[150px] hidden lg:table-cell">Professor e local</th>
+                            <th class="min-w-[150px]">Vagas</th>
+                            @if (verValores)
+                            {
+                                <th class="min-w-[110px] hidden md:table-cell">Mensalidade</th>
+                            }
+                            <th class="w-[1%] text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="flex items-center gap-2">
+                                            <a class="font-medium text-mono hover:text-primary" asp-action="Ficha" asp-route-id="@t.Id">@t.Nome</a>
+                                            @if (t.Situacao == SituacaoTurma.Encerrada)
+                                            {
+                                                <selo-status valor="t.Situacao"></selo-status>
+                                            }
+                                        </span>
+                                        <span class="text-xs text-secondary-foreground">@t.Modalidade@(t.Categoria is null ? "" : $" · {t.Categoria}")</span>
+                                    </div>
+                                </td>
+                                <td class="hidden md:table-cell text-secondary-foreground">@t.Horarios</td>
+                                <td class="hidden lg:table-cell">
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="text-foreground">@t.Professor</span>
+                                        <span class="text-xs text-secondary-foreground">@t.Local</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="flex flex-col gap-1.5">
+                                        <span class="flex items-center gap-2">
+                                            <span class="font-medium text-mono">@t.Ocupadas/@t.Capacidade</span>
+                                            @if (t.Lotada && t.Situacao == SituacaoTurma.Ativa)
+                                            {
+                                                <selo-status valor="SinalTela.TurmaLotada"></selo-status>
+                                            }
+                                        </span>
+                                        <progress class="esc-ocupacao" value="@Math.Min(t.Ocupadas, t.Capacidade)" max="@t.Capacidade" aria-label="@($"{t.Ocupadas} de {t.Capacidade} vagas ocupadas")"></progress>
+                                    </div>
+                                </td>
+                                @if (verValores)
+                                {
+                                    <td class="hidden md:table-cell text-mono">@(t.Mensalidade is { } valor ? Formatacao.Moeda(valor) : "—")</td>
+                                }
+                                <td class="text-end">
+                                    <a class="kt-btn kt-btn-sm kt-btn-outline" asp-action="Ficha" asp-route-id="@t.Id"><i class="ki-filled ki-eye"></i> Ficha</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

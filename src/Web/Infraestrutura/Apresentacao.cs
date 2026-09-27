@@ -2,10 +2,12 @@ using System.Globalization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Domain.Acesso;
+using MinhaEscolinha.Domain.Alunos;
 using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
 using MinhaEscolinha.Domain.Integracao;
 using MinhaEscolinha.Domain.Plataforma;
+using MinhaEscolinha.Domain.Turmas;
 
 namespace MinhaEscolinha.Web.Infraestrutura;
 
@@ -17,6 +19,10 @@ public static class ErrosDeFormulario
 {
     public static void AdicionarErro(this ModelStateDictionary modelState, ResultadoOperacao resultado) =>
         modelState.AddModelError(resultado.Campo ?? string.Empty, resultado.Mensagem);
+
+    /// <summary>Formulário cujos campos têm prefixo (<c>Nova.Inicio</c>): o erro vai para o campo com o prefixo.</summary>
+    public static void AdicionarErro(this ModelStateDictionary modelState, ResultadoOperacao resultado, string prefixo) =>
+        modelState.AddModelError(resultado.Campo is { Length: > 0 } campo ? $"{prefixo}.{campo}" : string.Empty, resultado.Mensagem);
 }
 
 /// <summary>Chaves de TempData lidas pelo layout (viram toast KTUI por JS em arquivo).</summary>
@@ -46,7 +52,14 @@ public enum SinalTela
     ContaRecebimentoAusente,
     SaldoCreditosBaixo,
     PacoteAVenda,
-    PacoteForaDeVenda
+    PacoteForaDeVenda,
+    TrialVencendo,
+    TrialVencido,
+    TurmaLotada,
+    SemMatricula,
+    ComAcesso,
+    SemAcesso,
+    Pagador
 }
 
 /// <summary>
@@ -88,6 +101,34 @@ public static class ApresentacaoStatus
         SinalTela.SaldoCreditosBaixo => ("Saldo baixo", VarianteSelo.Alerta),
         SinalTela.PacoteAVenda => ("À venda", VarianteSelo.Sucesso),
         SinalTela.PacoteForaDeVenda => ("Fora de venda", VarianteSelo.Neutro),
+        SinalTela.TrialVencendo => ("Trial vencendo", VarianteSelo.Alerta),
+        SinalTela.TrialVencido => ("Trial vencido", VarianteSelo.Alerta),
+        SinalTela.TurmaLotada => ("Lotada", VarianteSelo.Alerta),
+        SinalTela.SemMatricula => ("Sem turma", VarianteSelo.Alerta),
+        SinalTela.ComAcesso => ("Com acesso", VarianteSelo.Sucesso),
+        SinalTela.SemAcesso => ("Sem acesso ainda", VarianteSelo.Neutro),
+        SinalTela.Pagador => ("Pagador", VarianteSelo.Primario),
+
+        SituacaoAluno.Trial => ("Trial", VarianteSelo.Info),
+        SituacaoAluno.Ativo => ("Ativo", VarianteSelo.Sucesso),
+        SituacaoAluno.Inativo => ("Inativo", VarianteSelo.Neutro),
+        SituacaoAluno.Desistente => ("Desistente", VarianteSelo.Neutro),
+
+        SituacaoMatricula.Ativa => ("Ativa", VarianteSelo.Sucesso),
+        SituacaoMatricula.Encerrada => ("Encerrada", VarianteSelo.Neutro),
+
+        SituacaoTurma.Ativa => ("Ativa", VarianteSelo.Sucesso),
+        SituacaoTurma.Encerrada => ("Encerrada", VarianteSelo.Neutro),
+
+        SituacaoSessao.Prevista => ("Prevista", VarianteSelo.Info),
+        SituacaoSessao.Realizada => ("Realizada", VarianteSelo.Sucesso),
+        SituacaoSessao.Cancelada => ("Cancelada", VarianteSelo.Perigo),
+        SituacaoSessao.Remarcada => ("Remarcada", VarianteSelo.Alerta),
+
+        EstadoConsentimento.Pendente => ("Pendente", VarianteSelo.Alerta),
+        EstadoConsentimento.Concedido => ("Autorizado", VarianteSelo.Sucesso),
+        EstadoConsentimento.Recusado => ("Recusado", VarianteSelo.Neutro),
+        EstadoConsentimento.Revogado => ("Revogado", VarianteSelo.Neutro),
 
         _ => (valor.ToString(), VarianteSelo.Neutro)
     };
@@ -164,6 +205,29 @@ public static class Formatacao
     public static string DataHora(DateTime? quando) => quando?.ToString("dd/MM/yyyy HH:mm", PtBr) ?? "—";
 
     public static string Data(DateTime? quando) => quando?.ToString("dd/MM/yyyy", PtBr) ?? "—";
+
+    public static string Data(DateOnly? dia) => dia?.ToString("dd/MM/yyyy", PtBr) ?? "—";
+
+    /// <summary>"29/09 (ter)".</summary>
+    public static string DiaCurto(DateOnly dia) => dia.ToString("dd/MM (ddd)", PtBr);
+
+    /// <summary>"Terça-feira, 29 de setembro" (só a primeira letra maiúscula).</summary>
+    public static string DiaPorExtenso(DateOnly dia) => PrimeiraMaiuscula(dia.ToString("dddd, d 'de' MMMM", PtBr));
+
+    /// <summary>"18:00–19:00".</summary>
+    public static string Horario(DateTime inicio, DateTime fim) => $"{inicio.ToString("HH:mm", PtBr)}–{fim.ToString("HH:mm", PtBr)}";
+
+    public static string Horario(TimeOnly inicio, TimeOnly fim) => $"{inicio.ToString("HH:mm", PtBr)}–{fim.ToString("HH:mm", PtBr)}";
+
+    /// <summary>"Setembro de 2026".</summary>
+    public static string Mes(DateOnly dia) => PrimeiraMaiuscula(dia.ToString("MMMM 'de' yyyy", PtBr));
+
+    private static string PrimeiraMaiuscula(string texto) => texto.Length == 0 ? texto : char.ToUpper(texto[0], PtBr) + texto[1..];
+
+    public static string Cpf(string? digitos) => Domain.Comum.Cpf.Formatar(digitos);
+
+    /// <summary>"9 anos".</summary>
+    public static string Idade(int anos) => anos == 1 ? "1 ano" : $"{anos} anos";
 
     public static string Numero(int valor) => valor.ToString("N0", PtBr);
 

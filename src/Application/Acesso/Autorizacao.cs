@@ -9,7 +9,8 @@ public enum TipoAlvoEscopo
     Turma = 20,
     Professor = 30,
     Convocacao = 40,
-    Cobranca = 50
+    Cobranca = 50,
+    Sessao = 60
 }
 
 /// <summary>O registro sobre o qual se pede acesso (um aluno, uma turma...).</summary>
@@ -17,18 +18,11 @@ public readonly record struct AlvoEscopo(TipoAlvoEscopo Tipo, Guid Id);
 
 /// <summary>
 /// Resolve o "escopo próprio" de cada papel: as turmas do professor, os filhos com vínculo verificado do responsável.
-/// Cada fatia que cria uma entidade com escopo acrescenta a regra dela aqui (S1: turma e aluno).
+/// Cada fatia que cria uma entidade com escopo acrescenta a regra dela no <see cref="ResolvedorEscopoCadastros"/>.
 /// </summary>
 public interface IResolvedorEscopo
 {
     Task<bool> NoEscopoAsync(PapelAtuacao papel, AlvoEscopo alvo, Guid pessoaId, CancellationToken ct = default);
-}
-
-/// <summary>S0: ainda não existem turmas nem alunos — nenhum alvo está no escopo de um papel parcial (nega por padrão).</summary>
-public sealed class ResolvedorEscopoSemCadastros : IResolvedorEscopo
-{
-    public Task<bool> NoEscopoAsync(PapelAtuacao papel, AlvoEscopo alvo, Guid pessoaId, CancellationToken ct = default) =>
-        Task.FromResult(false);
 }
 
 /// <summary>

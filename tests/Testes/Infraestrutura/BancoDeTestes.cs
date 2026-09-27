@@ -70,6 +70,18 @@ public sealed class BancoDeTestes : IAsyncLifetime
         GarantirBancoDeTeste();
         await using var contexto = NovoContextoSemEscolinha();
         await contexto.Database.ExecuteSqlRawAsync("""
+            DELETE FROM ConsentimentoAluno;
+            DELETE FROM VinculoAlunoResponsavel;
+            DELETE FROM Matricula;
+            DELETE FROM SessaoTreino;
+            DELETE FROM HorarioTurma;
+            DELETE FROM Turma;
+            DELETE FROM Aluno;
+            DELETE FROM Responsavel;
+            DELETE FROM FaixaDisponibilidade;
+            DELETE FROM IndisponibilidadeProfessor;
+            DELETE FROM Professor;
+            DELETE FROM Local;
             DELETE FROM WebhookRecebido;
             DELETE FROM CompraCreditos;
             DELETE FROM PacoteCreditos;
@@ -178,6 +190,10 @@ public sealed class AmbienteAplicacao : IDisposable
         services.AddScoped<MinhaEscolinha.Application.Configuracao.IConfiguracaoRepositorio, ConfiguracaoRepositorio>();
         services.AddScoped<MinhaEscolinha.Application.Configuracao.IConsultasPlataforma, ConsultasPlataforma>();
         services.AddScoped<IPlataformaRepositorio, PlataformaRepositorio>();
+        services.AddScoped<MinhaEscolinha.Application.Equipe.IEquipeRepositorio, MinhaEscolinha.Infrastructure.Cadastro.EquipeRepositorio>();
+        services.AddScoped<MinhaEscolinha.Application.Turmas.ITurmasRepositorio, MinhaEscolinha.Infrastructure.Cadastro.TurmasRepositorio>();
+        services.AddScoped<MinhaEscolinha.Application.Alunos.IAlunosRepositorio, MinhaEscolinha.Infrastructure.Cadastro.AlunosRepositorio>();
+        services.AddScoped<IConsultasEscopo, MinhaEscolinha.Infrastructure.Cadastro.ConsultasEscopo>();
         services.AddSingleton(Stripe);
         services.AddSingleton<IGatewayStripe>(GatewayStripe);
         services.AddSingleton<IAgendadorPlataforma>(Agendador);

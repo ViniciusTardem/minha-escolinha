@@ -1,0 +1,230 @@
+@model NovoAlunoRequisicao
+@{
+    ViewData["Title"] = "Novo aluno";
+    var turmas = ViewData["Turmas"] as IReadOnlyList<TurmaResumo> ?? [];
+    var escolhidos = ViewData["Escolhidos"] as IReadOnlyDictionary<Guid, ResponsavelEncontrado> ?? new Dictionary<Guid, ResponsavelEncontrado>();
+    var duplicidadeResponsavel = ViewData["Duplicidade"] as DuplicidadeResponsavel;
+    var duplicidadeAluno = ViewData["Duplicidade"] as DuplicidadeAluno;
+    var mensalidade = ViewData.ModelState[nameof(Model.Mensalidade)]?.AttemptedValue ?? Moeda.ParaCampo(Model.Mensalidade);
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Novo aluno" voltar-href="/Alunos" voltar-texto="Alunos"
+                      descricao="Aluno, responsáveis, matrícula, saúde e consentimentos, gravados juntos. Responsável que já existe é reaproveitado: um cadastro por pessoa, mesmo com dois filhos."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[900px]">
+        <form asp-action="Novo" method="post" novalidate data-esc-assistente>
+            <div class="kt-card-header flex-wrap gap-3 py-4">
+                <h3 class="kt-card-title">Cadastro</h3>
+                <ol class="esc-passos" data-esc-passos></ol>
+            </div>
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+
+                @* ── 1. Aluno ── *@
+                <section class="flex flex-col gap-5" data-esc-passo data-esc-passo-titulo="Aluno">
+                    @if (duplicidadeAluno is not null)
+                    {
+                        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="alert">
+                            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                            <div class="flex flex-col gap-2 text-sm">
+                                <span class="font-medium">Já existe aluno com este nome e esta data de nascimento:</span>
+                                @foreach (var c in duplicidadeAluno.Candidatos)
+                                {
+                                    <a class="kt-link" href="/Alunos/Ficha/@c.Id" target="_blank" rel="noopener">@c.Nome · @Formatacao.Data(c.DataNascimento)</a>
+                                }
+                                <label class="kt-label">
+                                    <input class="kt-checkbox kt-checkbox-sm" asp-for="ConfirmarAlunoNovo" type="checkbox" />
+                                    <span class="text-sm text-foreground">É outra criança: cadastrar mesmo assim</span>
+                                </label>
+                            </div>
+                        </div>
+                    }
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="flex flex-col gap-1 md:col-span-2">
+                            <label class="kt-form-label" asp-for="Nome">Nome do aluno</label>
+                            <input class="kt-input" asp-for="Nome" required maxlength="150" autocomplete="off" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="DataNascimento">Data de nascimento</label>
+                            <input class="kt-input" asp-for="DataNascimento" type="date" required />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Cpf">CPF do aluno <span class="text-muted-foreground">(se tiver)</span></label>
+                            <input class="kt-input" asp-for="Cpf" inputmode="numeric" placeholder="000.000.000-00" />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Categoria">Categoria <span class="text-muted-foreground">(opcional)</span></label>
+                            <input class="kt-input" asp-for="Categoria" maxlength="60" placeholder="Ex.: Sub-9" />
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-3 rounded-xl border border-border p-4">
+                        <label class="kt-label">
+                            <input class="kt-checkbox kt-checkbox-sm" asp-for="EmTrial" type="checkbox" />
+                            <span class="text-sm text-foreground">Começa em aula experimental (trial)</span>
+                        </label>
+                        <div class="flex flex-col gap-1 max-w-[260px]">
+                            <label class="kt-form-label" asp-for="TrialAte">Trial até</label>
+                            <input class="kt-input" asp-for="TrialAte" type="date" />
+                            <span class="text-xs text-muted-foreground">O trial não é cobrado. Vencido o prazo, ele continua em trial, sinalizado: o sistema não converte nem desliga sozinho.</span>
+                        </div>
+                    </div>
+                    <details class="rounded-xl border border-border">
+                        <summary class="cursor-pointer px-4 py-3 text-sm font-medium text-mono">Endereço do aluno <span class="text-muted-foreground font-normal">(opcional)</span></summary>
+                        <div class="px-4 pb-4">
+                            <partial name="_CamposEndereco" model="Model" />
+                        </div>
+                    </details>
+                </section>
+
+                @* ── 2. Responsáveis ── *@
+                <section class="flex flex-col gap-5" data-esc-passo data-esc-passo-titulo="Responsáveis">
+                    <p class="text-sm text-secondary-foreground">
+                        Toda comunicação com o aluno passa pelo responsável (o aluno não recebe mensagem). O celular é o WhatsApp da família.
+                    </p>
+                    @for (var i = 0; i < Model.Responsaveis.Count; i++)
+                    {
+                        var dados = new ViewDataDictionary(ViewData)
+                        {
+                            ["Indice"] = i,
+                            ["Titulo"] = i == 0 ? "1º responsável" : "2º responsável (opcional)",
+                            ["Escolhido"] = Model.Responsaveis[i].ResponsavelId is { } rid ? escolhidos.GetValueOrDefault(rid) : null,
+                            ["Sugestao"] = duplicidadeResponsavel is { } d && d.Indice == i ? d : null
+                        };
+                        <partial name="_ResponsavelDoAluno" for="Responsaveis[i]" view-data="dados" />
+                    }
+                    <span class="text-xs text-muted-foreground">Outros responsáveis entram depois, na ficha do aluno. Só um é o pagador.</span>
+                </section>
+
+                @* ── 3. Matrícula ── *@
+                <section class="flex flex-col gap-5" data-esc-passo data-esc-passo-titulo="Matrícula">
+                    @if (turmas.Count == 0)
+                    {
+                        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="alert">
+                            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                            <span class="text-sm">Não há turma ativa. <a class="kt-link" href="/Turmas/Nova">Crie a turma</a> antes de matricular.</span>
+                        </div>
+                    }
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="flex flex-col gap-1 md:col-span-2">
+                            <label class="kt-form-label" asp-for="TurmaId">Turma</label>
+                            <select class="kt-select" asp-for="TurmaId" required>
+                                <option value="">Selecione</option>
+                                @foreach (var t in turmas)
+                                {
+                                    <option value="@t.Id">@t.Nome · @t.Horarios · @t.Ocupadas/@t.Capacidade vagas@(t.Mensalidade is { } m ? $" · {Formatacao.Moeda(m)}" : "")</option>
+                                }
+                            </select>
+                            <span class="text-xs text-muted-foreground">Turma cheia não bloqueia: a matrícula entra com o aviso. Outras turmas entram depois, na ficha.</span>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="DataInicio">Início na turma</label>
+                            <input class="kt-input" asp-for="DataInicio" type="date" required />
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Mensalidade">Mensalidade <span class="text-muted-foreground">(vazio = a da turma)</span></label>
+                            <div class="kt-input-group">
+                                <span class="kt-input-addon">R$</span>
+                                <input class="kt-input" asp-for="Mensalidade" type="text" inputmode="decimal" value="@mensalidade" placeholder="a da turma" />
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                @* ── 4. Saúde ── *@
+                <section class="flex flex-col gap-5" data-esc-passo data-esc-passo-titulo="Saúde">
+                    <div class="kt-alert kt-alert-light kt-alert-primary flex items-start gap-3" role="note">
+                        <i class="ki-filled ki-shield-tick text-lg shrink-0"></i>
+                        <span class="text-sm">Dado sensível: o gestor e o responsável veem tudo; o professor da turma vê só alergias, restrições e o contato de emergência.</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Alergias">Alergias</label>
+                            <textarea class="kt-textarea" asp-for="Alergias" rows="2" maxlength="500"></textarea>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="Restricoes">Restrições para o treino</label>
+                            <textarea class="kt-textarea" asp-for="Restricoes" rows="2" maxlength="500"></textarea>
+                        </div>
+                        <div class="flex flex-col gap-1 md:col-span-2">
+                            <label class="kt-form-label" asp-for="ObservacoesMedicas">Observações médicas <span class="text-muted-foreground">(só gestor e responsável)</span></label>
+                            <textarea class="kt-textarea" asp-for="ObservacoesMedicas" rows="2" maxlength="1000"></textarea>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" asp-for="ContatoEmergenciaNome">Contato de emergência</label>
+                            <input class="kt-input" asp-for="ContatoEmergenciaNome" maxlength="150" />
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="flex flex-col gap-1">
+                                <label class="kt-form-label" asp-for="ContatoEmergenciaTelefone">Telefone</label>
+                                <input class="kt-input" asp-for="ContatoEmergenciaTelefone" type="tel" inputmode="tel" />
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="kt-form-label" asp-for="ContatoEmergenciaParentesco">Parentesco</label>
+                                <input class="kt-input" asp-for="ContatoEmergenciaParentesco" maxlength="60" placeholder="Ex.: tia" />
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                @* ── 5. Consentimentos ── *@
+                <section class="flex flex-col gap-5" data-esc-passo data-esc-passo-titulo="Consentimentos">
+                    <p class="text-sm text-secondary-foreground">
+                        Registro separado de tratamento de dados e de uso de imagem, com data, hora, o texto apresentado e quem autorizou.
+                        Negar ou revogar a imagem não afeta matrícula, cobrança, presença nem convocação.
+                    </p>
+                    @for (var i = 0; i < Model.Consentimentos.Count; i++)
+                    {
+                        var termo = TermosConsentimento.Obter(Model.Consentimentos[i].Finalidade);
+                        <fieldset class="flex flex-col gap-3 rounded-xl border border-border p-4">
+                            <legend class="px-1 text-sm font-semibold text-mono">@termo.Titulo</legend>
+                            <input type="hidden" asp-for="Consentimentos[i].Finalidade" />
+                            <p class="text-sm text-secondary-foreground">@termo.Texto</p>
+                            <span class="text-xs text-muted-foreground">Texto versão @termo.Versao (provisório, em revisão jurídica).</span>
+                            <div class="flex flex-wrap gap-x-5 gap-y-2" role="radiogroup" aria-label="@termo.Titulo">
+                                <label class="kt-label">
+                                    <input class="kt-radio kt-radio-sm" asp-for="Consentimentos[i].Resposta" type="radio" value="@RespostaConsentimento.NaoColetado" />
+                                    <span class="text-sm text-foreground">Ainda não coletado</span>
+                                </label>
+                                <label class="kt-label">
+                                    <input class="kt-radio kt-radio-sm" asp-for="Consentimentos[i].Resposta" type="radio" value="@RespostaConsentimento.Concedido" />
+                                    <span class="text-sm text-foreground">Autorizou</span>
+                                </label>
+                                <label class="kt-label">
+                                    <input class="kt-radio kt-radio-sm" asp-for="Consentimentos[i].Resposta" type="radio" value="@RespostaConsentimento.Recusado" />
+                                    <span class="text-sm text-foreground">Recusou</span>
+                                </label>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex flex-col gap-1">
+                                    <label class="kt-form-label" asp-for="Consentimentos[i].ResponsavelIndice">Quem respondeu</label>
+                                    <select class="kt-select" asp-for="Consentimentos[i].ResponsavelIndice">
+                                        <option value="0">1º responsável</option>
+                                        <option value="1">2º responsável</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="kt-form-label" asp-for="Consentimentos[i].Origem">Como</label>
+                                    <select class="kt-select" asp-for="Consentimentos[i].Origem">
+                                        <option value="@OrigemConsentimento.TermoEmPapel">@TermosConsentimento.Rotulo(OrigemConsentimento.TermoEmPapel)</option>
+                                        <option value="@OrigemConsentimento.DeclaracaoAoGestor">@TermosConsentimento.Rotulo(OrigemConsentimento.DeclaracaoAoGestor)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </fieldset>
+                    }
+                </section>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" asp-action="Index">Cancelar</a>
+                <button class="kt-btn kt-btn-outline" type="button" data-esc-passo-anterior><i class="ki-filled ki-arrow-left"></i> Voltar</button>
+                <button class="kt-btn kt-btn-primary" type="button" data-esc-passo-proximo>Continuar <i class="ki-filled ki-arrow-right"></i></button>
+                <button class="kt-btn kt-btn-primary" type="submit" data-esc-passo-final><i class="ki-filled ki-check"></i> Cadastrar aluno</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/busca-responsavel.js" asp-append-version="true"></script>
+}

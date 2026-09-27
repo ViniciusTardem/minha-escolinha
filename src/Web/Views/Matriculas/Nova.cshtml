@@ -1,0 +1,52 @@
+@model NovaMatriculaRequisicao
+@{
+    var ficha = (FichaAluno)ViewData["Ficha"]!;
+    var turmas = ViewData["Turmas"] as IReadOnlyList<TurmaResumo> ?? [];
+    ViewData["Title"] = $"Nova matrícula · {ficha.Nome}";
+    var mensalidade = ViewData.ModelState[nameof(Model.Mensalidade)]?.AttemptedValue ?? Moeda.ParaCampo(Model.Mensalidade);
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Matricular em outra turma" meta="@ficha.Nome" voltar-href="/Alunos/Ficha/@ficha.Id?aba=matriculas" voltar-texto="Ficha do aluno"
+                      descricao="Uma matrícula por turma, com valor e datas próprios. Turma cheia não bloqueia: a matrícula entra com o aviso."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[720px]">
+        <form asp-action="Nova" method="post" novalidate>
+            <input type="hidden" asp-for="AlunoId" />
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                @if (turmas.Count == 0)
+                {
+                    <p class="text-sm text-secondary-foreground">O aluno já está em todas as turmas ativas.</p>
+                }
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1 md:col-span-2">
+                        <label class="kt-form-label" asp-for="TurmaId">Turma</label>
+                        <select class="kt-select" asp-for="TurmaId" required>
+                            <option value="">Selecione</option>
+                            @foreach (var t in turmas)
+                            {
+                                <option value="@t.Id">@t.Nome · @t.Horarios · @t.Ocupadas/@t.Capacidade vagas@(t.Mensalidade is { } m ? $" · {Formatacao.Moeda(m)}" : "")</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="DataInicio">Início na turma</label>
+                        <input class="kt-input" asp-for="DataInicio" type="date" required />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Mensalidade">Mensalidade <span class="text-muted-foreground">(vazio = a da turma)</span></label>
+                        <div class="kt-input-group">
+                            <span class="kt-input-addon">R$</span>
+                            <input class="kt-input" asp-for="Mensalidade" type="text" inputmode="decimal" value="@mensalidade" placeholder="a da turma" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="/Alunos/Ficha/@ficha.Id?aba=matriculas">Cancelar</a>
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Matricular</button>
+            </div>
+        </form>
+    </div>
+</div>

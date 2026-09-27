@@ -1,0 +1,153 @@
+@model AgendaResposta
+@{
+    ViewData["Title"] = "Agenda";
+    var opcoesDoRecorte = Model.Recorte switch
+    {
+        RecorteAgenda.Professor => Model.Professores,
+        RecorteAgenda.Local => Model.Locais,
+        _ => Model.Turmas
+    };
+    var rotuloRecorte = Model.Recorte switch
+    {
+        RecorteAgenda.Professor => "Professor",
+        RecorteAgenda.Local => "Local",
+        _ => "Turma"
+    };
+    var inicioMes = new DateOnly(Model.De.Year, Model.De.Month, 1);
+    var anterior = inicioMes.AddMonths(-1);
+    var proximo = inicioMes.AddMonths(1);
+
+    string Link(DateOnly de, DateOnly ate)
+    {
+        var partes = new List<string> { $"recorte={Model.Recorte}", $"de={de:yyyy-MM-dd}", $"ate={ate:yyyy-MM-dd}" };
+        if (Model.Id is { } id) partes.Add($"id={id}");
+        if (Model.ModalidadeId is { } modalidade) partes.Add($"modalidadeId={modalidade}");
+        if (Model.Situacao is { } situacao) partes.Add($"situacao={situacao}");
+        return "/Agenda?" + string.Join("&", partes);
+    }
+
+    var porDia = Model.Itens.GroupBy(i => i.Data).OrderBy(g => g.Key).ToList();
+    var voltar = Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString);
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Agenda" descricao="As sessões de treino por turma, professor ou local. Os alertas mostram professor em dois lugares, fora da disponibilidade ou indisponível, e local com dois treinos ao mesmo tempo."
+                      meta="@($"{Formatacao.Data(Model.De)} a {Formatacao.Data(Model.Ate)} · {Model.Itens.Count} sessão(ões)")">
+        <a class="kt-btn kt-btn-outline" href="@Link(anterior, anterior.AddMonths(1).AddDays(-1))" aria-label="Mês anterior"><i class="ki-filled ki-left"></i></a>
+        <span class="text-sm font-medium text-mono">@Formatacao.Mes(Model.De)</span>
+        <a class="kt-btn kt-btn-outline" href="@Link(proximo, proximo.AddMonths(1).AddDays(-1))" aria-label="Próximo mês"><i class="ki-filled ki-right"></i></a>
+    </cabecalho-pagina>
+
+    <form method="get" class="kt-card mb-5">
+        <div class="kt-card-content flex flex-col gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                <div class="flex flex-col gap-1">
+                    <label class="kt-form-label" for="recorte">Ver por</label>
+                    <select class="kt-select" id="recorte" name="recorte" data-esc-enviar-ao-mudar>
+                        <option value="Turma" selected="@(Model.Recorte == RecorteAgenda.Turma)">Turma</option>
+                        <option value="Professor" selected="@(Model.Recorte == RecorteAgenda.Professor)">Professor</option>
+                        <option value="Local" selected="@(Model.Recorte == RecorteAgenda.Local)">Local</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1 sm:col-span-2">
+                    <label class="kt-form-label" for="id">@rotuloRecorte</label>
+                    <select class="kt-select" id="id" name="id" data-esc-enviar-ao-mudar>
+                        <option value="">Todos</option>
+                        @foreach (var o in opcoesDoRecorte)
+                        {
+                            <option value="@o.Id" selected="@(o.Id == Model.Id)">@o.Nome</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            @* No celular os filtros tomavam a primeira tela: o período vem das setas do mês, o resto fica recolhido. *@
+            <details open="@(Model.Situacao is not null || Model.ModalidadeId is not null)">
+                <summary class="cursor-pointer text-sm font-medium text-mono">Período, situação e modalidade</summary>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end pt-4">
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" for="de">De</label>
+                        <input class="kt-input" id="de" name="de" type="date" value="@Model.De.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" for="ate">Até</label>
+                        <input class="kt-input" id="ate" name="ate" type="date" value="@Model.Ate.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" for="situacao">Situação</label>
+                        <select class="kt-select" id="situacao" name="situacao">
+                            <option value="">Todas</option>
+                            @foreach (var s in new[] { SituacaoSessao.Prevista, SituacaoSessao.Realizada, SituacaoSessao.Cancelada })
+                            {
+                                <option value="@s" selected="@(s == Model.Situacao)">@ApresentacaoStatus.Selo(s).Rotulo</option>
+                            }
+                        </select>
+                    </div>
+                    @if (Model.Modalidades.Count > 1)
+                    {
+                        <div class="flex flex-col gap-1">
+                            <label class="kt-form-label" for="modalidadeId">Modalidade</label>
+                            <select class="kt-select" id="modalidadeId" name="modalidadeId">
+                                <option value="">Todas</option>
+                                @foreach (var m in Model.Modalidades)
+                                {
+                                    <option value="@m.Id" selected="@(m.Id == Model.ModalidadeId)">@m.Nome</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    <div>
+                        <button class="kt-btn kt-btn-outline w-full justify-center" type="submit"><i class="ki-filled ki-filter"></i> Filtrar</button>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </form>
+
+    @if (porDia.Count == 0)
+    {
+        <div class="kt-card">
+            <estado-vazio icone="ki-calendar" titulo="Nenhuma sessão no período" texto="As sessões saem dos horários das turmas, até o fim do mês seguinte."></estado-vazio>
+        </div>
+    }
+    else
+    {
+        <div class="flex flex-col gap-5">
+            @foreach (var dia in porDia)
+            {
+                <section class="kt-card" aria-label="@Formatacao.DiaPorExtenso(dia.Key)">
+                    <div class="kt-card-header">
+                        <h3 class="kt-card-title">@Formatacao.DiaPorExtenso(dia.Key)</h3>
+                        <span class="text-xs text-secondary-foreground">@dia.Count() sessão(ões)</span>
+                    </div>
+                    <ul class="esc-linhas">
+                        @foreach (var i in dia)
+                        {
+                            <li class="esc-item-agenda px-5 py-3">
+                                <span class="esc-item-agenda-hora text-sm font-semibold text-mono">@Formatacao.Horario(i.Inicio, i.Fim)</span>
+                                <span class="flex flex-col gap-0.5 min-w-0">
+                                    <a class="text-sm font-medium text-mono hover:text-primary" href="/Turmas/Ficha/@i.TurmaId">@i.Turma</a>
+                                    <span class="text-xs text-secondary-foreground">@i.Local · @i.Professor@(i.Categoria is null ? "" : $" · {i.Categoria}")</span>
+                                    @if (i.MotivoCancelamento is not null)
+                                    {
+                                        <span class="text-xs text-secondary-foreground">Motivo: @i.MotivoCancelamento</span>
+                                    }
+                                    @foreach (var alerta in i.Alertas)
+                                    {
+                                        <span class="flex items-center gap-1.5 text-xs text-foreground"><i class="ki-filled ki-information-2 text-warning"></i> @alerta</span>
+                                    }
+                                </span>
+                                <span class="flex flex-wrap items-center justify-end gap-2">
+                                    <selo-status valor="i.Situacao"></selo-status>
+                                    @if (i.PodeCancelar)
+                                    {
+                                        <a class="kt-btn kt-btn-sm kt-btn-ghost" href="/Sessoes/Cancelar/@i.SessaoId?voltar=@voltar"><i class="ki-filled ki-cross-circle"></i> Cancelar</a>
+                                    }
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                </section>
+            }
+        </div>
+    }
+</div>

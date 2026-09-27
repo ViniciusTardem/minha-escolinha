@@ -35,15 +35,68 @@
                     </ul>
                 </div>
             }
-            else
+            else if (Model.ProximosTreinos.Count == 0)
             {
                 <div class="kt-card">
                     <estado-vazio icone="ki-cup" titulo="Bem-vindo à Minha Escolinha"
-                                  texto="A chamada na quadra e os jogos do fim de semana chegam nas próximas entregas do piloto. Por enquanto, nada para fazer aqui."></estado-vazio>
+                                  texto="Os treinos das suas turmas aparecem aqui. A chamada na quadra e os jogos do fim de semana chegam nas próximas entregas do piloto."></estado-vazio>
+                </div>
+            }
+
+            @if (Model.ProximosTreinos.Count > 0)
+            {
+                <div class="kt-card">
+                    <div class="kt-card-header">
+                        <h3 class="kt-card-title">Próximos treinos</h3>
+                        <a class="kt-link text-sm" href="/Agenda">Agenda completa</a>
+                    </div>
+                    <ul class="esc-linhas">
+                        @foreach (var t in Model.ProximosTreinos)
+                        {
+                            <li class="esc-item-agenda px-5 py-3">
+                                <span class="esc-item-agenda-hora flex flex-col">
+                                    <span class="text-xs text-secondary-foreground">@(t.Data == Model.Hoje ? "Hoje" : Formatacao.DiaCurto(t.Data))</span>
+                                    <span class="text-sm font-semibold text-mono">@Formatacao.Horario(t.Inicio, t.Fim)</span>
+                                </span>
+                                <span class="flex flex-col gap-0.5 min-w-0">
+                                    <a class="text-sm font-medium text-mono hover:text-primary" href="/Turmas/Ficha/@t.TurmaId">@t.Turma</a>
+                                    <span class="text-xs text-secondary-foreground">@t.Local · @t.Professor</span>
+                                </span>
+                                <span class="flex justify-end"><selo-status valor="t.Situacao"></selo-status></span>
+                            </li>
+                        }
+                    </ul>
                 </div>
             }
         </div>
 
+        <div class="flex flex-col gap-5 lg:gap-7.5">
+        @if (Model.TrialsVencendo.Count > 0 || Model.TrialsVencidos.Count > 0)
+        {
+            <div class="kt-card">
+                <div class="kt-card-header">
+                    <h3 class="kt-card-title">Trials</h3>
+                    <a class="kt-link text-sm" href="/Alunos?situacao=Trial">Ver todos</a>
+                </div>
+                <ul class="esc-linhas">
+                    @foreach (var (id, nome, ate) in Model.TrialsVencidos)
+                    {
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <a class="text-sm font-medium text-mono hover:text-primary truncate" href="/Alunos/Ficha/@id">@nome</a>
+                            <selo-status valor="SinalTela.TrialVencido" texto="@($"venceu {Formatacao.Data(ate)}")"></selo-status>
+                        </li>
+                    }
+                    @foreach (var (id, nome, ate) in Model.TrialsVencendo)
+                    {
+                        var dias = ate.DayNumber - Model.Hoje.DayNumber;
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <a class="text-sm font-medium text-mono hover:text-primary truncate" href="/Alunos/Ficha/@id">@nome</a>
+                            <selo-status valor="SinalTela.TrialVencendo" texto="@(dias == 0 ? "vence hoje" : $"vence em {dias} dia(s)")"></selo-status>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
         <div class="kt-card">
             <div class="kt-card-header">
                 <h3 class="kt-card-title">Próximas entregas</h3>
@@ -74,6 +127,7 @@
                     </ul>
                 }
             </div>
+        </div>
         </div>
     </div>
 </div>

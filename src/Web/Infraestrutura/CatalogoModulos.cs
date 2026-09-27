@@ -60,20 +60,27 @@ public static class CatalogoModulos
             "Cada turma tem modalidade, categoria, horários, local, capacidade, professor responsável e mensalidade. " +
             "As sessões de treino do mês são geradas a partir dos horários.",
             ["Horários e local de treino", "Ocupação de vagas", "Sessões de treino geradas pelos horários", "Agenda do professor e da quadra"],
-            "S1", SituacaoModulo.Planejado, "/turmas", Recurso.CadastroAlunosResponsaveis),
+            "S1", SituacaoModulo.Disponivel, "/Turmas", Recurso.CadastroAlunosResponsaveis),
 
         new("alunos", "Alunos", "ki-people", SecaoOperacao,
             "Alunos, responsáveis e matrículas, sem cadastro duplicado.",
             "Ficha do aluno com responsáveis (um cadastro para irmãos), matrículas em uma ou mais turmas, consentimentos e dados de saúde " +
             "restritos a quem precisa.",
             ["Responsável reaproveitado entre irmãos", "Matrícula em mais de uma turma", "Consentimento de imagem e de dados", "Desligamento com motivo"],
-            "S1", SituacaoModulo.Planejado, "/alunos", Recurso.CadastroAlunosResponsaveis),
+            "S1", SituacaoModulo.Disponivel, "/Alunos", Recurso.CadastroAlunosResponsaveis),
+
+        new("responsaveis", "Responsáveis", "ki-users", SecaoOperacao,
+            "Pais, mães e responsáveis: um cadastro por pessoa, com os filhos.",
+            "Cada responsável tem um cadastro só na escolinha, reaproveitado entre irmãos. O vínculo com o aluno diz quem paga, " +
+            "quem recebe a cobrança e quem recebe as notificações.",
+            ["Um cadastro por pessoa", "Filhos e vínculos", "Contato do WhatsApp"],
+            "S1", SituacaoModulo.Disponivel, "/Responsaveis", Recurso.CadastroAlunosResponsaveis),
 
         new("agenda", "Agenda", "ki-calendar", SecaoOperacao,
             "Treinos e jogos por turma, professor e quadra.",
-            "Calendário das sessões de treino e dos jogos, com alerta de conflito de agenda do professor.",
-            ["Por turma, professor ou quadra", "Filtro por período e modalidade", "Alerta de conflito do professor"],
-            "S1", SituacaoModulo.Planejado, "/agenda", Recurso.RegistroPresenca),
+            "Calendário das sessões de treino e dos jogos, com alerta de conflito de agenda do professor e do local.",
+            ["Por turma, professor ou quadra", "Filtro por período e modalidade", "Alerta de conflito do professor e do local"],
+            "S1", SituacaoModulo.Disponivel, "/Agenda", Recurso.RegistroPresenca),
 
         new("chamada", "Chamada", "ki-check-squared", SecaoOperacao,
             "Chamada na quadra, em poucos toques, mesmo sem internet.",
@@ -107,6 +114,19 @@ public static class CatalogoModulos
             "Nome, razão social, CNPJ, endereço e contato — o nome aparece nas mensagens às famílias.",
             ["Identificação e contato", "Endereço"],
             "S0", SituacaoModulo.Disponivel, "/Escolinha", Recurso.ConfiguracaoEscolinha),
+
+        new("professores", "Professores", "ki-teacher", SecaoEscolinha,
+            "Professores, disponibilidade semanal e indisponibilidades.",
+            "Dados e contato de cada professor, as turmas dele e a escala de disponibilidade: treino marcado fora dela ou num horário " +
+            "já ocupado gera alerta.",
+            ["Turmas sob responsabilidade", "Disponibilidade semanal", "Indisponibilidades pontuais", "Alertas de conflito"],
+            "S1", SituacaoModulo.Disponivel, "/Professores", Recurso.CadastroProfessores),
+
+        new("locais", "Locais de treino", "ki-geolocation", SecaoEscolinha,
+            "Quadras e locais onde as turmas treinam e jogam.",
+            "Nome, endereço e capacidade de cada quadra ou local. A agenda mostra a ocupação de cada um e alerta dois treinos no mesmo horário.",
+            ["Endereço e capacidade", "Turmas que treinam ali"],
+            "S1", SituacaoModulo.Disponivel, "/Locais", Recurso.ConfiguracaoEscolinha),
 
         new("modalidades", "Modalidades", "ki-medal-star", SecaoEscolinha,
             "Modalidades oferecidas e o que cada uma usa (adversário, convocação...).",

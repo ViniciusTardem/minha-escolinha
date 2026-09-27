@@ -1,0 +1,32 @@
+@model RevogarConsentimentoRequisicao
+@{
+    var (consentimento, aluno) = ((ConsentimentoAluno, string))ViewData["Consentimento"]!;
+    var titulo = TermosConsentimento.Rotulo(consentimento.Finalidade);
+    ViewData["Title"] = $"Revogar · {titulo}";
+    var imagem = consentimento.Finalidade == FinalidadeConsentimento.UsoImagem;
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@($"Revogar: {titulo}")" meta="@aluno" voltar-href="/Alunos/Ficha/@consentimento.Aluno_ID?aba=consentimentos" voltar-texto="Ficha do aluno"
+                      descricao="@(imagem ? "A revogação vale dali em diante e não afeta matrícula, cobrança, presença nem convocação." : "A revogação fica registrada com data, hora e quem registrou; nada é apagado.")"></cabecalho-pagina>
+
+    <div class="kt-card max-w-[640px]">
+        <form asp-action="Revogar" asp-route-id="@consentimento.ConsentimentoAluno_ID" method="post" novalidate>
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <p class="text-sm text-secondary-foreground">
+                    Autorizado por @(consentimento.Responsavel?.Nome ?? "responsável") em @Formatacao.DataHora(consentimento.RegistradoEm)
+                    (@TermosConsentimento.Rotulo(consentimento.Origem).ToLowerInvariant(), texto @consentimento.VersaoTermo).
+                </p>
+                <div class="flex flex-col gap-1">
+                    <label class="kt-form-label" asp-for="Motivo">Motivo <span class="text-muted-foreground">(opcional)</span></label>
+                    <input class="kt-input" asp-for="Motivo" maxlength="300" placeholder="Ex.: pedido da mãe por mensagem" />
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="/Alunos/Ficha/@consentimento.Aluno_ID?aba=consentimentos">Cancelar</a>
+                <button class="kt-btn kt-btn-destructive" type="submit"><i class="ki-filled ki-shield-cross"></i> Revogar</button>
+            </div>
+        </form>
+    </div>
+</div>

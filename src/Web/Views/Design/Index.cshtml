@@ -7,11 +7,14 @@
         ("--primary", "bg-primary"), ("--foreground", "bg-foreground"), ("--mono", "bg-mono"), ("--secondary-foreground", "bg-secondary-foreground"),
         ("--muted", "bg-muted"), ("--accent", "bg-accent"), ("--border", "bg-border"), ("--destructive", "bg-destructive")
     ];
+    // Toda máquina do mapa central (ApresentacaoStatus), inteira: a vitrine mostra rótulo e cor de cada estado.
+    IEnumerable<Enum> Todos<T>() where T : struct, Enum => Enum.GetValues<T>().Cast<Enum>();
     Enum[] selos =
     [
-        SituacaoVinculo.Ativo, SituacaoVinculo.Revogado, AmbienteAsaas.Sandbox, AmbienteAsaas.Producao,
-        TipoMovimentoCredito.Concessao, TipoMovimentoCredito.Consumo, TipoMovimentoCredito.Estorno, TipoMovimentoCredito.Ajuste,
-        PapelAtuacao.Gestor, PapelAtuacao.Professor, PapelAtuacao.Responsavel
+        .. Todos<SituacaoVinculo>(), .. Todos<AmbienteAsaas>(), .. Todos<TipoMovimentoCredito>(), .. Todos<PapelAtuacao>(),
+        .. Todos<SituacaoCompraCreditos>(), .. Todos<SituacaoWebhook>(),
+        .. Todos<SituacaoAluno>(), .. Todos<SituacaoMatricula>(), .. Todos<SituacaoTurma>(), .. Todos<SituacaoSessao>(),
+        .. Todos<EstadoConsentimento>(), .. Todos<SinalTela>()
     ];
     (string Icone, string Conceito)[] icones =
     [

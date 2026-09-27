@@ -1,0 +1,60 @@
+@model FichaResponsavel
+@{
+    ViewData["Title"] = Model.Nome;
+    string Ou(string? valor) => string.IsNullOrWhiteSpace(valor) ? "—" : valor;
+    var endereco = Model.Endereco.Resumo();
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@Model.Nome" voltar-href="/Responsaveis" voltar-texto="Responsáveis"
+                      descricao="Um cadastro só para todos os filhos. O que cada vínculo permite (pagar, receber cobrança, receber avisos) fica na ficha de cada aluno.">
+        @if (Model.PodeEditar)
+        {
+            <a class="kt-btn kt-btn-primary" asp-action="Editar" asp-route-id="@Model.Id"><i class="ki-filled ki-pencil"></i> Editar cadastro</a>
+        }
+    </cabecalho-pagina>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="kt-card">
+            <div class="kt-card-header">
+                <h3 class="kt-card-title">Dados</h3>
+                <selo-status valor="Model.TemAcesso ? SinalTela.ComAcesso : SinalTela.SemAcesso"></selo-status>
+            </div>
+            <div class="kt-card-content">
+                <dl class="esc-dados">
+                    <dt>Celular</dt>
+                    <dd>@Ou(Formatacao.Telefone(Model.Telefone))</dd>
+                    @if (Model.Cpf is not null)
+                    {
+                        <dt>CPF</dt>
+                        <dd>@Formatacao.Cpf(Model.Cpf)</dd>
+                    }
+                    <dt>E-mail</dt>
+                    <dd>@Ou(Model.Email)</dd>
+                    <dt>Endereço</dt>
+                    <dd>@Ou(endereco)</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="kt-card">
+            <div class="kt-card-header"><h3 class="kt-card-title">Alunos</h3></div>
+            <ul class="esc-linhas">
+                @foreach (var a in Model.Alunos)
+                {
+                    var marcas = new List<string> { VinculoAlunoResponsavel.Rotulo(a.Parentesco) };
+                    if (a.Pagador && Model.VerFinanceiro) marcas.Add("paga a mensalidade");
+                    if (a.RecebeCobranca && Model.VerFinanceiro) marcas.Add("recebe a cobrança");
+                    if (a.RecebeNotificacao) marcas.Add("recebe avisos");
+                    <li class="flex items-center justify-between gap-3 px-5 py-3">
+                        <span class="flex flex-col gap-0.5 min-w-0">
+                            <a class="text-sm font-medium text-mono hover:text-primary" href="/Alunos/Ficha/@a.AlunoId">@a.Aluno</a>
+                            <span class="text-xs text-secondary-foreground">@string.Join(" · ", marcas)</span>
+                        </span>
+                        <selo-status valor="a.Situacao"></selo-status>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>

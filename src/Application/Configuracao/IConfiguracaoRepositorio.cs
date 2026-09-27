@@ -37,6 +37,10 @@ public interface IConfiguracaoRepositorio
     /// <summary>Alterações mais recentes primeiro, de uma entidade (e, opcionalmente, de um campo).</summary>
     Task<IReadOnlyList<RegistroAlteracao>> ListarAlteracoesAsync(string entidade, string? campo, int limite, CancellationToken ct = default);
 
+    /// <summary>Alterações de um registro (a linha do tempo da ficha), mais recentes primeiro.</summary>
+    Task<IReadOnlyList<RegistroAlteracao>> ListarAlteracoesDoRegistroAsync(string entidade, Guid registroId, int limite,
+        CancellationToken ct = default);
+
     Task SalvarAsync(CancellationToken ct = default);
 }
 

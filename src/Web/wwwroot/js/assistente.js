@@ -19,6 +19,9 @@
     var anterior = form.querySelector("[data-esc-passo-anterior]");
     var proximo = form.querySelector("[data-esc-passo-proximo]");
     var final = form.querySelector("[data-esc-passo-final]");
+    // Sem "Continuar" e sem o envio final não há como andar nas etapas: o formulário fica inteiro (ex.: a edição, que
+    // reaproveita as seções do cadastro). Evita esconder etapas sem ter como chegar nelas.
+    if (!proximo || !final) return;
     var atual = 0;
 
     if (lista) {

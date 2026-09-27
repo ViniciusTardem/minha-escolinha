@@ -1,0 +1,163 @@
+@inject MinhaEscolinha.Application.Comum.IRelogioBrasil Relogio
+@model FichaTurma
+@{
+    ViewData["Title"] = Model.Nome;
+    var ativas = Model.Alunos.Where(a => a.SituacaoMatricula == SituacaoMatricula.Ativa).ToList();
+    var encerradas = Model.Alunos.Where(a => a.SituacaoMatricula == SituacaoMatricula.Encerrada).OrderByDescending(a => a.Fim).Take(20).ToList();
+    var hoje = DateOnly.FromDateTime(Relogio.Hoje());
+    var lotada = Model.Ocupadas >= Model.Capacidade;
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@Model.Nome" voltar-href="/Turmas" voltar-texto="Turmas"
+                      descricao="@($"{Model.Modalidade}{(Model.Categoria is null ? "" : $" · {Model.Categoria}")} · professor {Model.Professor} · {Model.Local}")">
+        <a class="kt-btn kt-btn-outline" href="/Agenda?recorte=Turma&id=@Model.Id"><i class="ki-filled ki-calendar"></i> Agenda</a>
+        @if (Model.Pode.Editar)
+        {
+            <a class="kt-btn kt-btn-outline" asp-action="Editar" asp-route-id="@Model.Id"><i class="ki-filled ki-pencil"></i> Editar</a>
+            <a class="kt-btn kt-btn-ghost" asp-action="Encerrar" asp-route-id="@Model.Id"><i class="ki-filled ki-archive"></i> Encerrar</a>
+        }
+    </cabecalho-pagina>
+
+    @if (Model.Situacao == SituacaoTurma.Encerrada)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-mono flex items-start gap-3 mb-5" role="status">
+            <i class="ki-filled ki-archive text-lg shrink-0"></i>
+            <span class="text-sm">Turma encerrada em @Formatacao.DataHora(Model.EncerradaEm)@(Model.MotivoEncerramento is null ? "" : $": {Model.MotivoEncerramento}"). Fica no histórico com as sessões e matrículas que teve.</span>
+        </div>
+    }
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+        <div class="kt-card">
+            <div class="kt-card-content flex flex-col gap-2">
+                <span class="text-xs text-secondary-foreground">Vagas ocupadas</span>
+                <span class="flex items-center gap-2">
+                    <span class="text-3xl font-semibold text-mono">@Model.Ocupadas<span class="text-base font-normal text-secondary-foreground"> de @Model.Capacidade</span></span>
+                    @if (lotada)
+                    {
+                        <selo-status valor="SinalTela.TurmaLotada"></selo-status>
+                    }
+                </span>
+                <progress class="esc-ocupacao" value="@Math.Min(Model.Ocupadas, Model.Capacidade)" max="@Model.Capacidade" aria-label="@($"{Model.Ocupadas} de {Model.Capacidade} vagas ocupadas")"></progress>
+                @if (Model.Inativos > 0)
+                {
+                    <span class="text-xs text-muted-foreground">@Model.Inativos inativo(s) em pausa ocupam vaga.</span>
+                }
+            </div>
+        </div>
+        <div class="kt-card">
+            <div class="kt-card-content flex flex-col gap-1">
+                <span class="text-xs text-secondary-foreground">Horários</span>
+                @foreach (var h in Model.Horarios)
+                {
+                    <span class="text-base font-medium text-mono">@DiasSemana.Nome(h.Dia), @Formatacao.Horario(h.Inicio, h.Fim)</span>
+                }
+                <span class="text-xs text-muted-foreground">Desde @Formatacao.Data(Model.DataInicio)</span>
+            </div>
+        </div>
+        <div class="kt-card">
+            <div class="kt-card-content flex flex-col gap-1">
+                <span class="text-xs text-secondary-foreground">@(Model.Mensalidade is null ? "Jogos" : "Mensalidade")</span>
+                @if (Model.Mensalidade is { } mensalidade)
+                {
+                    <span class="text-3xl font-semibold text-mono">@Formatacao.Moeda(mensalidade)</span>
+                }
+                <span class="text-xs text-muted-foreground">
+                    Mínimo de @Model.MinimoConfirmados confirmados por jogo · meta de frequência
+                    @(Model.MetaFrequenciaPercentual is { } meta ? $"{meta}%" : $"{Model.FrequenciaMinimaEscolinha:0.##}% (a da escolinha)")
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <div class="kt-card">
+            <div class="kt-card-header">
+                <h3 class="kt-card-title">Alunos matriculados</h3>
+                <a class="kt-link text-sm" href="/Alunos?turmaId=@Model.Id">Ver na lista de alunos</a>
+            </div>
+            @if (ativas.Count == 0)
+            {
+                <estado-vazio icone="ki-people" titulo="Nenhum aluno matriculado" texto="Matricule alunos pelo cadastro do aluno (Alunos › Novo aluno)."></estado-vazio>
+            }
+            else
+            {
+                <ul class="esc-linhas">
+                    @foreach (var a in ativas)
+                    {
+                        var trialVencido = a.Situacao == SituacaoAluno.Trial && a.TrialAte is { } ate && ate < hoje;
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <span class="flex flex-col gap-0.5 min-w-0">
+                                <a class="text-sm font-medium text-mono hover:text-primary truncate" href="/Alunos/Ficha/@a.AlunoId">@a.Nome</a>
+                                <span class="text-xs text-secondary-foreground">@Formatacao.Idade(Aluno.IdadeEm(a.DataNascimento, hoje)) · na turma desde @Formatacao.Data(a.Inicio)</span>
+                            </span>
+                            <span class="flex flex-wrap justify-end gap-1.5 shrink-0">
+                                <selo-status valor="a.Situacao"></selo-status>
+                                @if (trialVencido)
+                                {
+                                    <selo-status valor="SinalTela.TrialVencido"></selo-status>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+            }
+            @if (encerradas.Count > 0)
+            {
+                <div class="border-t border-border px-5 py-3 flex flex-col gap-2">
+                    <span class="text-xs font-medium text-secondary-foreground">Saíram da turma (histórico)</span>
+                    @foreach (var a in encerradas)
+                    {
+                        <span class="text-xs text-secondary-foreground">
+                            <a class="kt-link" href="/Alunos/Ficha/@a.AlunoId">@a.Nome</a> · @Formatacao.Data(a.Inicio) a @Formatacao.Data(a.Fim)
+                        </span>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="kt-card">
+            <div class="kt-card-header">
+                <h3 class="kt-card-title">Próximas sessões de treino</h3>
+                <a class="kt-link text-sm" href="/Agenda?recorte=Turma&id=@Model.Id">Agenda completa</a>
+            </div>
+            @if (Model.ProximasSessoes.Count == 0)
+            {
+                <estado-vazio icone="ki-calendar" titulo="Nenhuma sessão prevista" texto="As sessões saem dos horários da turma, até o fim do mês seguinte."></estado-vazio>
+            }
+            else
+            {
+                <ul class="esc-linhas">
+                    @foreach (var s in Model.ProximasSessoes)
+                    {
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <span class="flex flex-col gap-0.5 min-w-0">
+                                <span class="text-sm font-medium text-mono">@Formatacao.DiaCurto(s.Data) · @Formatacao.Horario(s.Inicio, s.Fim)</span>
+                                <span class="text-xs text-secondary-foreground">@s.Local · @s.Professor</span>
+                            </span>
+                            <span class="flex items-center gap-2 shrink-0">
+                                <selo-status valor="s.Situacao"></selo-status>
+                                @if (Model.Pode.CancelarSessao && s.Situacao == SituacaoSessao.Prevista)
+                                {
+                                    <a class="kt-btn kt-btn-sm kt-btn-ghost" href="/Sessoes/Cancelar/@s.Id" aria-label="@($"Cancelar o treino de {Formatacao.DiaCurto(s.Data)}")"><i class="ki-filled ki-cross-circle"></i> Cancelar</a>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+            }
+            @if (Model.Canceladas.Count > 0)
+            {
+                <div class="border-t border-border px-5 py-3 flex flex-col gap-2">
+                    <span class="text-xs font-medium text-secondary-foreground">Canceladas</span>
+                    @foreach (var s in Model.Canceladas)
+                    {
+                        <span class="text-xs text-secondary-foreground">
+                            @Formatacao.DiaCurto(s.Data) @Formatacao.Horario(s.Inicio, s.Fim) — @s.MotivoCancelamento (@s.CanceladaPorNome, @Formatacao.DataHora(s.CanceladaEm))
+                        </span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

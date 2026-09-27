@@ -63,5 +63,13 @@ public class ConfiguracaoRepositorio(EscolinhaDbContext contexto) : IConfiguraca
             .Take(limite)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<RegistroAlteracao>> ListarAlteracoesDoRegistroAsync(string entidade, Guid registroId, int limite,
+        CancellationToken ct = default) =>
+        await contexto.RegistrosAlteracao.AsNoTracking()
+            .Where(r => r.Entidade == entidade && r.Registro_ID == registroId)
+            .OrderByDescending(r => r.Em)
+            .Take(limite)
+            .ToListAsync(ct);
+
     public Task SalvarAsync(CancellationToken ct = default) => contexto.SaveChangesAsync(ct);
 }

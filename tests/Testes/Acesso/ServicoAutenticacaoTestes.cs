@@ -169,6 +169,9 @@ public class ServicoAutenticacaoTestes
         public Task<IReadOnlyList<VinculoAtuacao>> VinculosNaEscolinhaAsync(Guid pessoaId, CancellationToken ct = default) =>
             Task.FromResult<IReadOnlyList<VinculoAtuacao>>([]);
 
+        public Task<IReadOnlyList<PessoaDaEscolinha>> PessoasDaEscolinhaAsync(CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<PessoaDaEscolinha>>([]);
+
         public void AdicionarPessoa(Pessoa pessoa) { }
 
         public void AdicionarVinculo(VinculoAtuacao vinculo) { }

@@ -1,0 +1,63 @@
+@inject IAutorizacao Autorizacao
+@model IReadOnlyList<ProfessorResumo>
+@{
+    ViewData["Title"] = "Professores";
+    var podeAlterar = Autorizacao.Pode(Recurso.CadastroProfessores, Operacao.Alterar);
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Professores" descricao="Quem dá aula na escolinha, as turmas de cada um e a disponibilidade semanal (usada nos alertas de conflito de agenda)."
+                      meta="@($"{Model.Count} professor(es)")">
+        @if (podeAlterar)
+        {
+            <a class="kt-btn kt-btn-primary" asp-action="Novo"><i class="ki-filled ki-plus"></i> Novo professor</a>
+        }
+    </cabecalho-pagina>
+
+    <div class="kt-card">
+        @if (Model.Count == 0)
+        {
+            <estado-vazio icone="ki-teacher" titulo="Nenhum professor cadastrado" texto="Cadastre o professor antes da turma: toda turma tem um professor responsável.">
+                @if (podeAlterar)
+                {
+                    <a class="kt-btn kt-btn-primary" asp-action="Novo"><i class="ki-filled ki-plus"></i> Novo professor</a>
+                }
+            </estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[200px]">Professor</th>
+                            <th class="min-w-[160px] hidden md:table-cell">Turmas</th>
+                            <th class="min-w-[200px] hidden lg:table-cell">Disponibilidade</th>
+                            <th class="min-w-[120px]">Acesso</th>
+                            <th class="w-[1%] text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="flex flex-col gap-0.5">
+                                        <a class="font-medium text-mono hover:text-primary" asp-action="Ficha" asp-route-id="@p.Id">@p.Nome</a>
+                                        <span class="text-xs text-secondary-foreground">@(p.Telefone is null ? p.Email ?? "Sem contato" : Formatacao.Telefone(p.Telefone))</span>
+                                    </div>
+                                </td>
+                                <td class="hidden md:table-cell text-secondary-foreground">@(p.Turmas.Count == 0 ? "—" : string.Join(", ", p.Turmas))</td>
+                                <td class="hidden lg:table-cell text-secondary-foreground">@p.Disponibilidade</td>
+                                <td><selo-status valor="p.TemAcesso ? SinalTela.ComAcesso : SinalTela.SemAcesso"></selo-status></td>
+                                <td class="text-end">
+                                    <a class="kt-btn kt-btn-sm kt-btn-outline" asp-action="Ficha" asp-route-id="@p.Id"><i class="ki-filled ki-eye"></i> Ficha</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

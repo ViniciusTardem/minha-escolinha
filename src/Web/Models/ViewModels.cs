@@ -1,6 +1,9 @@
+using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
+using MinhaEscolinha.Application.Equipe;
 using MinhaEscolinha.Application.Plataforma;
+using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Domain.Auditoria;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
 using MinhaEscolinha.Web.Infraestrutura;
@@ -29,7 +32,11 @@ public record PainelViewModel(
     string Papeis,
     bool VeConfiguracao,
     IReadOnlyList<PassoConfiguracao> Passos,
-    IReadOnlyList<Modulo> ProximasEntregas);
+    IReadOnlyList<Modulo> ProximasEntregas,
+    IReadOnlyList<ItemAgenda> ProximosTreinos,
+    IReadOnlyList<(Guid Id, string Nome, DateOnly TrialAte)> TrialsVencendo,
+    IReadOnlyList<(Guid Id, string Nome, DateOnly TrialAte)> TrialsVencidos,
+    DateOnly Hoje);
 
 public record ParametrosViewModel(
     DominioParametro Dominio,
@@ -48,3 +55,12 @@ public record CompraCreditosViewModel(CompraResposta Compra, bool Cancelada, int
 
 /// <summary>Pacotes de créditos (equipe da plataforma) e a situação da integração com o Stripe.</summary>
 public record PacotesViewModel(IReadOnlyList<PacoteResposta> Pacotes, IntegracaoStripeResposta Integracao);
+
+/// <summary>Ficha do professor e o formulário da indisponibilidade nova (campos com o prefixo <c>Nova</c>).</summary>
+public record FichaProfessorViewModel(FichaProfessor Ficha, IndisponibilidadeRequisicao Nova);
+
+/// <summary>Lista de alunos: a visão por turma e a geral sobre a mesma base (BL-M03-05).</summary>
+public record AlunosViewModel(FiltroAlunos Filtro, Pagina<AlunoNaLista> Lista, IReadOnlyList<TurmaResumo> Turmas, DateOnly Hoje);
+
+/// <summary>Lista de responsáveis com a busca.</summary>
+public record ResponsaveisViewModel(string? Busca, Pagina<ResponsavelNaLista> Lista);
