@@ -79,7 +79,9 @@ public sealed record LinhaConvocado(
     DateTime? RespondidaEm,
     DateTime? LembreteEm,
     string? OutraResposta,
-    bool PodeRegistrar);
+    bool PodeRegistrar,
+    bool MudouPertoDoJogo = false,
+    string? TextoLivre = null);
 
 /// <summary>O painel de confirmações de um evento (BL-M07-09): atualiza sozinho, sem recarregar a página.</summary>
 public sealed record PainelEvento(
@@ -100,7 +102,14 @@ public sealed record PainelEvento(
     int MinimoConfirmados,
     IReadOnlyList<LinhaConvocado> Convocados,
     bool PodeAlterar,
-    DateTime AtualizadoEm);
+    DateTime AtualizadoEm,
+    int? PlacarNos = null,
+    int? PlacarAdversario = null,
+    bool PodeRegistrarPlacar = false,
+    bool SoAsTurmasDoProfessor = false);
+
+/// <summary>Uma resposta que mudou perto do jogo (P51), para o painel inicial.</summary>
+public sealed record MudancaPertoDoJogo(Guid EventoId, string Jogo, DateTime Inicio, string Aluno);
 
 /// <summary>Os alertas de agenda que pedem confirmação para salvar o evento (R9: sinaliza, não bloqueia).</summary>
 public sealed record AlertasEvento(IReadOnlyList<ConflitoAgenda> Alertas);
@@ -185,6 +194,9 @@ public interface IEventosRepositorio
     Task<IReadOnlyList<Convocacao>> ConvocacoesAsync(IReadOnlyCollection<Guid> eventos, CancellationToken ct = default);
 
     Task<Convocacao?> ObterConvocacaoAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>As convocações dos eventos com o histórico, só para mostrar (P51).</summary>
+    Task<IReadOnlyList<Convocacao>> ConvocacoesComHistoricoAsync(IReadOnlyCollection<Guid> eventos, CancellationToken ct = default);
 
     /// <summary>Quem pode ser convocado: matrícula ativa numa das turmas na data, aluno em trial ou ativo (CA-3).</summary>
     Task<IReadOnlyList<AlunoConvocavel>> AlunosConvocaveisAsync(IReadOnlyCollection<Guid> turmas, DateOnly data, CancellationToken ct = default);

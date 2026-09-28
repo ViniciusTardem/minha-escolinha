@@ -59,7 +59,13 @@ public enum TipoHistoricoConvocacao
     RespostaTardia = 60,
     RegistroManual = 70,
     SemResposta = 80,
-    Cancelada = 90
+    Cancelada = 90,
+
+    /// <summary>Quem respondeu mudou a própria resposta (P51: perto do jogo, fica em destaque).</summary>
+    MudancaDeResposta = 100,
+
+    /// <summary>O horário do jogo mudou e a escolinha pede nova confirmação (P45).</summary>
+    NovaConfirmacao = 110
 }
 
 /// <summary>
@@ -101,6 +107,9 @@ public class Convocacao : IEntidadeAuditavel, IEntidadeDaEscolinha
     public string? OutraResposta { get; private set; }
 
     public string? MotivoCancelamento { get; private set; }
+
+    /// <summary>A última vez que a escolinha pediu nova confirmação (P45): a resposta à mensagem de antes não vale mais.</summary>
+    public DateTime? NovaConfirmacaoEm { get; private set; }
 
     public List<HistoricoConvocacao> Historico { get; set; } = [];
 
@@ -164,7 +173,7 @@ public class Convocacao : IEntidadeAuditavel, IEntidadeDaEscolinha
                 if (vai == (Situacao == SituacaoConvocacao.Confirmada)) return ResultadoResposta.Repetida;
                 var antes = RotuloResposta(!vai);
                 Aplicar(vai, origem, quem, quemId, em);
-                Registrar(TipoHistoricoConvocacao.Resposta, agora, $"{texto}: mudou de \"{antes}\"", em);
+                Registrar(TipoHistoricoConvocacao.MudancaDeResposta, agora, $"{texto}: mudou de \"{antes}\"", em);
                 return ResultadoResposta.Aplicada;
             case SituacaoConvocacao.Confirmada or SituacaoConvocacao.Recusada:
                 Registrar(TipoHistoricoConvocacao.RespostaPosterior, agora, texto, em);
@@ -192,6 +201,44 @@ public class Convocacao : IEntidadeAuditavel, IEntidadeDaEscolinha
         Aplicar(vai, OrigemResposta.RegistroManual, autor, autorId, agora);
         Registrar(TipoHistoricoConvocacao.RegistroManual, agora, $"{RotuloResposta(vai)} · registrado por {autor}.");
     }
+
+    /// <summary>
+    /// O horário do jogo mudou (P45): a resposta dada para o horário de antes deixa de valer, e a convocação volta a
+    /// "aguardando resposta", com um lembrete novo. Quem chama manda a convocação de novo.
+    /// </summary>
+    public bool PedirNovaConfirmacao(string motivo, DateTime agora)
+    {
+        if (Situacao is not (SituacaoConvocacao.Enviada or SituacaoConvocacao.Confirmada or SituacaoConvocacao.Recusada)) return false;
+        var antes = Situacao == SituacaoConvocacao.Enviada ? "aguardando" : Rotulo(Situacao).ToLowerInvariant();
+        Situacao = SituacaoConvocacao.Enviada;
+        EnviadaEm = agora;
+        NovaConfirmacaoEm = agora;
+        LembreteEm = null;
+        RespondidaEm = null;
+        Origem = null;
+        RespondidoPorNome = null;
+        RespondidoPor_ID = null;
+        OutraResposta = null;
+        Registrar(TipoHistoricoConvocacao.NovaConfirmacao, agora, $"{motivo} Estava {antes}.");
+        return true;
+    }
+
+    /// <summary>A mensagem foi montada antes do último pedido de nova confirmação: o botão dela não vale mais (P45).</summary>
+    public bool MensagemAnteriorANovaConfirmacao(DateTime mensagemCriadaEm) =>
+        NovaConfirmacaoEm is { } pedido && mensagemCriadaEm < pedido;
+
+    public void RegistrarRespostaAntiga(bool vai, string quem, DateTime em, DateTime agora) =>
+        Registrar(TipoHistoricoConvocacao.RespostaPosterior, agora,
+            $"{RotuloResposta(vai)} · {quem}: resposta à convocação de antes da mudança de horário, não vale.", em);
+
+    /// <summary>
+    /// A resposta mudou dentro da janela antes do jogo (P51): a mesma pessoa mudou de ideia, ou outro responsável respondeu
+    /// diferente. Pede atenção de quem convocou.
+    /// </summary>
+    public bool MudouRespostaEntre(DateTime de, DateTime ate) =>
+        Historico.Any(h => h.Em >= de && h.Em <= ate
+                           && (h.Tipo == TipoHistoricoConvocacao.MudancaDeResposta
+                               || (h.Tipo == TipoHistoricoConvocacao.RespostaPosterior && OutraResposta is not null)));
 
     public void RegistrarLembrete(DateTime agora)
     {
@@ -281,6 +328,8 @@ public class HistoricoConvocacao : IEntidadeDaEscolinha
         TipoHistoricoConvocacao.RegistroManual => "Registrada por fora",
         TipoHistoricoConvocacao.SemResposta => "Sem resposta",
         TipoHistoricoConvocacao.Cancelada => "Cancelada",
+        TipoHistoricoConvocacao.MudancaDeResposta => "Mudou a resposta",
+        TipoHistoricoConvocacao.NovaConfirmacao => "Nova confirmação pedida",
         _ => tipo.ToString()
     };
 }

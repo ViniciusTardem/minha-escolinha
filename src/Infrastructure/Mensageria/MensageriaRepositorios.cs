@@ -77,6 +77,21 @@ public class MensageriaRepositorio(EscolinhaDbContext contexto) : IMensageriaRep
 
     public Task<int> ContarRespostasEmAbertoAsync(DateTime desde, CancellationToken ct = default) => RespostasEmAberto(desde).CountAsync(ct);
 
+    public async Task<IReadOnlyDictionary<Guid, (string Texto, DateTime Em)>> UltimosTextosDasOrigensAsync(string tipoOrigem,
+        IReadOnlyCollection<Guid> origens, CancellationToken ct = default)
+    {
+        if (origens.Count == 0) return new Dictionary<Guid, (string, DateTime)>();
+        var ids = origens.Distinct().ToList();
+        var linhas = await (from r in contexto.RespostasMensagem.AsNoTracking()
+                            where r.Payload == null && r.Texto != null
+                            join m in contexto.Mensagens.AsNoTracking() on r.Mensagem_ID equals m.Mensagem_ID
+                            where m.TipoOrigem == tipoOrigem && ids.Contains(m.Origem_ID)
+                            select new { m.Origem_ID, r.Texto, r.RecebidaEm })
+            .ToListAsync(ct);
+        return linhas.GroupBy(l => l.Origem_ID)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(l => l.RecebidaEm).Select(l => (l.Texto!, l.RecebidaEm)).First());
+    }
+
     public Task<RespostaMensagem?> ObterRespostaAsync(Guid id, CancellationToken ct = default) =>
         contexto.RespostasMensagem.SingleOrDefaultAsync(r => r.RespostaMensagem_ID == id, ct);
 

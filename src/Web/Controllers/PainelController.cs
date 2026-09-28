@@ -4,6 +4,7 @@ using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
+using MinhaEscolinha.Application.Eventos;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Presencas;
 using MinhaEscolinha.Application.Turmas;
@@ -35,6 +36,7 @@ public class PainelController(
     ServicoMensagens mensagens,
     ServicoPresenca presenca,
     Application.Financeiro.ServicoMensalidades mensalidades,
+    Application.Eventos.ServicoConvocacoes convocacoes,
     IParametros valores,
     IRelogioBrasil relogio) : Controller
 {
@@ -110,6 +112,12 @@ public class PainelController(
                 pendencias.Add(new("Respostas das famílias", $"{respostas} resposta(s) pelo WhatsApp esperando alguém ler: um recado, um pedido para sair.",
                     "ki-message-text-2", "/Mensagens/Respostas", "Ler respostas"));
         }
+
+        // P51: a resposta que mudou perto do jogo pede atenção de quem convocou.
+        if (await convocacoes.MudancasPertoDoJogoAsync(ct) is { Count: > 0 } mudancas)
+            pendencias.Add(new("Respostas que mudaram perto do jogo",
+                $"{EmissorGatilhos.Juntar(mudancas.Select(m => m.Aluno).Distinct())}: a resposta mudou nas últimas horas antes do {TextosEventos.Minusculo(mudancas[0].Jogo)}.",
+                "ki-flag", $"/Convocacao/Jogo/{mudancas[0].EventoId}", "Ver o jogo"));
 
         var hoje = DateOnly.FromDateTime(relogio.Hoje());
         var proximosTreinos = autorizacao.Pode(Recurso.RegistroPresenca, Operacao.Ler)

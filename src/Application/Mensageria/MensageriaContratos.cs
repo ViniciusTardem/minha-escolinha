@@ -130,6 +130,10 @@ public interface IMensageriaRepositorio
     Task<IReadOnlyList<RespostaEmAberto>> RespostasEmAbertoAsync(DateTime desde, int limite, CancellationToken ct = default);
     Task<int> ContarRespostasEmAbertoAsync(DateTime desde, CancellationToken ct = default);
 
+    /// <summary>A última resposta em texto (sem botão) às mensagens de cada origem: o que a família escreveu (P48).</summary>
+    Task<IReadOnlyDictionary<Guid, (string Texto, DateTime Em)>> UltimosTextosDasOrigensAsync(string tipoOrigem, IReadOnlyCollection<Guid> origens,
+        CancellationToken ct = default);
+
     /// <summary>A resposta para marcar como vista (rastreada).</summary>
     Task<RespostaMensagem?> ObterRespostaAsync(Guid id, CancellationToken ct = default);
 

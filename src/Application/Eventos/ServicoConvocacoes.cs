@@ -31,6 +31,7 @@ public class ServicoConvocacoes(
     IRiscoEvasao risco,
     IUsuarioAtual usuario,
     EmissorGatilhos emissor,
+    IMensageriaRepositorio mensageria,
     IRelogioBrasil relogio)
 {
     private static readonly CultureInfo PtBr = new("pt-BR");
@@ -58,25 +59,68 @@ public class ServicoConvocacoes(
         var podeRegistrar = !evento.Encerrado && await autorizacao.PodeAsync(Recurso.ResponderConvocacao, Operacao.Alterar, alvo, ct);
         var podeAlterar = evento.Aberto && await autorizacao.PodeAsync(Recurso.EventosConvocacao, Operacao.Alterar, alvo, ct);
 
-        var convocacoes = await eventos.ConvocacoesAsync([id], ct);
+        var p = (await parametros.ObterAsync(ct)).Convocacao;
+        var todas = await eventos.ConvocacoesComHistoricoAsync([id], ct);
+        // P47: no jogo de várias turmas, o professor vê e registra só os convocados das turmas dele (a gestão vê todos).
+        var alcance = await escopo.TurmasAsync(Recurso.EventosConvocacao, ct);
+        var soAsDele = p.ProfessorSoPropriaTurma && !alcance.Todas;
+        var convocacoes = soAsDele ? todas.Where(c => alcance.Inclui(c.Turma_ID)).ToList() : todas;
         var alunos = await eventos.NomesDosAlunosAsync(convocacoes.Select(c => c.Aluno_ID).Distinct().ToList(), ct);
         var nomesTurmas = await eventos.NomesDasTurmasAsync(evento.IdsDasTurmas, ct);
         var local = await turmas.ObterLocalAsync(evento.Local_ID, ct);
         var professor = await equipe.ObterProfessorAsync(evento.Professor_ID, ct);
         var turmasTexto = await textos.TurmasAsync(evento, ct);
+        // P48: o que a família escreveu em texto, na linha do convocado, para quem convoca registrar por fora.
+        var escritos = await mensageria.UltimosTextosDasOrigensAsync(EmissorGatilhos.OrigemConvocacao,
+            convocacoes.Select(c => c.Convocacao_ID).ToList(), ct);
+        // P51: a resposta que mudou perto do jogo fica em destaque.
+        var janela = evento.Inicio.AddHours(-p.AvisoMudancaRespostaHorasAntes);
 
         var linhas = convocacoes
             .Select(c => new LinhaConvocado(c.Convocacao_ID, c.Aluno_ID, alunos.GetValueOrDefault(c.Aluno_ID, "—"),
                 nomesTurmas.GetValueOrDefault(c.Turma_ID, "—"), c.Situacao, c.Origem, c.RespondidoPorNome, c.RespondidaEm, c.LembreteEm,
-                c.OutraResposta, podeRegistrar && c.PodeRegistrarPorFora))
+                c.OutraResposta, podeRegistrar && c.PodeRegistrarPorFora, c.MudouRespostaEntre(janela, evento.Inicio),
+                escritos.TryGetValue(c.Convocacao_ID, out var escrito) ? $"“{escrito.Texto}” · {escrito.Em:dd/MM HH:mm}" : null))
             .OrderBy(l => Ordem(l.Situacao)).ThenBy(l => l.Aluno, StringComparer.Create(PtBr, true))
             .ToList();
+
+        var modalidade = (await configuracao.ListarModalidadesAsync(ct)).FirstOrDefault(m => m.Modalidade_ID == evento.Modalidade_ID);
+        var podePlacar = modalidade is not null && PoliticaPerfil.Recursos(evento.Tipo, modalidade.Recursos).PermitePlacar
+                         && evento.Situacao is SituacaoEvento.Realizado or SituacaoEvento.ResultadoHomologado
+                         && await autorizacao.PodeAsync(Recurso.EventosConvocacao, Operacao.Alterar, alvo, ct);
 
         return new PainelEvento(evento.Evento_ID, evento.Titulo(turmasTexto), turmasTexto, evento.Inicio, evento.Fim, local?.Nome ?? "—",
             local is null ? null : NuloSeVazio(local.Endereco.Resumo()), local?.Endereco.LinkMapa(local.Nome), evento.Adversario,
             evento.Logistica, professor?.Nome ?? "—", evento.Situacao, evento.Motivo,
             ContagemConvocacoes.De(convocacoes.Select(c => c.Situacao)), await MinimoAsync(evento, ct), linhas, podeAlterar,
-            relogio.Agora());
+            relogio.Agora(), evento.PlacarNos, evento.PlacarAdversario, podePlacar, soAsDele && convocacoes.Count < todas.Count);
+    }
+
+    /// <summary>
+    /// As respostas que mudaram perto dos jogos que ainda vão acontecer (P51), no escopo de quem vê: para o painel inicial
+    /// do professor e da gestão.
+    /// </summary>
+    public async Task<IReadOnlyList<MudancaPertoDoJogo>> MudancasPertoDoJogoAsync(CancellationToken ct = default)
+    {
+        if (!servicoEventos.PodeVer) return [];
+        var agora = relogio.Agora();
+        var p = (await parametros.ObterAsync(ct)).Convocacao;
+        var alcance = await escopo.TurmasAsync(Recurso.EventosConvocacao, ct);
+        var lista = (await eventos.ListarAsync(agora, agora.AddHours(p.AvisoMudancaRespostaHorasAntes), alcance, ct)).Where(e => e.Aberto).ToList();
+        if (lista.Count == 0) return [];
+        var convocacoes = (await eventos.ConvocacoesComHistoricoAsync(lista.Select(e => e.Evento_ID).ToList(), ct))
+            .Where(c => alcance.Todas || !p.ProfessorSoPropriaTurma || alcance.Inclui(c.Turma_ID)).ToLookup(c => c.Evento_ID);
+        var resultado = new List<MudancaPertoDoJogo>();
+        foreach (var evento in lista)
+        {
+            var mudaram = convocacoes[evento.Evento_ID]
+                .Where(c => c.MudouRespostaEntre(evento.Inicio.AddHours(-p.AvisoMudancaRespostaHorasAntes), evento.Inicio)).ToList();
+            if (mudaram.Count == 0) continue;
+            var nomes = await eventos.NomesDosAlunosAsync(mudaram.Select(c => c.Aluno_ID).ToList(), ct);
+            var titulo = evento.Titulo(await textos.TurmasAsync(evento, ct));
+            resultado.AddRange(mudaram.Select(c => new MudancaPertoDoJogo(evento.Evento_ID, titulo, evento.Inicio, nomes.GetValueOrDefault(c.Aluno_ID, "—"))));
+        }
+        return resultado;
     }
 
     /// <summary>
@@ -190,6 +234,10 @@ public class ServicoConvocacoes(
             return ResultadoOperacao.Erro("Só a gestão e o professor do jogo registram a resposta.");
         if (await eventos.ObterAsync(convocacao.Evento_ID, ct) is not { Encerrado: false })
             return ResultadoOperacao.Erro("O jogo foi cancelado ou adiado.");
+        // P47: o professor registra só os convocados das turmas dele.
+        var alcance = await escopo.TurmasAsync(Recurso.EventosConvocacao, ct);
+        if ((await parametros.ObterAsync(ct)).Convocacao.ProfessorSoPropriaTurma && !alcance.Inclui(convocacao.Turma_ID))
+            return ResultadoOperacao.Erro("Este convocado é de uma turma de outro professor: o registro fica com ele ou com a gestão.");
         if (!convocacao.PodeRegistrarPorFora)
             return ResultadoOperacao.Erro($"Convocação {Convocacao.Rotulo(convocacao.Situacao).ToLowerInvariant()} não recebe resposta.");
 

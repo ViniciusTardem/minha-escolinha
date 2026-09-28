@@ -59,6 +59,7 @@ public class ServicoEventos(
     EmissorGatilhos emissor,
     TextosEventos textos,
     RegistroDeAlteracoes registro,
+    IParametros parametros,
     IRelogioBrasil relogio,
     IValidator<EventoRequisicao> validador,
     IValidator<EncerrarEventoRequisicao> validadorEncerrar)
@@ -173,8 +174,47 @@ public class ServicoEventos(
                 avisadas = await emissor.EventoAlteradoAsync(evento.Evento_ID, await textos.ParaMensagemAsync(evento, ct), convocados, etapa, ct);
             }
         }
+
+        // P45: mudou o horário, a resposta dada para o horário de antes deixa de valer. A convocação volta a "aguardando" e
+        // sai de novo, com os botões; a mensagem de antes que ainda estava na fila não sai mais.
+        var reconvocadas = 0;
+        if (alteracao.MudouInicio && (await parametros.ObterAsync(ct)).Convocacao.NovaConfirmacaoAoMudarHorario)
+        {
+            var agora = relogio.Agora();
+            var etapa = $"N{agora.ToString("yyMMddHHmmss", CultureInfo.InvariantCulture)}{Guid.NewGuid():N}"[..Mensagem.TamanhoEtapa];
+            var convocacoes = (await eventos.ConvocacoesAsync([evento.Evento_ID], ct)).Where(c => c.Disparada).ToList();
+            var nomes = await eventos.NomesDosAlunosAsync(convocacoes.Select(c => c.Aluno_ID).ToList(), ct);
+            var dados = await textos.ParaMensagemAsync(evento, ct);
+            foreach (var convocacao in convocacoes.Where(c => c.PedirNovaConfirmacao("O horário do jogo mudou.", agora)))
+            {
+                await emissor.CancelarPendentesAsync(EmissorGatilhos.OrigemConvocacao, convocacao.Convocacao_ID, "O horário do jogo mudou: saiu a convocação nova.", ct);
+                await emissor.ConvocacaoAsync(convocacao, dados, nomes.GetValueOrDefault(convocacao.Aluno_ID, "—"), null, ct, etapa);
+                reconvocadas++;
+            }
+        }
         await eventos.SalvarAsync(ct);
-        return ResultadoOperacao.Ok("Jogo alterado." + (avisadas > 0 ? $" {avisadas} aviso(s) às famílias na fila." : string.Empty));
+        return ResultadoOperacao.Ok("Jogo alterado." + (avisadas > 0 ? $" {avisadas} aviso(s) às famílias na fila." : string.Empty)
+                                    + (reconvocadas > 0 ? $" {reconvocadas} convocação(ões) pedindo nova confirmação." : string.Empty));
+    }
+
+    /// <summary>O placar do jogo realizado (P46), quando a modalidade tem placar. Corrigir é registrar de novo.</summary>
+    public async Task<ResultadoOperacao> RegistrarPlacarAsync(Guid id, int? nos, int? adversario, CancellationToken ct = default)
+    {
+        if (await ObterNoEscopoAsync(id, Operacao.Alterar, ct) is not { } evento) return ResultadoOperacao.Erro("Jogo não encontrado.");
+        if (nos is not { } a || adversario is not { } b || a is < 0 or > Evento.PlacarMaximo || b is < 0 or > Evento.PlacarMaximo)
+            return ResultadoOperacao.Erro($"Informe o placar dos dois lados, de 0 a {Evento.PlacarMaximo}.", "PlacarNos");
+        if (evento.Situacao is not (SituacaoEvento.Realizado or SituacaoEvento.ResultadoHomologado))
+            return ResultadoOperacao.Erro("Marque o jogo como realizado antes de registrar o placar.");
+        var modalidade = (await configuracao.ListarModalidadesAsync(ct)).First(m => m.Modalidade_ID == evento.Modalidade_ID);
+        if (!PoliticaPerfil.Recursos(evento.Tipo, modalidade.Recursos).PermitePlacar)
+            return ResultadoOperacao.Erro("A modalidade deste jogo não tem placar.");
+        var antes = evento.PlacarNos is null ? null : $"{evento.PlacarNos} x {evento.PlacarAdversario}";
+        var situacaoAntes = Evento.Rotulo(evento.Situacao);
+        evento.RegistrarPlacar(a, b, true, relogio.Agora(), usuario.Nome ?? "—");
+        registro.Registrar(Entidade, id, "Placar", antes, $"{a} x {b}", null);
+        registro.SeMudou(Entidade, id, "Situação", situacaoAntes, Evento.Rotulo(evento.Situacao));
+        await eventos.SalvarAsync(ct);
+        return ResultadoOperacao.Ok($"Placar registrado: {a} x {b}.");
     }
 
     public async Task<ResultadoOperacao> ConfirmarAsync(Guid id, CancellationToken ct = default)

@@ -225,8 +225,9 @@ public class EmissorGatilhos(
     /// (CA-11), com o nome do filho (CA-13), a data, a hora, o local com o link de mapa e os botões Vai/Não vai. Essencial:
     /// sem crédito, fica retida. Fora da janela de disparo, quando a escolinha pede, sai no começo da próxima (RF-CON-003).
     /// </summary>
+    /// <param name="etapa">A convocação que sai de novo (P45: o horário mudou) é uma etapa nova da mesma convocação.</param>
     public async Task<int> ConvocacaoAsync(Convocacao convocacao, DadosEventoMensagem evento, string aluno, DateTime? agendarPara,
-        CancellationToken ct = default)
+        CancellationToken ct = default, string? etapa = null)
     {
         var regra = CatalogoGatilhos.Obter(GatilhoMensagem.ConvocacaoCriada);
         var template = await TemplateAsync(regra.Gatilho, await TomDosAvisosAsync(ct), ct);
@@ -248,7 +249,7 @@ public class EmissorGatilhos(
             };
             criadas += await CriarAsync(regra, template, OrigemConvocacao, convocacao.Convocacao_ID, TipoDestinatario.Responsavel,
                 d.ResponsavelId, d.Nome, d.Telefone, d.AcessoAtivo && d.TodosVerificados ? d.PessoaId : null, convocacao.Aluno_ID,
-                valores, false, evento.Inicio, agora, ct, agendarPara: agendarPara);
+                valores, false, evento.Inicio, agora, ct, etapa, agendarPara);
         }
         return criadas;
     }

@@ -20,6 +20,12 @@ public class RespostasConvocacao(IEventosRepositorio eventos, EmissorGatilhos em
         if (await eventos.ObterConvocacaoAsync(mensagem.Origem_ID, ct) is not { } convocacao) return null;
 
         var vai = indice == 0;
+        // P45: o botão da convocação de antes da mudança de horário não confirma o horário novo.
+        if (convocacao.MensagemAnteriorANovaConfirmacao(mensagem.CriadaEm))
+        {
+            convocacao.RegistrarRespostaAntiga(vai, mensagem.DestinatarioNome, resposta.RecebidaEm, relogio.Agora());
+            return "Resposta à convocação de antes da mudança de horário: fica no histórico e não vale.";
+        }
         var resultado = convocacao.Responder(vai, OrigemResposta.WhatsApp, mensagem.DestinatarioNome, mensagem.Destinatario_ID,
             resposta.RecebidaEm, relogio.Agora());
         if (resultado == ResultadoResposta.Aplicada)

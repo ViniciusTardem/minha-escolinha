@@ -150,6 +150,12 @@ public class ConvocacaoController(ServicoConvocacoes convocacoes, ServicoEventos
     [Permissao(Recurso.EventosConvocacao, Operacao.Alterar)]
     public async Task<IActionResult> Realizar(Guid id, CancellationToken ct) => Voltar(await eventos.RealizarAsync(id, ct), id);
 
+    /// <summary>O placar do jogo realizado (P46).</summary>
+    [HttpPost]
+    [Permissao(Recurso.EventosConvocacao, Operacao.Alterar)]
+    public async Task<IActionResult> Placar(Guid id, int? nos, int? adversario, CancellationToken ct) =>
+        Voltar(await eventos.RegistrarPlacarAsync(id, nos, adversario, ct), id);
+
     private IActionResult Voltar(Application.Comum.ResultadoOperacao resultado, Guid id)
     {
         TempData[resultado.Sucesso ? ChavesTempData.Sucesso : ChavesTempData.Erro] = resultado.Mensagem;

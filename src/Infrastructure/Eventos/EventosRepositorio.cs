@@ -38,6 +38,14 @@ public class EventosRepositorio(EscolinhaDbContext contexto) : IEventosRepositor
         return await contexto.Convocacoes.Where(c => ids.Contains(c.Evento_ID)).ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Convocacao>> ConvocacoesComHistoricoAsync(IReadOnlyCollection<Guid> eventos, CancellationToken ct = default)
+    {
+        if (eventos.Count == 0) return [];
+        var ids = eventos.Distinct().ToList();
+        return await contexto.Convocacoes.AsNoTracking().Include(c => c.Historico).AsSplitQuery()
+            .Where(c => ids.Contains(c.Evento_ID)).ToListAsync(ct);
+    }
+
     public Task<Convocacao?> ObterConvocacaoAsync(Guid id, CancellationToken ct = default) =>
         contexto.Convocacoes.FirstOrDefaultAsync(c => c.Convocacao_ID == id, ct);
 

@@ -566,6 +566,8 @@ public sealed class EventosBancoTestes(BancoDeTestes banco) : IAsyncLifetime, ID
     {
         var b = await MontarAsync();
         await CreditarAsync(b.Escolinha, 20);
+        // A escolinha que não pede nova confirmação (P45 desligado): as respostas continuam valendo.
+        await ParametroAsync(b.Escolinha, ChavesParametro.ConvocacaoNovaConfirmacaoAoMudar, "false");
         var jogo = await JogoAsync(b, [b.Sub11], Sabado, new TimeOnly(9, 0), "Tigre FC");
         await ConvocarAsync(b.Escolinha, jogo, b.Pedro, b.Bruno);
         Assert.True((await RegistrarPorForaAsync(b.Escolinha, (await ConvocadoAsync(b.Escolinha, jogo, b.Bruno)).ConvocacaoId, true)).Sucesso);
@@ -801,5 +803,127 @@ public sealed class EventosBancoTestes(BancoDeTestes banco) : IAsyncLifetime, ID
 
         // A gestão vê os dois.
         Assert.Equal([doCarlos, proprio], (await SemanaAsync(b.Escolinha, Sabado)).Eventos.Select(e => e.Id));
+    }
+
+    // ── Depois do S7: nova confirmação (P45), turma do professor (P47), mudança perto do jogo (P51), texto (P48), placar (P46) ──
+
+    private async Task ParametroAsync(Guid escolinha, string chave, string valor)
+    {
+        var alterou = await Gestor(escolinha, sp => sp.GetRequiredService<ServicoParametros>().AlterarAsync(
+            new AlterarParametrosRequisicao { Valores = { [chave] = valor } }));
+        Assert.True(alterou.Sucesso, alterou.Mensagem);
+    }
+
+    private Task<ResultadoOperacao> MudarHoraAsync(Base b, Guid jogo, TimeOnly hora)
+    {
+        var r = NovoJogo(b, [], Sabado, hora, "Tigre FC");
+        r.Id = jogo;
+        return Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoEventos>().AlterarAsync(r));
+    }
+
+    [FatoComBanco]
+    public async Task Mudar_o_horario_pede_nova_confirmacao_e_o_botao_da_convocacao_antiga_nao_vale()
+    {
+        var b = await MontarAsync();
+        await CreditarAsync(b.Escolinha, 30);
+        var jogo = await JogoAsync(b, [b.Sub11], Sabado, new TimeOnly(9, 0), "Tigre FC");
+        await ConvocarAsync(b.Escolinha, jogo, b.Pedro, b.Bruno);
+        var antiga = (await MensagensAsync(b.Escolinha)).Single(m => m.Gatilho == GatilhoMensagem.ConvocacaoCriada && m.Destinatario_ID == b.Rita);
+        Assert.Equal(SituacaoMensagem.Enviada, await EnviarAsync(b.Escolinha, antiga.Mensagem_ID));
+        await BotaoAsync(antiga, vai: true, "wamid.R1");
+        Assert.Equal(SituacaoConvocacao.Confirmada, (await ConvocadoAsync(b.Escolinha, jogo, b.Bruno)).Situacao);
+
+        // P45: o horário mudou; a resposta de antes deixa de valer e a convocação sai de novo, com os botões.
+        _app.Tempo.Advance(TimeSpan.FromMinutes(5));
+        var mudou = await MudarHoraAsync(b, jogo, new TimeOnly(10, 30));
+        Assert.True(mudou.Sucesso, mudou.Mensagem);
+        Assert.EndsWith("2 convocação(ões) pedindo nova confirmação.", mudou.Mensagem);
+        var bruno = await ConvocadoAsync(b.Escolinha, jogo, b.Bruno);
+        Assert.Equal((SituacaoConvocacao.Enviada, (string?)null), (bruno.Situacao, bruno.RespondidoPor));
+        var nova = (await MensagensAsync(b.Escolinha))
+            .Single(m => m.Gatilho == GatilhoMensagem.ConvocacaoCriada && m.Destinatario_ID == b.Rita && m.Mensagem_ID != antiga.Mensagem_ID);
+        Assert.Contains("sábado, 03/10 às 10:30", nova.Conteudo);
+
+        // O botão da mensagem de antes não confirma o horário novo; o da nova confirma.
+        await BotaoAsync(antiga, vai: true, "wamid.R2");
+        Assert.Equal(SituacaoConvocacao.Enviada, (await ConvocadoAsync(b.Escolinha, jogo, b.Bruno)).Situacao);
+        Assert.Contains((await ConvocacoesAsync(b.Escolinha)).Single(c => c.Aluno_ID == b.Bruno).Historico,
+            h => h.Detalhe?.Contains("antes da mudança de horário", StringComparison.Ordinal) == true);
+        Assert.Equal(SituacaoMensagem.Enviada, await EnviarAsync(b.Escolinha, nova.Mensagem_ID));
+        await BotaoAsync(nova, vai: true, "wamid.R3");
+        Assert.Equal(SituacaoConvocacao.Confirmada, (await ConvocadoAsync(b.Escolinha, jogo, b.Bruno)).Situacao);
+    }
+
+    [FatoComBanco]
+    public async Task No_jogo_de_varias_turmas_o_professor_ve_e_registra_so_os_convocados_da_turma_dele()
+    {
+        var b = await MontarAsync();
+        var (paula, pessoaPaula) = await ProfessorComLoginAsync(b.Escolinha, "Paula Souza", "(43) 98888-1111");
+        var sub15 = await TurmaAsync(b.Escolinha, "Sub-15", b.Local, paula, DayOfWeek.Thursday);
+        var lucas = await AlunoAsync(b.Escolinha, sub15, "Lucas Prado", "Cida Prado", null, "43922221111");
+        var requisicao = NovoJogo(b, [b.Sub11, sub15], Sabado, new TimeOnly(9, 0), "Tigre FC");
+        requisicao.ConfirmarAlertas = true;
+        var jogo = Id(await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoEventos>().CriarAsync(requisicao)));
+        await ConvocarAsync(b.Escolinha, jogo, b.Pedro, lucas);
+
+        Task<T> ComoPaula<T>(Func<IServiceProvider, Task<T>> acao) => Como(b.Escolinha, pessoaPaula, "Paula Souza", PapelAtuacao.Professor, acao);
+        var painel = (await ComoPaula(sp => sp.GetRequiredService<ServicoConvocacoes>().PainelAsync(jogo)))!;
+        Assert.Equal([lucas], painel.Convocados.Select(c => c.AlunoId));
+        Assert.True(painel.SoAsTurmasDoProfessor);
+        var pedro = (await ConvocacoesAsync(b.Escolinha)).Single(c => c.Aluno_ID == b.Pedro).Convocacao_ID;
+        Assert.Contains("turma de outro professor",
+            (await ComoPaula(sp => sp.GetRequiredService<ServicoConvocacoes>().RegistrarPorForaAsync(pedro, true))).Mensagem);
+
+        // A gestão vê os dois; desligado o parâmetro, a professora também.
+        Assert.Equal(2, (await PainelAsync(b.Escolinha, jogo)).Convocados.Count);
+        await ParametroAsync(b.Escolinha, ChavesParametro.ConvocacaoProfessorSoPropriaTurma, "false");
+        Assert.Equal(2, (await ComoPaula(sp => sp.GetRequiredService<ServicoConvocacoes>().PainelAsync(jogo)))!.Convocados.Count);
+    }
+
+    [FatoComBanco]
+    public async Task A_resposta_que_muda_perto_do_jogo_fica_em_destaque_e_o_texto_da_familia_aparece_na_linha()
+    {
+        var b = await MontarAsync();
+        await CreditarAsync(b.Escolinha, 30);
+        var jogo = await JogoAsync(b, [b.Sub11], Sabado, new TimeOnly(9, 0), "Tigre FC");
+        await ConvocarAsync(b.Escolinha, jogo, b.Pedro, b.Bruno);
+        var daMaria = (await MensagensAsync(b.Escolinha)).Single(m => m.Gatilho == GatilhoMensagem.ConvocacaoCriada && m.Destinatario_ID == b.Maria);
+        var daRita = (await MensagensAsync(b.Escolinha)).Single(m => m.Gatilho == GatilhoMensagem.ConvocacaoCriada && m.Destinatario_ID == b.Rita);
+        Assert.Equal(SituacaoMensagem.Enviada, await EnviarAsync(b.Escolinha, daMaria.Mensagem_ID));
+        await BotaoAsync(daMaria, vai: true, "wamid.M1");
+
+        // Sexta, 02/10, 10:00: a menos de 24 horas do jogo, a Maria muda para "Não vai".
+        _app.Tempo.Advance(new DateTime(2026, 10, 2, 10, 0, 0) - new DateTime(2026, 9, 26, 12, 0, 0));
+        await BotaoAsync(daMaria, vai: false, "wamid.M2");
+        var pedro = await ConvocadoAsync(b.Escolinha, jogo, b.Pedro);
+        Assert.Equal((SituacaoConvocacao.Recusada, true), (pedro.Situacao, pedro.MudouPertoDoJogo));
+        var mudancas = await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoConvocacoes>().MudancasPertoDoJogoAsync());
+        Assert.Equal(("Pedro Lima", jogo), (Assert.Single(mudancas).Aluno, mudancas[0].EventoId));
+
+        // P48: a Rita escreve em vez de tocar no botão; o texto aparece na linha do Bruno.
+        await _app.NaEscolinhaAsync(b.Escolinha, [], sp => sp.GetRequiredService<ServicoRetornoMensagens>().RegistrarRespostaAsync(daRita.Mensagem_ID,
+            CanalMensagem.WhatsApp, "Ele está gripado, não vai dar", null, "wamid.T1", sp.GetRequiredService<IRelogioBrasil>().Agora()));
+        var bruno = await ConvocadoAsync(b.Escolinha, jogo, b.Bruno);
+        Assert.Equal((SituacaoConvocacao.Enviada, false), (bruno.Situacao, bruno.MudouPertoDoJogo));
+        Assert.StartsWith("“Ele está gripado, não vai dar”", bruno.TextoLivre);
+    }
+
+    [FatoComBanco]
+    public async Task O_placar_e_registrado_depois_do_jogo_realizado()
+    {
+        var b = await MontarAsync();
+        var jogo = await JogoAsync(b, [b.Sub11], Sabado, new TimeOnly(9, 0), "Tigre FC");
+        Task<ResultadoOperacao> PlacarAsync(int nos, int eles) =>
+            Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoEventos>().RegistrarPlacarAsync(jogo, nos, eles));
+
+        Assert.Equal("Marque o jogo como realizado antes de registrar o placar.", (await PlacarAsync(3, 1)).Mensagem);
+        _app.Tempo.Advance(new DateTime(2026, 10, 3, 10, 30, 0) - new DateTime(2026, 9, 26, 12, 0, 0));
+        Assert.True((await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoEventos>().RealizarAsync(jogo))).Sucesso);
+        Assert.True((await PainelAsync(b.Escolinha, jogo)).PodeRegistrarPlacar);
+        Assert.Equal("Placar registrado: 3 x 1.", (await PlacarAsync(3, 1)).Mensagem);
+        Assert.Equal("Placar registrado: 3 x 2.", (await PlacarAsync(3, 2)).Mensagem); // corrigir é registrar de novo
+        var painel = await PainelAsync(b.Escolinha, jogo);
+        Assert.Equal((SituacaoEvento.ResultadoHomologado, 3, 2), (painel.Situacao, painel.PlacarNos!.Value, painel.PlacarAdversario!.Value));
+        Assert.False((await PlacarAsync(-1, 0)).Sucesso);
     }
 }

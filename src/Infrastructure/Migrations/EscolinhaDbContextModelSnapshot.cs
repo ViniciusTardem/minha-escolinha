@@ -1386,6 +1386,9 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<DateTime?>("NovaConfirmacaoEm")
+                        .HasColumnType("datetime2(3)");
+
                     b.Property<int?>("Origem")
                         .HasColumnType("int");
 
@@ -1491,6 +1494,19 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Property<string>("Motivo")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<int?>("PlacarAdversario")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PlacarEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<int?>("PlacarNos")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PlacarPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<Guid>("Professor_ID")
                         .HasColumnType("uniqueidentifier");

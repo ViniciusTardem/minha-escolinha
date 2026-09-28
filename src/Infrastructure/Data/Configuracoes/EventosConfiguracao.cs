@@ -34,6 +34,7 @@ public class EventoConfiguracao : IEntityTypeConfiguration<Evento>
         builder.Property(e => e.Logistica).HasMaxLength(Evento.TamanhoLogistica);
         builder.Property(e => e.Motivo).HasMaxLength(Evento.TamanhoMotivo);
         builder.Property(e => e.EncerradoPorNome).HasMaxLength(Evento.TamanhoAutor);
+        builder.Property(e => e.PlacarPorNome).HasMaxLength(Evento.TamanhoAutor);
         builder.Property(e => e.Versao).IsRowVersion();
         builder.Ignore(e => e.Fim);
         builder.Ignore(e => e.Aberto);

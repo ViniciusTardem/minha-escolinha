@@ -5,7 +5,8 @@ namespace MinhaEscolinha.Domain.Eventos;
 /// <summary>
 /// Máquina do evento (spec §6): agendado → confirmado → realizado → resultado homologado | cancelado | adiado. As
 /// transições são manuais (P19). Adiado e cancelado são finais e levam as convocações a canceladas; o jogo remarcado é
-/// um evento novo. O "resultado homologado" fica sem uso no piloto (P11).
+/// um evento novo. O "resultado homologado" é o jogo realizado com o placar registrado (P46), quando a modalidade tem
+/// placar; campeonato e classificação continuam fora do piloto (§1.5).
 /// </summary>
 public enum SituacaoEvento
 {
@@ -18,7 +19,7 @@ public enum SituacaoEvento
 }
 
 /// <summary>O que mudou numa alteração do evento: a família só é avisada quando muda o quando ou o onde.</summary>
-public sealed record AlteracaoEvento(bool MudouQuando, bool MudouLocal, bool MudouOutros)
+public sealed record AlteracaoEvento(bool MudouQuando, bool MudouLocal, bool MudouOutros, bool MudouInicio = false)
 {
     public bool AvisaFamilias => MudouQuando || MudouLocal;
     public bool Mudou => MudouQuando || MudouLocal || MudouOutros;
@@ -64,6 +65,15 @@ public class Evento : IEntidadeAuditavel, IEntidadeDaEscolinha
 
     public DateTime? EncerradoEm { get; private set; }
     public string? EncerradoPorNome { get; private set; }
+
+    /// <summary>O placar (P46): gols ou pontos da escolinha e do adversário, depois do jogo.</summary>
+    public int? PlacarNos { get; private set; }
+
+    public int? PlacarAdversario { get; private set; }
+    public DateTime? PlacarEm { get; private set; }
+    public string? PlacarPorNome { get; private set; }
+
+    public const int PlacarMaximo = 999;
 
     public List<EventoTurma> Turmas { get; set; } = [];
 
@@ -113,7 +123,8 @@ public class Evento : IEntidadeAuditavel, IEntidadeDaEscolinha
         return new AlteracaoEvento(
             MudouQuando: antes.Inicio != Inicio || antes.DuracaoMinutos != DuracaoMinutos,
             MudouLocal: antes.Local_ID != Local_ID,
-            MudouOutros: antes.Professor_ID != Professor_ID || antes.Adversario != Adversario || antes.Logistica != Logistica);
+            MudouOutros: antes.Professor_ID != Professor_ID || antes.Adversario != Adversario || antes.Logistica != Logistica,
+            MudouInicio: antes.Inicio != Inicio);
     }
 
     private void Definir(DateTime inicio, int duracaoMinutos, Guid localId, Guid professorId, string? adversario, bool adversarioPermitido,
@@ -149,6 +160,24 @@ public class Evento : IEntidadeAuditavel, IEntidadeDaEscolinha
         Situacao = SituacaoEvento.Realizado;
     }
 
+    /// <summary>
+    /// Registra (ou corrige) o placar do jogo realizado (P46): só quando a modalidade tem placar (R8). O jogo passa a
+    /// "resultado homologado".
+    /// </summary>
+    public void RegistrarPlacar(int nos, int adversario, bool placarPermitido, DateTime agora, string autorNome)
+    {
+        if (!placarPermitido) throw new InvalidOperationException("A modalidade deste jogo não tem placar.");
+        if (Situacao is not (SituacaoEvento.Realizado or SituacaoEvento.ResultadoHomologado))
+            throw new InvalidOperationException("O placar é registrado depois do jogo realizado.");
+        if (nos is < 0 or > PlacarMaximo || adversario is < 0 or > PlacarMaximo)
+            throw new ArgumentOutOfRangeException(nameof(nos), $"O placar vai de 0 a {PlacarMaximo}.");
+        PlacarNos = nos;
+        PlacarAdversario = adversario;
+        PlacarEm = agora;
+        PlacarPorNome = TextoHelper.Truncar(autorNome, TamanhoAutor);
+        Situacao = SituacaoEvento.ResultadoHomologado;
+    }
+
     /// <summary>Cancelar ou adiar, com motivo (spec §6: os dois avisam todos e cancelam as convocações).</summary>
     public void Encerrar(bool adiar, string motivo, DateTime agora, string autorNome)
     {
@@ -169,7 +198,7 @@ public class Evento : IEntidadeAuditavel, IEntidadeDaEscolinha
         SituacaoEvento.Agendado => "Agendado",
         SituacaoEvento.Confirmado => "Confirmado",
         SituacaoEvento.Realizado => "Realizado",
-        SituacaoEvento.ResultadoHomologado => "Resultado homologado",
+        SituacaoEvento.ResultadoHomologado => "Resultado registrado",
         SituacaoEvento.Cancelado => "Cancelado",
         SituacaoEvento.Adiado => "Adiado",
         _ => situacao.ToString()

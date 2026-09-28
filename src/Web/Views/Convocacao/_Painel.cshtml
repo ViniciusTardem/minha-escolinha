@@ -34,6 +34,25 @@
             {
                 <p class="text-sm text-secondary-foreground">Motivo: @Model.Motivo</p>
             }
+            @if (Model.PlacarNos is { } nos && Model.PlacarAdversario is { } eles)
+            {
+                <span class="text-sm font-medium text-mono">Placar: @nos x @eles</span>
+            }
+            @if (Model.PodeRegistrarPlacar)
+            {
+                @* P46: o placar do jogo realizado, quando a modalidade tem placar. Corrigir é registrar de novo. *@
+                <form method="post" asp-controller="Convocacao" asp-action="Placar" asp-route-id="@Model.Id" class="flex flex-wrap items-end gap-2 pt-1">
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" for="placar-nos-@Model.Id">Nós</label>
+                        <input class="kt-input w-20" id="placar-nos-@Model.Id" name="nos" type="number" min="0" max="999" inputmode="numeric" value="@Model.PlacarNos" required />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" for="placar-eles-@Model.Id">Adversário</label>
+                        <input class="kt-input w-20" id="placar-eles-@Model.Id" name="adversario" type="number" min="0" max="999" inputmode="numeric" value="@Model.PlacarAdversario" required />
+                    </div>
+                    <button class="kt-btn kt-btn-outline" type="submit"><i class="ki-filled ki-cup"></i> @(Model.PlacarNos is null ? "Registrar placar" : "Corrigir placar")</button>
+                </form>
+            }
             @if (Model.PodeAlterar && (Model.Situacao == SituacaoEvento.Agendado || Model.Inicio <= Model.AtualizadoEm))
             {
                 <div class="flex flex-wrap gap-2 pt-1">
@@ -113,6 +132,10 @@
             {
                 <span class="text-xs text-secondary-foreground">@c.Selecionadas ainda não enviada(s)</span>
             }
+            @if (Model.SoAsTurmasDoProfessor)
+            {
+                <span class="text-xs text-secondary-foreground">Só os convocados das suas turmas</span>
+            }
         </div>
         @if (Model.Convocados.Count == 0)
         {
@@ -143,6 +166,15 @@
                         else if (l.LembreteEm is { } lembrete && l.Situacao == SituacaoConvocacao.Enviada)
                         {
                             <span class="text-xs text-secondary-foreground">Lembrete enviado em @Formatacao.DataHora(lembrete)</span>
+                        }
+                        @if (l.MudouPertoDoJogo)
+                        {
+                            <selo-status class="self-start" valor="SinalTela.MudouPertoDoJogo"></selo-status>
+                        }
+                        @if (l.TextoLivre is not null)
+                        {
+                            @* P48: o que a família escreveu, em vez de tocar no botão: quem convoca registra por fora. *@
+                            <span class="text-xs text-secondary-foreground wrap-anywhere">Escreveu: @l.TextoLivre</span>
                         }
                         @if (l.OutraResposta is not null)
                         {

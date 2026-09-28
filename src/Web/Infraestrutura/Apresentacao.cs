@@ -93,7 +93,10 @@ public enum SinalTela
     OutroJogoNoHorario,
 
     /// <summary>Chegou outra resposta depois da primeira, ou depois do início do jogo (P03, P19): o professor decide.</summary>
-    OutraResposta
+    OutraResposta,
+
+    /// <summary>A resposta mudou perto do jogo (P51): pede atenção de quem convocou.</summary>
+    MudouPertoDoJogo
 }
 
 /// <summary>
@@ -152,6 +155,7 @@ public static class ApresentacaoStatus
         SinalTela.SemCelular => ("Sem WhatsApp", VarianteSelo.Alerta),
         SinalTela.OutroJogoNoHorario => ("Outro jogo no horário", VarianteSelo.Alerta),
         SinalTela.OutraResposta => ("Outra resposta", VarianteSelo.Alerta),
+        SinalTela.MudouPertoDoJogo => ("Mudou perto do jogo", VarianteSelo.Alerta),
 
         SituacaoAluno.Trial => ("Trial", VarianteSelo.Info),
         SituacaoAluno.Ativo => ("Ativo", VarianteSelo.Sucesso),
@@ -229,7 +233,7 @@ public static class ApresentacaoStatus
         SituacaoEvento.Agendado => ("Agendado", VarianteSelo.Info),
         SituacaoEvento.Confirmado => ("Confirmado", VarianteSelo.Info),
         SituacaoEvento.Realizado => ("Realizado", VarianteSelo.Sucesso),
-        SituacaoEvento.ResultadoHomologado => ("Resultado homologado", VarianteSelo.Sucesso),
+        SituacaoEvento.ResultadoHomologado => ("Resultado registrado", VarianteSelo.Sucesso),
         SituacaoEvento.Cancelado => ("Cancelado", VarianteSelo.Perigo),
         SituacaoEvento.Adiado => ("Adiado", VarianteSelo.Alerta),
 
