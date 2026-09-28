@@ -10,6 +10,7 @@ using MinhaEscolinha.Application.Eventos;
 using MinhaEscolinha.Application.Financeiro;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
+using MinhaEscolinha.Application.Portal;
 using MinhaEscolinha.Application.Presencas;
 using MinhaEscolinha.Application.Turmas;
 
@@ -81,6 +82,7 @@ public static class DependencyInjection
         // S4 — mensalidade (M06): projeção pela matrícula, emissão e conciliação na Asaas da escolinha, régua pelo motor
         services.AddScoped<ServicoAcessoAsaas>();
         services.AddScoped<EmissaoCobrancas>();
+        services.AddScoped<PixCobrancas>();
         services.AddScoped<ConciliacaoCobrancas>();
         services.AddScoped<ProcessadorWebhooksAsaas>();
         services.AddScoped<VarreduraCobrancas>();

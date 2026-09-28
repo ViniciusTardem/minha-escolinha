@@ -30,6 +30,7 @@ public class RespostasConvocacao(IEventosRepositorio eventos, EmissorGatilhos em
             ResultadoResposta.Aplicada => $"Convocação {(vai ? "confirmada" : "recusada")} pela resposta de {mensagem.DestinatarioNome}.",
             ResultadoResposta.Posterior => "Já havia resposta: vale a primeira (P03). Esta fica no histórico da convocação.",
             ResultadoResposta.Tardia => "O jogo já tinha começado: a resposta fica no histórico da convocação.",
+            ResultadoResposta.Repetida => "A mesma resposta já estava registrada.",
             _ => "A convocação não estava valendo: a resposta fica no histórico."
         };
     }

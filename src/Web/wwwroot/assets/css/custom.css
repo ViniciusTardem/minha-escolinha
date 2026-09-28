@@ -710,6 +710,21 @@ progress.esc-ocupacao::-moz-progress-bar { background-color: var(--primary); bor
     font-weight: 600;
 }
 
+/* Pix copia e cola: o texto inteiro, quebrando em qualquer ponto, fácil de selecionar (o botão "Copiar" ao lado). */
+.esc-pix {
+    display: block;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px dashed var(--border);
+    background-color: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--foreground);
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
 /* ============================================
    VITRINE DO DESIGN SYSTEM (/dev/design)
    ============================================ */

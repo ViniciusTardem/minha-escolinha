@@ -55,7 +55,7 @@ A tabela da §4.5 do plano, com o status de hoje.
 | S3 | **Hoje → Chamada** (P/F/J num toque, sem sinal, "Concluir chamada" na barra inferior); selo de risco nas listas; aba Presença na ficha, com os alertas (CA-6) | professor · **Quadra**; gestor · Painel | — (tela própria) | **Pronto** (27/09/2026). A reabertura sem sinal espera o certificado confiável (P37) |
 | S4 | Financeiro › Pagamentos (agrupado por situação, com as ações isentar, cancelar e reenviar); Divergências (resolução manual com autoria); aba Financeiro na ficha; `/dev/asaas` | gestor · Painel | `account/billing/*` | **Pronto** (28/09/2026), no simulador. Com as ações confirmar, receber por fora e tentar de novo, e o cartão no Painel |
 | S5 | **Montar fim de semana** (jogos → convocados por jogo, com alertas → revisar → disparar tudo); **Painel de confirmações** em tempo real (registrar resposta por fora; cancelar, adiar ou alterar em um toque) | professor · **Quadra** (e Painel) | `network/user-cards/*` | **Pronto** (28/09/2026), no simulador. A semana junta a montagem e o disparo numa tela; o painel atualiza pelo hub |
-| S6 | Portal: Início (filhos, pendências, próximos jogos), Jogos (Sim/Não por filho), Pagamentos (total do mês + detalhamento por filho, pagar pela fatura Asaas ou pelo Pix copia-e-cola), Presenças (só leitura), Avisos | responsável · **Portal** | `store-client/checkout/*` (só a forma) | Começado no S2: Início (filhos confirmados) e Avisos prontos; Jogos e Pagamentos "em breve" |
+| S6 | Portal: Início (filhos, pendências, próximos jogos), Jogos (Sim/Não por filho), Pagamentos (total do mês + detalhamento por filho, pagar pela fatura Asaas ou pelo Pix copia-e-cola), Presenças (só leitura), Avisos | responsável · **Portal** | `store-client/checkout/*` (só a forma) | **Pronto** (28/09/2026), no simulador. As presenças abrem pelo Início, sem aba própria |
 | S7 | Importação: enviar planilha → mapear → validar e classificar → **conferência** (novos, reaproveitados, vínculos, bloqueados; saúde mascarada) → confirmar; modelo `.xlsx` para baixar | gestor ou equipe · Painel | `account/members/import-members` | Em breve (`/importacao`) |
 
 As referências ficam em `docs/metronic/html/demo1/` (cópia local, fora do git).
@@ -198,7 +198,7 @@ O **Painel** ganhou, no S2, o passo "Convites de acesso" e as pendências da ges
 | Ativação do convite | `GET /Convite/{token}`; `POST /Convite/{token}/Identificar` e `/Convite/{token}/Ativar` | `[AllowAnonymous]`, com o limite de tentativas do login | Autenticação | 1º o CPF (nada aparece antes); depois o e-mail opcional e a senha, ou a senha da conta que já existe. Convite usado, vencido ou cancelado mostra "Convite indisponível" | M01-05 |
 | Portal: Início | `GET /Portal` | `[SomenteAutenticado]`, escopo do responsável | Portal | os filhos com vínculo confirmado; enquanto houver vínculo pendente, só o aviso, sem nomes; avisos novos | M01-06, M12-11 |
 | Portal: Avisos | `GET /Portal/Avisos` | idem | Portal | os avisos do motor (os mesmos do WhatsApp); abrir marca como lido | M09-02, M09-07 |
-| Portal: em breve | `GET /Portal/EmBreve?aba=jogos` e `?aba=pagamentos` | idem | Portal | até o S6 (a resposta pelo portal é o BL-M10-07) | — |
+| ~~Portal: em breve~~ | ~~`GET /Portal/EmBreve`~~ | — | — | saiu no S6: Jogos e Pagamentos são telas reais (§3E) | — |
 | Simulador do WhatsApp | `GET /dev/whatsapp`; `POST /dev/whatsapp/{id}/entregar`, `/ler`, `/falhar`, `/botao/{indice}`, `/responder`; `POST /dev/whatsapp/limpar` | `[SomenteAutenticado]` | Painel | só em Development com `WhatsApp:Modo = Simulado`; cada ação manda o webhook assinado ao endpoint de verdade | M09-02, M09-07 |
 | Webhook do WhatsApp | `GET` (verificação da Meta) e `POST /api/v1/webhooks/whatsapp` | `[AllowAnonymous]` (assinatura `X-Hub-Signature-256`) | API | grava o corpo bruto e responde 200; o job interpreta. 400 com assinatura inválida, 503 com o WhatsApp desligado | M09-07 |
 
@@ -286,6 +286,23 @@ Tudo exige `EventosConvocacao` (gestão: tudo; professor: os jogos das turmas de
 
 ---
 
+## 3E. S6: telas prontas (28/09/2026)
+
+### 3E.1 Portal (`PortalController`, `_LayoutPortal`)
+
+Tudo exige login com o papel Responsável (`[SomenteAutenticado]` e o serviço confere o papel) e passa pelos filhos com vínculo confirmado (D87). Fora disso, "não encontrada" ou 404.
+
+| Tela | Rota | Acesso | Observações | BL |
+|---|---|---|---|---|
+| Início | `GET /Portal` | responsável | os filhos confirmados (turmas, frequência dos últimos 30 dias, "Ver as presenças"), as convocações a responder, as mensalidades em aberto e os avisos novos; o vínculo a confirmar só na contagem, sem nome | M10-01, M10-11, CA-15 |
+| Jogos | `GET /Portal/Jogos` | idem | "Esperando a sua resposta", "Respondidos" e "Anteriores e cancelados" (14 dias), com o parcial `_ConvocacaoPortal` | M10-07 |
+| Responder | `POST /Portal/Responder/{id}` (`vai`) | `ResponderConvocacao`, `Alterar`, e o filho confirmado | a regra do WhatsApp (D88); volta para `/Portal/Jogos#convocacao-{id}` com o toast | M10-07 |
+| Pagamentos | `GET /Portal/Pagamentos` | idem, só os filhos de quem a pessoa cuida das mensalidades | o total do mês com o detalhamento por filho, para pagar (Pix copia e cola e fatura), próximas e pagas dos últimos 3 meses; o outro responsável vê o aviso, sem valores (D89) | M10-05, M10-06, CA-16 |
+| Presenças | `GET /Portal/Presencas/{aluno}` | `RegistroPresenca`, `Ler`, e o filho confirmado; senão 404 | os últimos 60 dias, com os totais e a situação de cada treino; a justificada sem o motivo (D91) | — |
+| Avisos | `GET /Portal/Avisos` | responsável | os do S2; a convocação leva a Jogos e a mensalidade a Pagamentos | M09-02 |
+
+---
+
 ## 4. Páginas "em breve" (catálogo de módulos)
 
 A rota `{chave}` (registrada antes da rota padrão) só aceita as chaves dos módulos com situação `Planejado` no `CatalogoModulos`. A página mostra o que o módulo vai fazer, a fatia e a lista de recursos.
@@ -349,12 +366,11 @@ O que cada fatia encontra pronto no design system e o que ainda precisa ser cons
 - **Construído no S5** (guia §6.31): a tela da semana (montagem e disparo), o `_FormularioJogo`, o parcial `_Painel` e as telas de alterar e de cancelar ou adiar. Novas regras: a âncora sob a barra fixa leva `scroll-mt-20`; a turma na linha do aluno só quando o jogo junta turmas; os rótulos longos da barra inferior encurtam no celular.
 - **Forma diferente do plano:** o plano previa as parciais `_CartaoJogo`, `_SelecaoConvocados` e `_PainelConfirmacoes` e um fluxo "jogos → convocados → revisar → disparar". Ficou uma tela só, com um cartão por jogo, a escolha como rascunho e o disparo de tudo pela barra inferior: menos toques na quadra (R10).
 
-### S6 — Portal do responsável (responsável · Portal)
+### S6 — Portal do responsável (responsável · Portal) — **pronto em 28/09/2026** (§3E)
 
-- **Onde entra:** o `PortalController` do S2 (`Views/Portal`, sem área), com o `_LayoutPortal`. Início e Avisos já existem; Jogos e Pagamentos trocam o "em breve" pelas telas de verdade.
-- **Presenças (só leitura)** não tem aba própria no layout: decidir onde entra.
-- **A construir** (plano, 4.4): `_CartaoFilho`, `_CartaoConvocacao` (Sim/Não com o nome do filho) e `_CartaoCobranca`; chips dos filhos com 48 px (hoje têm 36).
-- **Pronto para usar:** os chips (`data-esc-escolha`), a resposta Sim/Não (`esc-resposta`) e o copiar (`data-esc-copiar`) para o Pix copia-e-cola.
+- **Construído com o que já existia:** o `_LayoutPortal` com as abas (F0 e S2), a resposta (`esc-resposta`), o copiar (`data-esc-copiar`, §6.13), o `<selo-status>` da convocação, do evento e da mensalidade (§4.2) e o `<estado-vazio>`.
+- **Construído no S6** (guia §5.4): `_ConvocacaoPortal`, `_FilhosPortal` (os filhos como etiquetas, sem toque), o Pix copia e cola (`esc-pix`) e as telas de Jogos, Pagamentos e Presenças. As presenças abrem pelo Início, sem aba própria.
+- **Novas regras:** os dois botões de resposta ficam neutros até a resposta; o valor em reais não quebra entre "R$" e o número; a checagem de tela mede também o conteúdo que transborda o próprio botão (guia §12).
 
 ### S7 — Carga inicial (gestor ou equipe · Painel)
 

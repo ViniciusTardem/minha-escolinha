@@ -43,7 +43,10 @@ public enum ResultadoResposta
     Tardia = 30,
 
     /// <summary>A convocação foi cancelada: só o histórico.</summary>
-    Ignorada = 40
+    Ignorada = 40,
+
+    /// <summary>Quem já tinha respondido mandou a mesma resposta de novo: nada muda.</summary>
+    Repetida = 50
 }
 
 public enum TipoHistoricoConvocacao
@@ -140,7 +143,12 @@ public class Convocacao : IEntidadeAuditavel, IEntidadeDaEscolinha
         Registrar(TipoHistoricoConvocacao.Enviada, agora, null);
     }
 
-    /// <summary>A resposta da família (WhatsApp ou portal). Vale a primeira (P03).</summary>
+    /// <summary>
+    /// A resposta da família (WhatsApp ou portal). Vale a primeira (P03): a de outro responsável, se diferente, fica à vista
+    /// de quem convocou. Quem respondeu pode mudar a própria resposta (mudou de ideia), salvo depois do registro por fora,
+    /// que é decisão de quem convocou.
+    /// </summary>
+    /// <param name="quemId">O responsável que respondeu (a ficha), para reconhecer a mesma pessoa pelo WhatsApp e pelo portal.</param>
     public ResultadoResposta Responder(bool vai, OrigemResposta origem, string quem, Guid? quemId, DateTime em, DateTime agora)
     {
         if (origem == OrigemResposta.RegistroManual) throw new ArgumentException("O registro por fora usa RegistrarPorFora.", nameof(origem));
@@ -150,6 +158,13 @@ public class Convocacao : IEntidadeAuditavel, IEntidadeDaEscolinha
             case SituacaoConvocacao.Enviada:
                 Aplicar(vai, origem, quem, quemId, em);
                 Registrar(TipoHistoricoConvocacao.Resposta, agora, texto, em);
+                return ResultadoResposta.Aplicada;
+            case SituacaoConvocacao.Confirmada or SituacaoConvocacao.Recusada
+                when quemId is not null && quemId == RespondidoPor_ID && Origem != OrigemResposta.RegistroManual:
+                if (vai == (Situacao == SituacaoConvocacao.Confirmada)) return ResultadoResposta.Repetida;
+                var antes = RotuloResposta(!vai);
+                Aplicar(vai, origem, quem, quemId, em);
+                Registrar(TipoHistoricoConvocacao.Resposta, agora, $"{texto}: mudou de \"{antes}\"", em);
                 return ResultadoResposta.Aplicada;
             case SituacaoConvocacao.Confirmada or SituacaoConvocacao.Recusada:
                 Registrar(TipoHistoricoConvocacao.RespostaPosterior, agora, texto, em);

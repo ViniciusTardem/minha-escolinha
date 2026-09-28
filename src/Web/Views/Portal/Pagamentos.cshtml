@@ -1,0 +1,176 @@
+@model PagamentosPortal
+@{
+    ViewData["Title"] = "Pagamentos";
+    Layout = "_LayoutPortal";
+    var nada = Model.PorFilho.All(f => f.Total == 0) && Model.EmAberto.Count == 0 && Model.Proximas.Count == 0 && Model.Pagas.Count == 0;
+}
+
+@* A aba Pagamentos (BL-M10-05, BL-M10-06, CA-16): o total do mês com o detalhamento por filho, o que pagar agora (Pix copia
+   e cola ou a fatura da Asaas, com o dinheiro direto na conta da escolinha, R1), o que vem e o que já foi pago. Só os filhos
+   de quem a pessoa cuida das mensalidades; nenhum dado de cartão passa pelo sistema. *@
+@section Filhos {
+    <partial name="_FilhosPortal" model="Model.Filhos" />
+}
+
+<div class="flex flex-col gap-1">
+    <h1 class="text-lg font-semibold text-mono">Pagamentos</h1>
+    <p class="text-sm text-secondary-foreground">O pagamento vai direto para a conta da escolinha, pela Asaas: Pix, boleto ou cartão.</p>
+</div>
+
+@if (Model.ComOutroResponsavel.Count > 0)
+{
+    <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3" role="status">
+        <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+        <span class="text-sm">As mensalidades de @EmissorGatilhos.Juntar(Model.ComOutroResponsavel.Select(EmissorGatilhos.PrimeiroNome)) ficam com outro responsável da família.</span>
+    </div>
+}
+
+@if (Model.PorFilho.Count == 0)
+{
+    @if (Model.ComOutroResponsavel.Count == 0)
+    {
+        <div class="kt-card">
+            <estado-vazio icone="ki-people" titulo="Nenhum aluno por aqui" texto="Os filhos aparecem aqui depois que a escolinha confirma o seu vínculo com eles."></estado-vazio>
+        </div>
+    }
+}
+else if (nada)
+{
+    <div class="kt-card">
+        <estado-vazio icone="ki-dollar" titulo="Nenhuma mensalidade por aqui" texto="Quando a mensalidade do mês for emitida, ela aparece aqui e chega pelo WhatsApp com o link para pagar."></estado-vazio>
+    </div>
+}
+else
+{
+    <div class="kt-card">
+        <div class="kt-card-content flex flex-col gap-3">
+            <div class="flex items-center justify-between gap-2">
+                <span class="min-w-0 text-sm font-semibold text-mono">Mensalidades de @Formatacao.Mes(Model.Mes).ToLowerInvariant()</span>
+                <span class="shrink-0 whitespace-nowrap text-lg font-semibold text-mono">@Formatacao.Moeda(Model.TotalDoMes)</span>
+            </div>
+            <ul class="esc-linhas text-sm">
+                @foreach (var f in Model.PorFilho)
+                {
+                    <li class="flex items-center justify-between gap-2 py-2">
+                        <span class="min-w-0">@EmissorGatilhos.PrimeiroNome(f.Aluno)</span>
+                        @if (f.Total == 0)
+                        {
+                            <span class="text-xs text-secondary-foreground">sem mensalidade no mês</span>
+                        }
+                        else
+                        {
+                            <span class="flex shrink-0 flex-col items-end gap-0.5">
+                                <span class="whitespace-nowrap font-medium text-mono">@Formatacao.Moeda(f.Total)</span>
+                                @if (f.APagar == 0)
+                                {
+                                    <selo-status valor="SituacaoCobranca.Paga" texto="Pago"></selo-status>
+                                }
+                                else if (f.Pago == 0)
+                                {
+                                    <span class="text-xs text-secondary-foreground">a pagar</span>
+                                }
+                                else
+                                {
+                                    <span class="whitespace-nowrap text-xs text-secondary-foreground">a pagar @Formatacao.Moeda(f.APagar)</span>
+                                }
+                            </span>
+                        }
+                    </li>
+                }
+            </ul>
+            <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
+                <span>Pago: <span class="whitespace-nowrap font-semibold text-mono">@Formatacao.Moeda(Model.PagoNoMes)</span></span>
+                <span>A pagar: <span class="whitespace-nowrap font-semibold text-mono">@Formatacao.Moeda(Model.APagarNoMes)</span></span>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.EmAberto.Count > 0)
+    {
+        <h2 class="text-sm font-semibold text-mono">Para pagar</h2>
+        @foreach (var m in Model.EmAberto)
+        {
+            <article class="kt-card" id="mensalidade-@m.Id.ToString("N")">
+                <div class="kt-card-content flex flex-col gap-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="flex items-center gap-1.5 text-sm font-semibold text-mono"><i class="ki-filled ki-people text-primary"></i> @m.Aluno</span>
+                        <selo-status valor="m.Situacao" texto="@(m.Situacao == SituacaoCobranca.Emitida ? "Em aberto" : null)"></selo-status>
+                    </div>
+                    <div class="flex items-end justify-between gap-2">
+                        <span class="flex flex-col gap-0.5">
+                            <span class="text-sm text-secondary-foreground">Mensalidade de @Cobranca.RotuloCompetencia(m.Competencia)</span>
+                            <span class="text-xs text-secondary-foreground">vence @Formatacao.Data(m.Vencimento)</span>
+                        </span>
+                        <span class="shrink-0 whitespace-nowrap text-lg font-semibold text-mono">@Formatacao.Moeda(m.Valor)</span>
+                    </div>
+                    @if (m.EmAnalise)
+                    {
+                        <span class="text-sm text-secondary-foreground">A escolinha está conferindo esta mensalidade. Se precisar, ela fala com você.</span>
+                    }
+                    else
+                    {
+                        @if (m.PixCopiaECola is not null)
+                        {
+                            <div class="flex flex-col gap-2">
+                                <span class="text-xs text-secondary-foreground">Pix copia e cola: copie e cole no aplicativo do seu banco</span>
+                                <span class="esc-pix" id="pix-@m.Id.ToString("N")">@m.PixCopiaECola</span>
+                                <button class="kt-btn kt-btn-primary justify-center" type="button" data-esc-copiar="#pix-@m.Id.ToString("N")">
+                                    <i class="ki-filled ki-copy"></i> Copiar o Pix
+                                </button>
+                            </div>
+                        }
+                        @if (m.UrlFatura is not null)
+                        {
+                            <a class="kt-btn @(m.PixCopiaECola is null ? "kt-btn-primary" : "kt-btn-outline") justify-center" href="@m.UrlFatura"
+                               target="_blank" rel="noopener noreferrer">
+                                <i class="ki-filled ki-bill"></i> Abrir a fatura
+                            </a>
+                            <span class="text-xs text-secondary-foreground">Na fatura da Asaas: Pix, boleto ou cartão.</span>
+                        }
+                    }
+                </div>
+            </article>
+        }
+    }
+
+    @if (Model.Proximas.Count > 0)
+    {
+        <h2 class="text-sm font-semibold text-mono">Próximas</h2>
+        <div class="kt-card">
+            <ul class="esc-linhas text-sm">
+                @foreach (var m in Model.Proximas)
+                {
+                    <li class="flex items-center justify-between gap-2 px-4 py-3">
+                        <span class="flex flex-col gap-0.5 min-w-0">
+                            <span class="font-medium text-mono">@EmissorGatilhos.PrimeiroNome(m.Aluno) · @Cobranca.RotuloCompetencia(m.Competencia)</span>
+                            <span class="text-xs text-secondary-foreground">vence @Formatacao.Data(m.Vencimento); a cobrança chega pelo WhatsApp</span>
+                        </span>
+                        <span class="font-semibold text-mono shrink-0 whitespace-nowrap">@Formatacao.Moeda(m.Valor)</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+
+    @if (Model.Pagas.Count > 0)
+    {
+        <h2 class="text-sm font-semibold text-mono">Pagas</h2>
+        <div class="kt-card">
+            <ul class="esc-linhas text-sm">
+                @foreach (var m in Model.Pagas)
+                {
+                    <li class="flex items-center justify-between gap-2 px-4 py-3">
+                        <span class="flex flex-col gap-0.5 min-w-0">
+                            <span class="font-medium text-mono">@EmissorGatilhos.PrimeiroNome(m.Aluno) · @Cobranca.RotuloCompetencia(m.Competencia)</span>
+                            <span class="text-xs text-secondary-foreground">paga em @Formatacao.Data(m.PagaEm)</span>
+                        </span>
+                        <span class="flex items-center gap-2 shrink-0">
+                            <span class="whitespace-nowrap font-semibold text-mono">@Formatacao.Moeda(m.ValorPago ?? m.Valor)</span>
+                            <selo-status valor="m.Situacao"></selo-status>
+                        </span>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+}

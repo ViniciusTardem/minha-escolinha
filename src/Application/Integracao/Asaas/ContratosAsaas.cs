@@ -101,6 +101,9 @@ public sealed record PagamentoAsaas(
     public Guid? CobrancaId => Guid.TryParse(ReferenciaExterna, out var id) ? id : null;
 }
 
+/// <summary>O Pix copia e cola da cobrança (o conteúdo do QR code dinâmico da Asaas), com a validade quando a Asaas informa.</summary>
+public sealed record PixAsaas(string CopiaECola, DateTime? ExpiraEm);
+
 public static class StatusAsaas
 {
     public const string Pendente = "PENDING";
@@ -121,7 +124,8 @@ public static class StatusAsaas
 
 /// <summary>
 /// O que a Minha Escolinha usa da Asaas, sempre com a conta da escolinha (R1): cliente (o pagador), cobrança com a fatura
-/// que aceita Pix, boleto e cartão, a situação dela, a exclusão, o recebimento em dinheiro e o cadastro do webhook.
+/// que aceita Pix, boleto e cartão, o Pix copia e cola, a situação dela, a exclusão, o recebimento em dinheiro e o
+/// cadastro do webhook.
 /// Implementado pelo cliente HTTP (modo Api) e pelo simulador (modo Simulado), com a mesma interface (spec §8.1).
 /// </summary>
 public interface IGatewayAsaas
@@ -143,6 +147,11 @@ public interface IGatewayAsaas
     /// <returns>A cobrança, ou <c>null</c> se ela não existe nesta conta.</returns>
     /// <exception cref="Comum.FalhaIntegracaoException">Classificada (retentável ou definitiva).</exception>
     Task<PagamentoAsaas?> ObterCobrancaAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default);
+
+    /// <summary>O Pix copia e cola da cobrança em aberto, para o portal (BL-M10-06).</summary>
+    /// <returns><c>null</c> quando a cobrança não existe nesta conta ou não tem Pix (paga, excluída).</returns>
+    /// <exception cref="Comum.FalhaIntegracaoException">Classificada (retentável ou definitiva).</exception>
+    Task<PixAsaas?> ObterPixAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default);
 
     /// <summary>Exclui a cobrança pendente (a fatura deixa de valer). Cobrança que já não existe não é erro.</summary>
     /// <exception cref="Comum.FalhaIntegracaoException">Classificada (retentável ou definitiva).</exception>

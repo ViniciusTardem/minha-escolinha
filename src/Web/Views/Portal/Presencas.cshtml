@@ -1,0 +1,56 @@
+@model PresencasPortal
+@{
+    ViewData["Title"] = "Presenças";
+    Layout = "_LayoutPortal";
+    var f = Model.Frequencia;
+}
+
+@* As presenças de um filho nos treinos (só leitura, CA-15): os últimos 60 dias com chamada. O motivo da falta justificada
+   não aparece (pode ser de saúde, D64). *@
+<a class="kt-link text-sm self-start" href="/Portal"><i class="ki-filled ki-arrow-left"></i> Início</a>
+
+<div class="flex flex-col gap-1">
+    <h1 class="text-lg font-semibold text-mono">Presenças de @EmissorGatilhos.PrimeiroNome(Model.Filho.Nome)</h1>
+    <p class="text-sm text-secondary-foreground">Os treinos com chamada de @Formatacao.Data(Model.De) a @Formatacao.Data(Model.Ate).</p>
+</div>
+
+@if (Model.Presencas.Count == 0)
+{
+    <div class="kt-card">
+        <estado-vazio icone="ki-check-squared" titulo="Nenhuma chamada no período" texto="Quando o professor fizer a chamada do treino, a presença aparece aqui."></estado-vazio>
+    </div>
+}
+else
+{
+    <div class="kt-card">
+        <div class="kt-card-content grid grid-cols-3 gap-2 text-center">
+            <div class="flex flex-col gap-0.5 min-w-0">
+                <span class="text-2xl font-semibold text-mono">@f.Presencas</span>
+                <span class="text-xs text-secondary-foreground">Presenças</span>
+            </div>
+            <div class="flex flex-col gap-0.5 min-w-0">
+                <span class="text-2xl font-semibold text-mono">@f.Faltas</span>
+                <span class="text-xs text-secondary-foreground">Faltas</span>
+            </div>
+            <div class="flex flex-col gap-0.5 min-w-0">
+                <span class="text-2xl font-semibold text-mono">@f.Justificadas</span>
+                <span class="text-xs text-secondary-foreground">Justificadas</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="kt-card">
+        <ul class="esc-linhas text-sm">
+            @foreach (var p in Model.Presencas)
+            {
+                <li class="flex items-center justify-between gap-2 px-4 py-3">
+                    <span class="flex flex-col gap-0.5 min-w-0">
+                        <span class="font-medium text-mono">@Formatacao.DiaCurto(DateOnly.FromDateTime(p.Sessao)) · @p.Sessao.ToString("HH:mm")</span>
+                        <span class="text-xs text-secondary-foreground">@p.Turma</span>
+                    </span>
+                    <selo-status valor="p.Situacao"></selo-status>
+                </li>
+            }
+        </ul>
+    </div>
+}

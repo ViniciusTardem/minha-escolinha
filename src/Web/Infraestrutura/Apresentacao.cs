@@ -342,6 +342,6 @@ public static class Formatacao
     /// <summary>"62,5 %" e "60 %": até uma casa decimal, com espaço antes do símbolo.</summary>
     public static string Percentual(decimal valor) => $"{valor.ToString("0.#", PtBr)} %";
 
-    /// <summary>"R$ 1.234,50".</summary>
-    public static string Moeda(decimal valor) => valor.ToString("C", PtBr);
+    /// <summary>"R$ 1.234,50", com espaço sem quebra depois do símbolo: o valor não se parte no fim da linha.</summary>
+    public static string Moeda(decimal valor) => valor.ToString("C", PtBr).Replace("R$ ", "R$ ");
 }

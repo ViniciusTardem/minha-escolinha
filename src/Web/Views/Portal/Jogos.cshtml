@@ -1,0 +1,57 @@
+@model JogosPortal
+@{
+    ViewData["Title"] = "Jogos";
+    Layout = "_LayoutPortal";
+    var nenhum = Model.AResponder.Count + Model.Respondidas.Count + Model.Encerradas.Count == 0;
+}
+
+@* A aba Jogos (BL-M10-07): as convocações dos filhos, com a resposta pelo portal. O WhatsApp continua valendo (R2):
+   vale a primeira resposta da família, venha de onde vier. *@
+@section Filhos {
+    <partial name="_FilhosPortal" model="Model.Filhos" />
+}
+
+<div class="flex flex-col gap-1">
+    <h1 class="text-lg font-semibold text-mono">Jogos</h1>
+    <p class="text-sm text-secondary-foreground">Responda aqui ou pelos botões do WhatsApp: a escolinha vê a resposta na hora.</p>
+</div>
+
+@if (Model.Filhos.Count == 0)
+{
+    <div class="kt-card">
+        <estado-vazio icone="ki-people" titulo="Nenhum aluno por aqui" texto="Os filhos aparecem aqui depois que a escolinha confirma o seu vínculo com eles. Até lá, as convocações chegam pelo WhatsApp."></estado-vazio>
+    </div>
+}
+else if (nenhum)
+{
+    <div class="kt-card">
+        <estado-vazio icone="ki-cup" titulo="Nenhuma convocação por aqui" texto="Quando a escolinha convocar um dos seus filhos para um jogo, a convocação aparece aqui e no WhatsApp."></estado-vazio>
+    </div>
+}
+
+@if (Model.AResponder.Count > 0)
+{
+    <h2 class="text-sm font-semibold text-mono">Esperando a sua resposta</h2>
+    @foreach (var c in Model.AResponder)
+    {
+        <partial name="_ConvocacaoPortal" model="c" />
+    }
+}
+
+@if (Model.Respondidas.Count > 0)
+{
+    <h2 class="text-sm font-semibold text-mono">Respondidos</h2>
+    @foreach (var c in Model.Respondidas)
+    {
+        <partial name="_ConvocacaoPortal" model="c" />
+    }
+}
+
+@if (Model.Encerradas.Count > 0)
+{
+    <h2 class="text-sm font-semibold text-mono">Anteriores e cancelados</h2>
+    @foreach (var c in Model.Encerradas)
+    {
+        <partial name="_ConvocacaoPortal" model="c" />
+    }
+}

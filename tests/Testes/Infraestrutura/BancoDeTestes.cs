@@ -251,6 +251,7 @@ public sealed class AmbienteAplicacao : IDisposable
         services.AddSingleton<MinhaEscolinha.Application.Integracao.Asaas.IGatewayAsaas>(GatewayAsaas);
         services.AddSingleton<MinhaEscolinha.Application.Financeiro.IAgendadorFinanceiro>(Financeiro);
         services.AddScoped<MinhaEscolinha.Application.Eventos.IEventosRepositorio, MinhaEscolinha.Infrastructure.Eventos.EventosRepositorio>();
+        services.AddScoped<MinhaEscolinha.Application.Portal.IPortalRepositorio, MinhaEscolinha.Infrastructure.Portal.PortalRepositorio>();
         services.AddSingleton<MinhaEscolinha.Application.Eventos.INotificadorConvocacoes>(TempoReal);
         _servicos = services.BuildServiceProvider();
     }

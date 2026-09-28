@@ -8,7 +8,7 @@ Plano vivo, atualizado ao fim de cada fatia. Cada documento responde por uma coi
 | **Como** construir | A herança do AlternativaDepartamentoPessoal ([`HERANCA.md`](HERANCA.md)) |
 | **Em que ordem** e onde estamos | Este plano |
 
-Última atualização: **28/09/2026**. F0, S0, o extra EX-01, o S1 (com o extra EX-02), o S2, o S3 e o S4 estão commitados na `main`. O S5 está pronto no simulador e vai para a `main` com a autorização por fatia ("continue"). As provas fora dos simuladores esperam as contas: a da Meta, para o S2 e o S5 (P34), e a da Asaas, para o S4 (P41). A próxima fatia é o S6.
+Última atualização: **28/09/2026**. F0, S0, o extra EX-01, o S1 (com o extra EX-02), o S2, o S3, o S4 e o S5 estão commitados na `main`. O S6 está pronto no simulador e vai para a `main` com a autorização por fatia ("continue"). As provas fora dos simuladores esperam as contas: a da Meta, para o S2 e o S5 (P34), e a da Asaas, para o S4 e o S6 (P41). A próxima fatia é o S7.
 
 ---
 
@@ -68,6 +68,7 @@ O registro completo, com data, está em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-AB
 | Mensagens (R3) | Motor único: o módulo chama o emissor, a mensagem é gravada com o negócio (outbox), e o envio revalida a origem | D45, D46 |
 | Mensalidades (R1) | Recorrência própria pela matrícula; emissão na Asaas por job; conciliação por webhook, varredura e revalidação no envio; divergência só sinaliza | D66 a D72 |
 | Convocação (R8) | Evento genérico com turmas N:N; uma convocação por aluno e jogo, com rascunho até o disparo em lote; a primeira resposta vale; tempo real pelo SignalR no padrão do DP | D76 a D79 |
+| Portal (R2, R4) | `/Portal` do responsável, só com os filhos de vínculo confirmado; a resposta com a mesma regra do WhatsApp; mensalidades só para quem cuida delas; Pix copia e cola buscado por job | D87 a D91 |
 
 ---
 
@@ -84,9 +85,9 @@ O registro completo, com data, está em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-AB
 | S2 — Mensageria e acesso das famílias | 14 | **Pronto no simulador** e commitado (`c642f2f`), com os 14 concluídos. A prova com um número real espera a conta na Meta (P34). | 27/09/2026 |
 | S3 — Presença e controle de evasão | 6 | **Pronto** e commitado (`c6bdbc4`), com os 6 concluídos. A reabertura da chamada sem sinal pelo service worker espera um navegador que confie no certificado e o teste em aparelho real (P37). | 27/09/2026 |
 | S4 — Financeiro: mensalidade, régua e conciliação | 8 | **Pronto no simulador** e commitado (`44df87a`), com os 8 concluídos. A prova com a sandbox da Asaas espera a conta (P41). | 28/09/2026 |
-| S5 — Eventos e convocações | 10 | **Pronto no simulador**, com os 10 concluídos. A resposta de uma família real pelo WhatsApp espera a conta na Meta (P34). | 28/09/2026 |
-| S6 — Portal do responsável | 6 | Próxima | — |
-| S7 — Carga inicial da escolinha piloto | 5 | — | — |
+| S5 — Eventos e convocações | 10 | **Pronto no simulador** e commitado (`ec42cc3`), com os 10 concluídos. A resposta de uma família real pelo WhatsApp espera a conta na Meta (P34). | 28/09/2026 |
+| S6 — Portal do responsável | 6 | **Pronto no simulador**, com os 6 concluídos. O pagamento na sandbox da Asaas espera a conta (P41). | 28/09/2026 |
+| S7 — Carga inicial da escolinha piloto | 5 | Próxima | — |
 
 Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [`BACKLOG.md`](BACKLOG.md).
 
@@ -95,7 +96,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
 ## 4. Próximos passos
 
 ### 4.0 Agora
-1. **S6 — Portal do responsável:** próxima fatia (§4.1).
+1. **S7 — Carga inicial:** próxima fatia (§4.1), sem a planilha real (P21).
 2. **Provar o S4 com a sandbox da Asaas** (P41), assim que houver a conta sandbox e um endereço https público:
    - gravar em user-secrets `Asaas:Modo = Api` e `Asaas:UrlPublica` (CLAUDE.md §7);
    - vincular a chave sandbox na tela Conta de recebimento; o webhook é cadastrado sozinho;
@@ -118,23 +119,34 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
    - criar um sandbox próprio no painel do Stripe (P27);
    - gravar em user-secrets `Stripe:Modo = Teste` e `Stripe:ChaveSecreta` (chave de teste, `sk_test_` ou `rk_test_` restrita);
    - para os webhooks em localhost, rodar o Stripe CLI (`stripe listen --forward-to https://localhost:7186/api/v1/webhooks/stripe`) e gravar o `whsec_` que ele mostrar em `Stripe:SegredoWebhook`. Sem isso, a volta do pagamento e a varredura confirmam as compras.
-### 4.1 O que o S6 precisa e ainda não existe
-- **Critério de pronto da spec:** um responsável com dois filhos vê os dois numa conta só, paga a mensalidade e responde a convocação identificando de qual filho se trata.
-- **Itens:** operação por WhatsApp e pela web sem instalar nada (BL-M10-01); pagamentos, pendências e total do mês, com o detalhamento por filho (BL-M10-05, CA-16); pagamento pela fatura da Asaas (BL-M10-06, R1); receber e responder a convocação no portal (BL-M10-07); nenhum dado do filho antes do vínculo verificado (BL-M10-11); mediação obrigatória (BL-M10-12, R4).
-- **Decisões que o S6 toca:**
-  - P10: a visão única dos filhos (o BL-M10-02 foi adiado), pela home do portal com os filhos de vínculo verificado (CA-15);
-  - P16: o acesso pelo convite e o login pelo CPF (D52), sem recuperação de senha no piloto;
-  - o pagamento: o link da fatura da Asaas (D67), onde a família escolhe Pix, boleto ou cartão; nenhum dado de cartão passa pelo sistema;
-  - a resposta pelo portal usa a mesma regra da resposta pelo WhatsApp (D78: vale a primeira, P03), com a origem "portal";
-  - CA-17 e CA-19 repetidos: tudo que o portal faz também chega pelo WhatsApp, e nada é dirigido ao aluno.
-- **O que as fatias anteriores deixam pronto:**
-  - o portal inicial, a ativação do convite, os avisos no portal e o vínculo verificado (S2, D52, D53);
-  - as mensalidades por aluno, com o link da fatura e a situação (S4);
-  - a convocação por aluno, com a origem "portal" já aceita no domínio, e o aviso da convocação no portal para quem tem acesso (S5);
-  - a presença por sessão (S3), para a consulta da família.
-- **Maior risco do S6:** dado de menor exposto por link sem login. Toda tela do portal passa pelo vínculo verificado, e o escopo do responsável é o do resolvedor (D53).
+### 4.1 O que o S7 precisa e ainda não existe
+- **Critério de pronto da spec:** a base real da escolinha piloto entra no sistema em uma operação, com os erros apontados antes da confirmação.
+- **Itens:**
+  - envio e leitura da planilha, com o mapeamento das colunas para os campos de aluno e responsável (BL-M12-01);
+  - validação e classificação das linhas: apta, com aviso ou bloqueada, com o motivo (BL-M12-02);
+  - deduplicação de responsáveis: reaproveitar quem já existe e criar só o vínculo novo (BL-M12-03, CA-1);
+  - conferência do lote, com novos, reaproveitados, vínculos e bloqueados, e a gravação só depois da confirmação (BL-M12-04);
+  - a saúde mascarada na conferência e restrita no cadastro (BL-M12-05, R5).
+- **Sem a planilha real** (P21, "seguir sem ela"): um modelo `.xlsx` para baixar define as colunas, com os campos do cadastro do S1 (§5 da spec). A planilha real, quando chegar, pede só o mapeamento das colunas dela.
+- **Leitura do `.xlsx`:** o ClosedXML 0.105.1, o mesmo do DP (relatórios). É herança, não dependência nova.
+- **Decisões que o S7 toca:**
+  - as regras de duplicidade do S1 (D33): o mesmo CPF reaproveita sozinho; o mesmo celular ou nome vira aviso na conferência;
+  - o pagador por aluno (D34) e a emissão sem CPF (P17);
+  - o consentimento na matrícula (R6, P29) e o opt-in do WhatsApp (P15): a importação registra a declaração da gestão;
+  - a matrícula na turma com o valor da turma (S1) e a primeira mensalidade à espera da confirmação (S4, D66).
+- **O que as fatias anteriores deixam pronto:** o cadastro inteiro do S1 (aluno, responsável, vínculo, matrícula, consentimentos e saúde restrita), os convites em lote do S2 para as famílias importadas e a projeção das mensalidades do S4.
+- **Maior risco do S7:** o formato real da planilha. O mapeamento das colunas e a conferência antes da gravação reduzem o risco.
 
-### 4.2 O que o S5 entregou (referência)
+### 4.2 O que o S6 entregou (referência)
+- **O portal do responsável** (`/Portal`), no celular e no computador, sem instalar nada: Início, Jogos, Pagamentos, Avisos e as presenças de cada filho (D87).
+- **Uma conta, todos os filhos** (CA-15): só os filhos com vínculo confirmado; antes disso, nenhum nome, jogo, mensalidade nem presença (BL-M10-11).
+- **A resposta pelo portal** (BL-M10-07), com a regra do WhatsApp: vale a primeira da família, quem respondeu muda a própria resposta, e a registrada pela escolinha não muda. O painel do jogo aberto é avisado (D88).
+- **Pagamentos** (CA-16): o total do mês com o detalhamento por filho, só para quem cuida das mensalidades (D89).
+- **Pagar pelo portal** (BL-M10-06): Pix copia e cola, buscado por job depois da emissão e de novo pela rotina, e a fatura da Asaas para boleto e cartão (D90).
+- **Presenças** só leitura (D91).
+- **Testes:** 406 passando, 8 deles do S6 (3 de unidade e 5 com banco).
+
+### 4.3 O que o S5 entregou (referência)
 - **O evento genérico:** tipo e adversário pelo perfil da modalidade (R8), turmas N:N, duração da modalidade, local e professor da turma por padrão, situações da §6 com transições manuais (D76).
 - **Montagem do fim de semana numa tela:** os jogos da semana, a escolha dos convocados como rascunho, com os sinais (trial, risco, atraso, sem quem receba mensagem, outro jogo no horário), e o disparo de todos numa gravação só (D77, CA-10).
 - **Mensagem por convocado,** com o nome do filho, o jogo, o dia e a hora, o local e o link de mapa, e os botões "Vai" e "Não vai" (D85, CA-11, CA-13). Janela de disparo, e o aviso de quando as mensagens saem.
@@ -145,7 +157,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
 - **Escopo** do professor pelas turmas do jogo (D82); **alertas de agenda** do jogo (D83); **desligamento** tira das próximas convocações (D84, CA-3).
 - **Testes:** 398 passando, 24 deles do S5 (13 de unidade e 11 com banco). Os avisos de consulta do EF viraram erro nos testes (D86).
 
-### 4.3 O que o S4 entregou (referência)
+### 4.4 O que o S4 entregou (referência)
 - **Recorrência pela matrícula:** previstas até o fim do mês seguinte, sem cobrar para trás; trial e pausa não pagam; a primeira de cada matrícula espera a gestão (D66).
 - **Emissão na Asaas:** um job por mensalidade na data de emissão, na conta da escolinha e no nome do pagador; a família escolhe Pix, boleto ou cartão; multa e juros congelados; sem duplicar; a impedida mostra o motivo, e a recusada volta com "Tentar de novo" ou com a conta vinculada de novo (D67, D73).
 - **Painel de pagamentos** por mês, com os grupos provisórios (P40), a aba Financeiro na ficha e o cartão no painel da gestão (D68).
@@ -161,7 +173,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - o contrato HTTP da Asaas e a trava de ambiente;
   - o professor sem acesso ao financeiro.
 
-### 4.4 O que o S3 entregou (referência)
+### 4.5 O que o S3 entregou (referência)
 - **Chamada na quadra** (`/Chamada`):
   - o treino do dia e a chamada esquecida dos últimos 7 dias;
   - P, F ou J num toque, "Todos presentes" e "Concluir chamada" na barra inferior (D58).
@@ -179,7 +191,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - o consumidor `presenca.*` (CA-18);
   - a restrição do motivo de saúde.
 
-### 4.5 O que o S2 entregou (referência)
+### 4.6 O que o S2 entregou (referência)
 - **Motor único de mensagens** (R3):
   - catálogo fechado de 11 gatilhos, com uma regra por gatilho;
   - outbox na mesma gravação do negócio, despacho depois do commit e varredura a cada 5 min (D45);
@@ -204,7 +216,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - isolamento A/B das mensagens e dos convites;
   - o teste de arquitetura: só o emissor cria mensagem e só o motor envia.
 
-### 4.6 O que o S1 entregou (referência)
+### 4.7 O que o S1 entregou (referência)
 - **Turmas e agenda:**
   - locais e professores, com disponibilidade semanal e indisponibilidades;
   - turma em etapas, com os valores iniciais do catálogo;
@@ -226,7 +238,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - escopo do professor e isolamento A/B;
   - saúde fora do registro de alterações.
 
-### 4.7 O que o S0 entregou (referência)
+### 4.8 O que o S0 entregou (referência)
 - **Criação da escolinha pela plataforma:** assistente em 3 etapas (escolinha → modalidade → 1º gestor). Grava tudo junto: escolinha, modalidade, os 26 parâmetros, conta de créditos, gestor e auditoria. A senha temporária aparece uma vez.
 - **Acesso:**
   - login com troca obrigatória de senha e bloqueio;
@@ -246,7 +258,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - criação atômica;
   - regras de arquitetura: relógio, `IgnoreQueryFilters`, acesso declarado, binding de coleções.
 
-### 4.8 O que o F0 entregou (referência)
+### 4.9 O que o F0 entregou (referência)
 - **Base do projeto:**
   - solução de 4 camadas + testes, em .NET 9;
   - Central Package Management, com o prefixo `MinhaEscolinha` nas DLLs;
@@ -269,9 +281,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
 
 | Fatia | O essencial | Maior risco |
 |---|---|---|
-| S5 | <ul><li>Evento genérico, convocação por convocado, lote com rascunho até o disparo.</li><li>Painel em tempo real (SignalR, padrão do DP).</li><li>Lembretes, cancelamento e adiamento, alertas de conflito.</li></ul> | O fluxo em lote no celular e o limite de envio de um número novo |
-| S6 | <ul><li>`Areas/Portal`: filhos verificados, total do mês por filho.</li><li>Pix obtido antes por job; fatura Asaas para cartão.</li><li>Resposta à convocação.</li></ul> | Dado de menor exposto |
-| S7 | <ul><li>Planilha → mapear → validar e classificar → conferência (saúde mascarada) → gravação única.</li><li>ClosedXML (dependência nova, registrar em 12.3).</li></ul> | O formato real da planilha |
+| S7 | <ul><li>Planilha → mapear → validar e classificar → conferência (saúde mascarada) → gravação única.</li><li>ClosedXML, o mesmo do DP (herança).</li></ul> | O formato real da planilha |
 
 **Massa de demonstração**, construída aos poucos (spec §13): 1 escolinha, 3 turmas, cerca de 60 alunos, irmãos, alunos com 2 responsáveis, 4 jogos no fim de semana com 12 convocados cada, e mensalidades pagas, vencidas, isentas e parciais. **O S1 montou a base** (turmas, alunos e famílias, em `/dev/massa`). No S4, as mensalidades nascem da projeção das matrículas da massa ("Atualizar agora"), e o simulador da Asaas produz as pagas, as parciais e os estornos. Os jogos entram no S5.
 
@@ -308,7 +318,8 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
   - em A, desde o S2: a responsável Ana Almeida ativou o acesso sem e-mail (login pelo CPF), e o vínculo com o Arthur foi confirmado. O treino de sábado, 03/10, da Sub-9 foi cancelado na validação, e o log tem as mensagens do convite e do cancelamento;
   - em A, desde o S3: a turma "Sub-11 · segunda e quarta" tem uma sessão realizada no domingo, 27/09, com a falta da Ana Lima, o alerta disparado e a mensagem à Maria Lima. Para a validação, o limite de faltas foi a 1 e voltou a 4, e um horário de domingo entrou e saiu da turma, tudo com histórico;
   - em A, desde o S4: a conta de recebimento está vinculada (Sandbox), com o simulador. As 53 mensalidades de outubro foram projetadas: 50 a confirmar, a da Alice Pereira impedida (pagador sem CPF), a do Antônio Moura paga com divergência aceita (R$ 100,00) e a do Anthony Pacheco cancelada depois do estorno. Os parâmetros ajustados para a validação (emissão, lembrete e janela de silêncio) voltaram pela tela, com histórico. O simulador guarda as faturas em `%LOCALAPPDATA%\MinhaEscolinha\simulador-asaas.json`;
-  - para validar o escopo do professor com um login real, o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A: a ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL, e o vínculo Professor em A foi criado.
+  - para validar o escopo do professor com um login real, o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A: a ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL, e o vínculo Professor em A foi criado;
+  - em A, desde o S6: a responsável Sabrina Pacheco ativou o acesso sem e-mail (login pelo CPF), com os vínculos do Anthony, do Benjamin e do Raul confirmados. As mensalidades de outubro do Benjamin (em aberto, com o Pix) e do Raul (paga pela fatura do simulador) foram emitidas. O Benjamin tem a resposta "Vai" pelo portal no jogo contra o Leões da Vila e a presença no treino de 28/09, às 19:00. A janela de silêncio e a emissão, mudadas para a validação, voltaram pela tela, com histórico.
 
 ---
 
@@ -333,6 +344,7 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | Confirmar com a escolinha: a meta de frequência da turma entra no risco? O risco exige um mínimo de sessões? A quadra usa aparelho compartilhado? | Nada bloqueia; seguem os encaminhamentos provisórios | P32, P38, P39 |
 | Decidir com a escolinha: mudar o horário do jogo pede nova confirmação? O piloto registra o placar? No jogo que junta turmas, cada professor registra só a turma dele? A resposta por texto à convocação aparece no painel? | Nada bloqueia; seguem os encaminhamentos provisórios | P45, P46, P47, P48 |
 | Validar a chamada sem sinal com o service worker: certificado de desenvolvimento confiável e, antes do piloto, Android e iPhone no servidor com HTTPS | A reabertura da chamada sem sinal (CA-21) | P37 |
+| Decidir com a escolinha: o portal mostra a imagem do QR code do Pix? Quem não é pagador nem recebe a cobrança vê as mensalidades? A mudança de resposta perto do jogo avisa o professor? | Nada bloqueia; seguem os encaminhamentos provisórios | P49, P50, P51 |
 
 ---
 
@@ -376,3 +388,8 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | 28/09/2026 | **Validação no navegador** (Playwright), com o simulador do WhatsApp: <ul><li>os quatro jogos do fim de semana, os alertas de professor e de local, os 48 convocados e o disparo num fluxo só;</li><li>a resposta pelo botão mudando o painel aberto, sem recarregar, e a outra resposta visível;</li><li>a resposta por fora, a alteração do horário e o cancelamento, com os avisos às famílias;</li><li>o professor restrito às turmas dele (404 fora delas);</li><li>as telas em 1280, 375 e 320 px, no claro e no escuro.</li></ul> |
 | 28/09/2026 | **Defeitos achados e corrigidos:** <ul><li>O jogo novo não herdava o local da turma (D76).</li><li>O disparo na janela de silêncio não dizia que as mensagens só sairiam às 07:00 (D77).</li><li>Duas alterações do jogo no mesmo segundo perderiam o segundo aviso, e o registro da alteração não guardava o local, o professor e as informações (D81).</li><li>Qualquer pessoa autenticada da escolinha entrava no tempo real; agora só a gestão e os professores, e a conexão fecha quando a autenticação expira (D79).</li><li>O motivo da mensagem suprimida dizia "já respondida" para a convocação sem resposta.</li><li>O encerramento de matrícula não dizia quantas convocações saíram.</li><li>As advertências do EF no log (do S1 e do S4), que agora são erro nos testes (D86).</li><li>Na tela: o título do jogo criado escondido sob a barra fixa, a turma repetida em cada linha, os contadores zerados no jogo cancelado e os botões da barra em duas linhas no celular.</li></ul> |
 | 28/09/2026 | **Resultado:** build sem aviso; 398 testes passando (24 do S5); 0 classes faltando; nenhuma rolagem horizontal em 375 e 320 px nas telas do S5, no claro e no escuro. |
+| 28/09/2026 | **Commit do S5** na `main` (`ec42cc3`), com a autorização por fatia do responsável ("continuar"). |
+| 28/09/2026 | **S6 construído** (6 itens), direto na `main`: <ul><li>o módulo `Portal`, com o Início dos filhos confirmados, os Jogos com a resposta, os Pagamentos com o total do mês, as Presenças e os Avisos;</li><li>a resposta pelo portal com a regra do WhatsApp, e a mesma pessoa mudando a própria resposta;</li><li>o Pix copia e cola buscado na Asaas por job, depois da emissão e pela rotina.</li></ul> Decisões D87 a D91; pendências P49 a P51; inconsistência I15. |
+| 28/09/2026 | **Validação no navegador** (Playwright), com os simuladores da Asaas e do WhatsApp: <ul><li>o convite e a ativação da Sabrina Pacheco, com nada à mostra antes da confirmação dos vínculos;</li><li>os três filhos numa conta só;</li><li>a resposta pelo portal mudando o painel do jogo aberto, sem recarregar;</li><li>o Pix copiado, o pagamento pela fatura e a conciliação sozinha;</li><li>as telas em 320, 375 e 1280 px, no claro e no escuro.</li></ul> |
+| 28/09/2026 | **Defeitos achados e corrigidos:** <ul><li>O "Vai" vinha preenchido antes da resposta, e a resposta registrada pela escolinha convidava a "mudar de ideia" (D88).</li><li>A aba Jogos, sem filho confirmado, não explicava a confirmação.</li><li>O valor em reais quebrava entre "R$" e o número, em qualquer tela. Agora o espaço não quebra.</li><li>Em 320 px, o botão da fatura transbordava, a linha de cada filho quebrava e o rótulo "Justificadas" passava do cartão.</li><li>O painel do jogo falava só do WhatsApp.</li><li>O token da chamada (S3) gerava um aviso do antiforgery no log a cada pedido.</li></ul> A checagem de tela passou a medir também o conteúdo que transborda o próprio botão ou cartão, e não só o que passa da tela. |
+| 28/09/2026 | **Resultado:** build sem aviso; 406 testes passando (8 do S6); 0 classes faltando; nenhuma rolagem horizontal nem transbordo em 320 e 375 px nas telas do portal, no claro e no escuro. Um teste de contrato do WhatsApp (S2) falhou uma vez numa rodada completa e passou nas sete rodadas seguintes; a causa não foi achada. |

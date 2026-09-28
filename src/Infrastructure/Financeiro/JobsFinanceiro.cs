@@ -15,8 +15,8 @@ namespace MinhaEscolinha.Infrastructure.Financeiro;
 /// <list type="bullet">
 /// <item>a rotina diária de cada escolinha, às 06:30: projeção, vencidas, régua e emissões;</item>
 /// <item>a varredura de hora em hora, que confere na Asaas o que o webhook não trouxe;</item>
-/// <item>por cobrança: emitir (uma de cada vez: duas emissões da mesma cobrança nunca correm juntas), conferir, excluir e
-/// registrar o recebimento por fora; por escolinha: refazer a projeção e cadastrar o webhook.</item>
+/// <item>por cobrança: emitir (uma de cada vez: duas emissões da mesma cobrança nunca correm juntas), buscar o Pix,
+/// conferir, excluir e registrar o recebimento por fora; por escolinha: refazer a projeção e cadastrar o webhook.</item>
 /// </list>
 /// </summary>
 public class JobsFinanceiro(
@@ -92,6 +92,12 @@ public class JobsFinanceiro(
 
     [Queue(HangfireEscolinhaExtensions.FilaIntegracoes)]
     [AutomaticRetry(Attempts = 5)]
+    [JobDisplayName("Mensalidade — buscar o Pix de {1} na Asaas")]
+    public Task ObterPixAsync(Guid escolinhaId, Guid cobrancaId, CancellationToken ct) =>
+        executor.ExecutarAsync(escolinhaId, sp => sp.GetRequiredService<PixCobrancas>().AtualizarAsync(cobrancaId, ct), ct);
+
+    [Queue(HangfireEscolinhaExtensions.FilaIntegracoes)]
+    [AutomaticRetry(Attempts = 5)]
     [JobDisplayName("Mensalidade — conferir {1} na Asaas")]
     public Task ConferirAsync(Guid escolinhaId, Guid cobrancaId, CancellationToken ct) =>
         executor.ExecutarAsync(escolinhaId, sp => sp.GetRequiredService<VarreduraCobrancas>().ConferirAsync(cobrancaId, ct), ct);
@@ -134,6 +140,7 @@ public class AgendadorFinanceiroHangfire(IBackgroundJobClient jobs) : IAgendador
 {
     public void Projetar(Guid escolinhaId) => jobs.Enqueue<JobsFinanceiro>(j => j.ProjetarAsync(escolinhaId, CancellationToken.None));
     public void Emitir(Guid escolinhaId, Guid cobrancaId) => jobs.Enqueue<JobsFinanceiro>(j => j.EmitirAsync(escolinhaId, cobrancaId, CancellationToken.None));
+    public void ObterPix(Guid escolinhaId, Guid cobrancaId) => jobs.Enqueue<JobsFinanceiro>(j => j.ObterPixAsync(escolinhaId, cobrancaId, CancellationToken.None));
     public void Conferir(Guid escolinhaId, Guid cobrancaId) => jobs.Enqueue<JobsFinanceiro>(j => j.ConferirAsync(escolinhaId, cobrancaId, CancellationToken.None));
 
     public void ExcluirNaAsaas(Guid escolinhaId, Guid cobrancaId) =>

@@ -51,12 +51,13 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
     - `Comum`, `Acesso` (M01), `Configuracao` (M02), `Eventos` e `Auditoria`;
     - `Turmas` (M04), `Alunos` (M03) e `Equipe` (M08), do S1; `Agenda`, só no domínio: compromisso datado e conflitos;
     - `Plataforma` e `Integracao` (Stripe, EX-01; WhatsApp, S2; Asaas, S4);
-    - `Mensageria` (M09), do S2: motor, templates, convites (em `Acesso`) e o portal inicial;
+    - `Mensageria` (M09), do S2: motor, templates e convites (em `Acesso`);
     - `Presencas` (M05), do S3: chamada, alerta de faltas e risco de evasão;
-    - `Financeiro` (M06), do S4: mensalidades, régua, conciliação e divergências;
-    - `Eventos` (M07), do S5: o evento, a convocação, a rotina (lembrete e "sem resposta") e o tempo real (hub em `Web/Hubs`).
+    - `Financeiro` (M06), do S4: mensalidades, régua, conciliação, divergências e, desde o S6, o Pix copia e cola (`PixCobrancas`);
+    - `Eventos` (M07), do S5: o evento, a convocação, a rotina (lembrete e "sem resposta") e o tempo real (hub em `Web/Hubs`);
+    - `Portal` (M10), do S6: o portal do responsável (`/Portal`), só leitura, sobre os módulos acima. A única gravação é a resposta à convocação.
     - Na `Infrastructure`, os repositórios do cadastro ficam juntos em `Cadastro/`.
-  - Próximos: o portal do responsável (S6, na `Web`, sobre os módulos que já existem) e `Carga` (S7).
+  - Próximo: `Carga` (S7).
 
 ---
 
@@ -208,11 +209,12 @@ Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons (só `ki-filled`). O mapa das tel
   - 4 superfícies: `_LayoutAutenticacao`, `_Layout` (painel), `_LayoutQuadra` e `_LayoutPortal`;
   - quadra e portal com alvos de 48 px (`esc-toque`) e barra de ação inferior fixa.
 - **Service worker:** só na chamada (`/sw-chamada.js`, escopo `/Chamada`). Ao mudar o que ele guarda ou como guarda, suba a `VERSAO` dele, para a cópia antiga sair dos aparelhos (D60).
-- **Formato pt-BR** pelos helpers de `Formatacao`: dd/MM/aaaa, R$ 0,00, 24 h, "2,5 %", "ligado/desligado".
+- **Formato pt-BR** pelos helpers de `Formatacao`: dd/MM/aaaa, R$ 0,00 (com espaço que não quebra depois do "R$"), 24 h, "2,5 %", "ligado/desligado".
 - **Texto:** linguagem neutra, e o nome da escolinha nunca vem depois da palavra "escolinha". "A escolinha Escolinha X" duplica a palavra; use "Escolinha X informa" ou "em Escolinha X".
 - **Checagem de tela:**
   - sem rolagem horizontal em 375 e 320 px;
   - elemento `position: fixed` não aparece na checagem de rolagem, então confira que nada passa da largura da tela; item flex em barra fixa precisa de `min-width: 0`;
+  - confira também o conteúdo que transborda o próprio botão ou cartão (`scrollWidth > clientWidth`): ele não passa da tela e escapa da checagem de rolagem. Botão com rótulo longo transborda em 320 px;
   - **tabela no celular:** ficam só as colunas principais (cerca de 280 px, para caber em 320 px sem rolar a tabela). O dado secundário desce para a célula principal com `sm:hidden`, e a ação vira só ícone. O `<th>` da coluna escondida leva o mesmo `hidden sm:table-cell` da célula: sem isso, as colunas desalinham;
   - cabeçalho de cartão com `flex-wrap` leva `py-4`: sem ele, quando quebra em duas linhas, o conteúdo encosta na borda;
   - texto longo sem espaço (um link) leva `wrap-anywhere`;
@@ -304,13 +306,14 @@ dotnet dev-certs https --trust
   - em A, desde o S2: a responsável Ana Almeida tem acesso (login pelo CPF, com o vínculo do Arthur confirmado), e o log tem as mensagens da validação (convite e treino cancelado);
   - em A, desde o S3: uma sessão de domingo, 27/09, na turma "Sub-11 · segunda e quarta", com a falta da Ana Lima, o alerta e a mensagem à responsável;
   - em A, desde o S4: a conta de recebimento (Sandbox, com o simulador) e as mensalidades de outubro da validação: 50 a confirmar, 1 impedida, 1 paga com divergência aceita e 1 cancelada depois do estorno. As faturas do simulador ficam em `%LOCALAPPDATA%\MinhaEscolinha\simulador-asaas.json`;
-  - em A, desde o S5: os jogos do fim de semana de 03 e 04/10 (quatro da gestão, um cancelado e um alterado, e um do professor), com 49 convocações, as respostas da validação e os avisos às famílias.
+  - em A, desde o S5: os jogos do fim de semana de 03 e 04/10 (quatro da gestão, um cancelado e um alterado, e um do professor), com 49 convocações, as respostas da validação e os avisos às famílias;
+  - em A, desde o S6: a responsável Sabrina Pacheco tem acesso (login pelo CPF), com os vínculos do Anthony, do Benjamin e do Raul confirmados, e as mensalidades de outubro do Benjamin (em aberto, com o Pix) e do Raul (paga) emitidas.
 - **Chamada sem sinal:** o navegador só registra o service worker com certificado confiável. Em desenvolvimento, rode `dotnet dev-certs https --trust`; sem isso, a fila funciona com a página aberta, mas a página não reabre sem sinal (P37).
 - **Jobs recorrentes** (horário de Brasília, registrados no startup):
   - `sessoes-gerar-horizonte`, às 03:15: gera as sessões de treino até o fim do mês seguinte, uma escolinha por vez (D31);
   - `stripe-varredura-compras`, a cada 20 minutos: confere as compras de créditos pendentes. Sai quando o Stripe está desligado (`Stripe:Habilitado = false`);
   - `mensagens-varredura`, a cada 5 minutos, uma escolinha por vez: solta as mensagens retidas quando o saldo volta e reenfileira as que venceram (D45);
-  - `mensalidades-rotina`, às 06:30, uma escolinha por vez: projeção, vencidas, régua e emissões (D66). As mensagens da régua esperam o fim da janela de silêncio;
+  - `mensalidades-rotina`, às 06:30, uma escolinha por vez: projeção, vencidas, régua e emissões (D66), e a busca do Pix das mensalidades em aberto sem Pix ou com o Pix vencido (D90). As mensagens da régua esperam o fim da janela de silêncio;
   - `mensalidades-varredura`, de hora em hora (:40): confere na Asaas as mensalidades em aberto que o webhook não trouxe (D70). Sai quando a Asaas está desligada;
   - `convocacoes-rotina`, a cada 15 minutos, uma escolinha por vez: lembrete a quem não respondeu e "sem resposta" no início do jogo (D80).
 - **Tempo real:** o hub `/hubs/convocacoes` (SignalR) avisa os painéis de jogo abertos. Só a gestão e os professores entram, e a conexão fecha quando a autenticação expira (D79).

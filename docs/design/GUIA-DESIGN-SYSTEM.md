@@ -546,35 +546,41 @@ Renomear qualquer um quebra o recolhimento, a rolagem do menu ou a busca.
 
     <nav class="esc-portal-abas" aria-label="Portal">
         <a class="esc-portal-aba" href="/Portal" aria-current="@Atual("inicio")"><i class="ki-filled ki-home-2"></i>Início</a>
-        <a class="esc-portal-aba" href="/Portal/EmBreve?aba=jogos" aria-current="@Atual("jogos")"><i class="ki-filled ki-cup"></i>Jogos</a>
-        <a class="esc-portal-aba" href="/Portal/EmBreve?aba=pagamentos" aria-current="@Atual("pagamentos")"><i class="ki-filled ki-dollar"></i>Pagamentos</a>
+        <a class="esc-portal-aba" href="/Portal/Jogos" aria-current="@Atual("jogos")"><i class="ki-filled ki-cup"></i>Jogos</a>
+        <a class="esc-portal-aba" href="/Portal/Pagamentos" aria-current="@Atual("pagamentos")"><i class="ki-filled ki-dollar"></i>Pagamentos</a>
         <a class="esc-portal-aba" href="/Portal/Avisos" aria-current="@Atual("avisos")"><i class="ki-filled ki-notification-status"></i>Avisos</a>
     </nav>
 ```
 
-- **Topo** (`esc-portal-topo`, sticky, com safe-area): a escolinha e, pela seção `Filhos`, os chips dos filhos (uma conta só para todos):
+- **Topo** (`esc-portal-topo`, sticky, com safe-area): a escolinha e, pela seção `Filhos` (parcial `_FilhosPortal`), os filhos confirmados, uma conta só para todos. Desde o S6, são etiquetas, não filtros: cada cartão diz de qual filho se trata. Aparecem com dois filhos ou mais, e a faixa rola na horizontal:
 
 ```cshtml
 @section Filhos {
-    <div class="esc-chips" data-esc-escolha role="group" aria-label="Filhos">
-        <button class="esc-chip" type="button" aria-pressed="true" data-valor="todos">Todos</button>
-        <button class="esc-chip" type="button" aria-pressed="false" data-valor="pedro">Pedro · Sub-11</button>
-    </div>
+    <partial name="_FilhosPortal" model="Model.Filhos" />
 }
-```
-
-- **Abas inferiores** (`esc-portal-abas`: fixas, quatro colunas, 64 px de altura, ícone de 22 px). A ativa vem de `ViewData["AbaPortal"]` (`inicio`, `jogos`, `pagamentos` ou `avisos`) e ganha `aria-current="page"`, na cor da marca. Desde o S2, as abas levam às páginas reais do `PortalController` (`Views/Portal`, sem área). Jogos e Pagamentos mostram "em breve" até o S5 e o S6; Início lista os filhos com vínculo confirmado, e Avisos lista os avisos do motor (abrir marca como lido).
-- **Conteúdo** (`esc-portal-conteudo`): uma coluna de cartões grandes, até 40rem, que reserva a altura das abas.
-- **Resposta Sim/Não** (`esc-resposta`): dois botões em grade, com 48 px e texto de 16 px em peso 600:
-
-```cshtml
-<div class="esc-resposta">
-    <button class="kt-btn kt-btn-primary" type="button"><i class="ki-filled ki-check"></i> Vai</button>
-    <button class="kt-btn kt-btn-outline" type="button"><i class="ki-filled ki-cross"></i> Não vai</button>
+@* _FilhosPortal *@
+<div class="esc-chips" role="list" aria-label="Filhos">
+    <span class="esc-chip" role="listitem">Pedro · Sub-11</span>
 </div>
 ```
 
-- Os chips (`esc-chip`) têm 36 px de altura mínima, abaixo dos 48 px do resto do portal (§14).
+- **Abas inferiores** (`esc-portal-abas`: fixas, quatro colunas, 64 px de altura, ícone de 22 px). A ativa vem de `ViewData["AbaPortal"]` (`inicio`, `jogos`, `pagamentos` ou `avisos`) e ganha `aria-current="page"`, na cor da marca. As abas levam às páginas do `PortalController` (`Views/Portal`, sem área): Início, Jogos, Pagamentos e Avisos, desde o S6 todas reais; as presenças de cada filho abrem pelo Início (`/Portal/Presencas/{aluno}`, com "← Início").
+- **Conteúdo** (`esc-portal-conteudo`): uma coluna de cartões grandes, até 40rem, que reserva a altura das abas.
+- **Resposta Vai/Não vai** (`esc-resposta`, parcial `_ConvocacaoPortal`): dois botões em grade, com 48 px e texto de 16 px em peso 600, num formulário POST para `/Portal/Responder/{id}` (`name="vai"`). **Os dois ficam `kt-btn-outline` até a resposta**; só a que vale fica `kt-btn-primary`, com `aria-pressed="true"`. Preenchido antes da resposta parece escolha feita (achado do S6):
+
+```cshtml
+<form method="post" asp-controller="Portal" asp-action="Responder" asp-route-id="@Model.ConvocacaoId" class="esc-resposta">
+    <button class="kt-btn @(vai ? "kt-btn-primary" : "kt-btn-outline")" type="submit" name="vai" value="true"
+            aria-pressed="@(vai ? "true" : "false")" aria-label="Pedro vai"><i class="ki-filled ki-check"></i> Vai</button>
+    <button class="kt-btn @(naoVai ? "kt-btn-primary" : "kt-btn-outline")" type="submit" name="vai" value="false"
+            aria-pressed="@(naoVai ? "true" : "false")" aria-label="Pedro não vai"><i class="ki-filled ki-cross"></i> Não vai</button>
+</form>
+```
+
+  Debaixo dos botões, a linha diz quem respondeu: "Mudou de ideia? Toque na outra opção." para a própria resposta; "Se a resposta mudou, toque na outra opção: a escolinha confere." para a de outro responsável ou a registrada pela escolinha ("Registrada pela escolinha em ..."). Depois do POST, a volta é para `/Portal/Jogos#convocacao-{id}` (o cartão tem `scroll-mt-28`, para não ficar sob o topo).
+- **Pix copia e cola** (`esc-pix`, S6): o código em fonte mono de 0.75rem, com borda tracejada, fundo `--muted`, `overflow-wrap: anywhere` e `user-select: all`, seguido do botão "Copiar o Pix" (`data-esc-copiar="#pix-{id}"`, §6.13) e do botão "Abrir a fatura", com a linha "Na fatura da Asaas: Pix, boleto ou cartão." O rótulo do botão é curto: com o texto inteiro no botão, ele transbordava em 320 px.
+- **Total do mês** (aba Pagamentos): o nome de cada filho à esquerda; à direita, o valor e, embaixo, "a pagar" ou o selo "Pago". Com o valor e o estado na mesma linha do nome, a linha quebrava em 320 px.
+- Os chips (`esc-chip`) têm 36 px de altura mínima, abaixo dos 48 px do resto do portal (§14); são etiquetas, sem toque.
 
 ### 5.5 `_LayoutVitrine` e `/dev/design`
 
@@ -783,7 +789,7 @@ document.addEventListener("esc:escolha", function (evento) {
 </li>
 ```
 
-- Os **chips dos filhos** do portal (`esc-chips` e `esc-chip`, §5.4) usam o mesmo `data-esc-escolha`.
+- Os **chips dos filhos** na vitrine do portal usam o mesmo `data-esc-escolha`. No portal real (S6), são etiquetas sem toque (§5.4).
 - O controle guarda só o estado visual: gravar a escolha é da tela, ouvindo `esc:escolha`.
 - **A chamada real não usa o `data-esc-escolha`:** o `chamada.js` cuida do toque, do `aria-pressed`, da fila e do painel do motivo (§6.29).
 
@@ -1005,9 +1011,10 @@ Fica em `Views/Parametros/_CampoParametro.cshtml` (não em `Shared`). Cada parâ
 | `esc-item-chamada` | a sessão na lista do dia: o item inteiro é o alvo de toque (48 px de altura mínima) |
 | `esc-segmento`, `esc-segmento-opcao` | o controle segmentado (§6.9) |
 | `esc-portal`, `esc-portal-topo`, `esc-portal-conteudo` | a estrutura do `_LayoutPortal` |
-| `esc-chips`, `esc-chip` | os chips dos filhos; o marcado tem `aria-pressed="true"` e a cor da marca |
+| `esc-chips`, `esc-chip` | os filhos no topo do portal: desde o S6, etiquetas (`role="listitem"`), sem toque; como botão, o marcado tem `aria-pressed="true"` e a cor da marca (vitrine) |
 | `esc-portal-abas`, `esc-portal-aba` | as abas inferiores do portal |
-| `esc-resposta` | a grade dos botões Sim/Não |
+| `esc-resposta` | a grade dos botões Vai/Não vai: os dois neutros até a resposta (§5.4) |
+| `esc-pix` | o Pix copia e cola na aba Pagamentos: mono, borda tracejada, quebra em qualquer ponto e seleção do código inteiro (§5.4) |
 | `esc-amostra-cor`, `esc-moldura-celular` | só da vitrine: a amostra de token e a moldura de celular do `<iframe>` |
 
 As parciais que o plano previa para essas peças (`_StatusConexao`, `_LinhaChamada`, `_BarraAcaoInferior`, `_AbasPortal`) não foram criadas: o selo e as abas moram nos layouts, a barra é a seção `BarraAcao`, e a linha da chamada é markup com as classes acima (§14).
@@ -1308,7 +1315,7 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 | `Formatacao.Cnpj(digitos)` | 14 dígitos → "00.000.000/0000-00" |
 | `Formatacao.Cep(digitos)` | "86010000" → "86010-000" |
 | `Formatacao.Numero(int)` | separador de milhar: "1.234" |
-| `Formatacao.Moeda(decimal)` | "R$ 1.234,50" |
+| `Formatacao.Moeda(decimal)` | "R$ 1.234,50", com espaço que não quebra (U+00A0) depois do "R$": o valor não se parte no fim da linha (achado do S6) |
 | `Formatacao.Parametro(definicao, valor, seVazio)` | valor de parâmetro como o gestor lê (abaixo) |
 
 `Formatacao.Parametro` recebe o valor gravado em texto invariável e devolve:
@@ -1583,6 +1590,16 @@ O `kt-input` é um contêiner flex, e o `<input>` de dentro herda o estilo. A me
 });
 ```
 
+- [ ] **Nem essa pega o conteúdo que transborda o próprio botão ou cartão** sem passar da tela: foi o botão "Abrir a fatura: Pix, boleto ou cartão" em 320 px, com o ícone para fora da borda (S6). Cole também:
+
+```js
+[...document.querySelectorAll("body *")].filter(function (el) {
+  var cs = getComputedStyle(el);
+  return cs.display !== "inline" && !/(auto|scroll|hidden|clip)/.test(cs.overflowX)
+    && el.scrollWidth > el.clientWidth + 1 && el.children.length < 20;
+});
+```
+
 - [ ] Tabela em 320 px sem rolar dentro do cartão: `[...document.querySelectorAll(".kt-scrollable-x-auto")].map(t => t.scrollWidth - t.clientWidth)` dá só zeros (§6.17).
 - [ ] Coluna escondida no celular: o `<th>` e o `<td>` levam a mesma classe (`hidden sm:table-cell`). Confira que o número de cabeçalhos visíveis é igual ao de células visíveis da primeira linha (§6.30).
 - [ ] Cabeçalho de cartão que pode quebrar (`kt-card-header flex-wrap`) leva `py-4` (§6.30).
@@ -1641,7 +1658,7 @@ Achadas no S1:
 
 ## 14. Diferenças entre o plano e o construído
 
-Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita na fatia S0 (26/09/2026), revista na S1 e na S2 (27/09/2026) e na S4 (28/09/2026).
+Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita na fatia S0 (26/09/2026), revista na S1 e na S2 (27/09/2026) e na S4 e na S6 (28/09/2026).
 
 ### 14.1 Previsto no plano e diferente, parcial ou ainda não construído
 
@@ -1655,8 +1672,8 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita 
 | 6 | `_LayoutAutenticacao` com base no `authentication/branded`, "cor + formas em CSS" (4.3) | cartão central sobre `bg-muted/40` com o logo; sem painel de marca e sem formas | Mais simples que o previsto |
 | 7 | Header do painel com "sino" (4.3) | não construído no S2: as pendências da gestão aparecem no topo do Painel (§6.26, D55) | Adiado para o S5, com o tempo real |
 | 8 | Quadra: "a chamada funciona offline" (4.3) | fila no aparelho e service worker (§6.29, X07). A reabertura sem sinal não foi validada nesta máquina: o certificado de desenvolvimento não é confiável (P37) | Construído no S3 |
-| 9 | Portal: alvos de 48 px (4.3) | botões Sim/Não com 48 px (`esc-resposta`), abas com 64 px; **chips dos filhos com 36 px** | Chips abaixo do mínimo |
-| 10 | Portal em `Areas/Portal` (3.1, 4.3) | desde o S2, `Views/Portal` + `PortalController`, sem área; as abas levam às páginas reais (Jogos e Pagamentos "em breve") | A área não fez falta; o build continua varrendo `Areas/` |
+| 9 | Portal: alvos de 48 px (4.3) | botões Vai/Não vai, Copiar o Pix e Abrir a fatura com 48 px, abas com 64 px; **chips dos filhos com 36 px**, que desde o S6 são etiquetas, sem toque | Resolvido no S6: os chips não são alvo |
+| 10 | Portal em `Areas/Portal` (3.1, 4.3) | desde o S2, `Views/Portal` + `PortalController`, sem área; desde o S6, as quatro abas e as presenças são páginas reais | A área não fez falta; o build continua varrendo `Areas/` |
 | 11 | Componentes do DP: ficha lateral única (drawer com versão e resposta 409) (4.4) | **não adotada no S1:** a ficha é página com abas, com URL própria; a versão de linha vai num campo do formulário, e o conflito vira mensagem | Decisão D37 |
 | 12 | Menu de ações ⋮ (4.4) | não construído; a vitrine mostra só o botão com `ki-dots-vertical`. No S1, as ações ficam no cabeçalho da ficha | Planejado |
 | 13 | Modal de confirmação com motivo (4.4) | a confirmação é `window.confirm` (`data-esc-confirmar`). No S1, desligar, encerrar e cancelar são páginas próprias, com o motivo no formulário e os efeitos explicados | Planejado |
@@ -1664,7 +1681,7 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita 
 | 15 | `_CampoParametro` (4.4) | construído em `Views/Parametros/`, não em `Shared` | Pronto; o tipo `Hora` não tem editor |
 | 16 | Quadra: `_StatusConexao`, `_LinhaChamada`, `_BarraAcaoInferior` (4.4) | não são parciais: selo no `_LayoutQuadra`, classes `esc-linha-chamada*`, seção `BarraAcao` | Forma diferente, mesma função |
 | 17 | Convocação: `_CartaoJogo`, `_SelecaoConvocados`, `_PainelConfirmacoes` (4.4) | o cartão do jogo com a seleção fica na tela da semana (`Convocacao/Index`), o formulário é o `_FormularioJogo` e o painel é o parcial `_Painel`, que o tempo real busca de novo (§6.31) | Forma diferente, mesma função (S5) |
-| 18 | Portal: `_CartaoFilho`, `_CartaoConvocacao`, `_CartaoCobranca`, `_AbasPortal` (4.4) | não são parciais: abas no layout; os cartões só como markup na vitrine | Planejado (S6) |
+| 18 | Portal: `_CartaoFilho`, `_CartaoConvocacao`, `_CartaoCobranca`, `_AbasPortal` (4.4) | no S6: `_ConvocacaoPortal` (o cartão da convocação, usado nas três seções de Jogos) e `_FilhosPortal` (os filhos no topo). O cartão do filho fica no Início e o da mensalidade em Pagamentos, como markup, porque cada um só aparece numa tela; as abas continuam no layout | Forma diferente, mesma função (S6) |
 | 19 | Vitrine com "os selos de todas as máquinas" e "as 4 superfícies" (4.4) | selos de todos os enums do mapa central (S0 a S4 e EX-01, por `Enum.GetValues`); quadra, portal e autenticação em páginas próprias; o painel aparece só como miolo (`_LayoutVitrine`, sem sidebar e header, porque a vitrine não exige login); o ícone `ki-timer` não está na vitrine | Parcial, por construção |
 | 20 | Nova escolinha em etapas: dados → modalidade → 1º gestor → **revisão** (4.5) | três etapas, sem revisão | Sem a etapa de revisão |
 | 21 | Mapa de status com a coluna "secondary / mono" (4.2) | `VarianteSelo` tem `Neutro` (`kt-badge-secondary`) e **`Primario`**, que o plano não previa (usado no papel Gestor); não tem Mono | Diferença de variantes |

@@ -22,7 +22,8 @@ public sealed record ResumoRotinaCobrancas(int Criadas, int Ajustadas, int Retir
 /// <item>emitida que passou do vencimento vira vencida (se o aviso da Asaas não chegou antes);</item>
 /// <item>régua (<see cref="ReguaCobranca"/>, BL-M06-04): no máximo um degrau por cobrança, pelo motor (R3), na mesma
 /// gravação da última etapa (outbox);</item>
-/// <item>as prontas para a Asaas viram um job de emissão cada (BL-M06-02).</item>
+/// <item>as prontas para a Asaas viram um job de emissão cada (BL-M06-02);</item>
+/// <item>a em aberto sem o Pix do portal (ou com ele vencido) vira um job de busca (BL-M10-06).</item>
 /// </list>
 /// Os parâmetros são os do momento (regra de ouro 14) e tudo é idempotente: a retentativa não duplica.
 /// </summary>
@@ -49,9 +50,14 @@ public class RotinaCobrancas(
 
         var vencidas = 0;
         var avisos = 0;
+        var agora = relogio.Agora();
         foreach (var cobranca in await repositorio.EmAbertoAsync(ct))
         {
             if (cobranca.Vencer(hoje)) vencidas++;
+            // O Pix do portal que falta ou venceu é buscado de novo (BL-M10-06).
+            if (opcoes.Habilitado && contexto.EscolinhaId is { } escolinhaId && cobranca.IdAsaas is not null && !cobranca.ComSinal
+                && !cobranca.PixValidoEm(agora))
+                agendador.ObterPix(escolinhaId, cobranca.Cobranca_ID);
             if (cobranca.ComSinal || ReguaCobranca.Proxima(cobranca, p, hoje) is not { } etapa) continue;
 
             var aluno = await repositorio.NomeDoAlunoAsync(cobranca.Aluno_ID, ct);

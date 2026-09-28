@@ -1648,6 +1648,13 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Property<Guid?>("Pagador_ID")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("PixCopiaECola")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("PixExpiraEm")
+                        .HasColumnType("datetime2(3)");
+
                     b.Property<bool>("PrimeiraDaMatricula")
                         .HasColumnType("bit");
 

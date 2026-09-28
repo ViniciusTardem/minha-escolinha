@@ -7,22 +7,42 @@
     var outroPapel = Contexto.Papeis.Any(p => p != PapelAtuacao.Responsavel);
 }
 
+@* A home do portal (CA-15): os filhos numa conta só, o que espera a família (convocações e mensalidades), os avisos e,
+   em cada filho, as turmas e as presenças dos últimos 30 dias. *@
 @section Filhos {
-    @if (Model.Filhos.Count > 1)
-    {
-        <div class="esc-chips" role="list" aria-label="Filhos">
-            @foreach (var f in Model.Filhos)
-            {
-                <span class="esc-chip" role="listitem">@EmissorGatilhos.PrimeiroNome(f.Nome)@(f.Turmas.Count == 0 ? "" : $" · {f.Turmas[0]}")</span>
-            }
-        </div>
-    }
+    <partial name="_FilhosPortal" model="Model.Filhos" />
 }
 
 <div class="flex flex-col gap-1">
     <h1 class="text-lg font-semibold text-mono">Olá, @EmissorGatilhos.PrimeiroNome(Model.Nome)!</h1>
-    <p class="text-sm text-secondary-foreground">Os avisos da escolinha chegam pelo WhatsApp e ficam guardados aqui.</p>
+    <p class="text-sm text-secondary-foreground">Jogos, mensalidades, presenças e avisos num lugar só. Os avisos também chegam pelo WhatsApp.</p>
 </div>
+
+@if (Model.ConvocacoesAResponder > 0)
+{
+    <a class="kt-card hover:border-primary" href="/Portal/Jogos">
+        <span class="kt-card-content flex items-center justify-between gap-3">
+            <span class="flex items-center gap-2 text-sm font-medium text-mono">
+                <i class="ki-filled ki-cup text-primary"></i>
+                @(Model.ConvocacoesAResponder == 1 ? "1 convocação espera a sua resposta" : $"{Model.ConvocacoesAResponder} convocações esperam a sua resposta")
+            </span>
+            <i class="ki-filled ki-right text-muted-foreground"></i>
+        </span>
+    </a>
+}
+
+@if (Model.MensalidadesEmAberto > 0)
+{
+    <a class="kt-card hover:border-primary" href="/Portal/Pagamentos">
+        <span class="kt-card-content flex items-center justify-between gap-3">
+            <span class="flex items-center gap-2 text-sm font-medium text-mono">
+                <i class="ki-filled ki-dollar text-primary"></i>
+                @(Model.MensalidadesEmAberto == 1 ? "1 mensalidade em aberto" : $"{Model.MensalidadesEmAberto} mensalidades em aberto"): @Formatacao.Moeda(Model.EmAberto)
+            </span>
+            <i class="ki-filled ki-right text-muted-foreground"></i>
+        </span>
+    </a>
+}
 
 @if (Model.AvisosNaoLidos > 0)
 {
@@ -54,6 +74,7 @@
 
 @foreach (var f in Model.Filhos)
 {
+    var frequencia = Model.Frequencias.GetValueOrDefault(f.AlunoId);
     <div class="kt-card">
         <div class="kt-card-content flex flex-col gap-2">
             <div class="flex items-center justify-between gap-2">
@@ -63,16 +84,21 @@
             <span class="text-sm text-secondary-foreground flex items-center gap-1.5">
                 <i class="ki-filled ki-category"></i> @(f.Turmas.Count == 0 ? "Sem turma no momento" : string.Join(", ", f.Turmas))
             </span>
+            <span class="text-sm text-secondary-foreground flex items-center gap-1.5">
+                <i class="ki-filled ki-check-squared"></i>
+                @if (frequencia is { Marcadas: > 0 } q)
+                {
+                    <span>Últimos 30 dias: @q.Presencas presença(s), @q.Faltas falta(s)@(q.Justificadas > 0 ? $", {q.Justificadas} justificada(s)" : "")</span>
+                }
+                else
+                {
+                    <span>Nenhuma chamada nos últimos 30 dias</span>
+                }
+            </span>
+            <a class="kt-link text-sm self-start" href="/Portal/Presencas/@f.AlunoId">Ver as presenças</a>
         </div>
     </div>
 }
-
-<div class="kt-card">
-    <div class="kt-card-content flex flex-col gap-2 text-sm">
-        <span class="font-medium text-mono">Em breve por aqui</span>
-        <span class="text-secondary-foreground">Os jogos com a confirmação de presença, as mensalidades com o Pix e as presenças nos treinos.</span>
-    </div>
-</div>
 
 <div class="flex flex-col gap-2.5 pb-4">
     @if (outroPapel)

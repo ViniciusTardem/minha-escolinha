@@ -1,6 +1,6 @@
 @* Portal do responsável: celular, sem instalar nada. No topo a escolinha e os chips dos filhos (uma conta só);
    abas inferiores Início · Jogos · Pagamentos · Avisos; cartões grandes e linguagem simples. Início e Avisos desde o S2;
-   Jogos e Pagamentos chegam no S5 e no S6. docs/design/GUIA-DESIGN-SYSTEM.md §5. *@
+   Jogos, Pagamentos e as presenças desde o S6. docs/design/GUIA-DESIGN-SYSTEM.md §5. *@
 @{
     var aba = ViewData["AbaPortal"] as string ?? "inicio";
     string Atual(string chave) => aba == chave ? "page" : "false";
@@ -30,8 +30,8 @@
 
     <nav class="esc-portal-abas" aria-label="Portal">
         <a class="esc-portal-aba" href="/Portal" aria-current="@Atual("inicio")"><i class="ki-filled ki-home-2"></i>Início</a>
-        <a class="esc-portal-aba" href="/Portal/EmBreve?aba=jogos" aria-current="@Atual("jogos")"><i class="ki-filled ki-cup"></i>Jogos</a>
-        <a class="esc-portal-aba" href="/Portal/EmBreve?aba=pagamentos" aria-current="@Atual("pagamentos")"><i class="ki-filled ki-dollar"></i>Pagamentos</a>
+        <a class="esc-portal-aba" href="/Portal/Jogos" aria-current="@Atual("jogos")"><i class="ki-filled ki-cup"></i>Jogos</a>
+        <a class="esc-portal-aba" href="/Portal/Pagamentos" aria-current="@Atual("pagamentos")"><i class="ki-filled ki-dollar"></i>Pagamentos</a>
         <a class="esc-portal-aba" href="/Portal/Avisos" aria-current="@Atual("avisos")"><i class="ki-filled ki-notification-status"></i>Avisos</a>
     </nav>
 

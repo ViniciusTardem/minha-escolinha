@@ -12,6 +12,7 @@ using MinhaEscolinha.Application.Eventos;
 using MinhaEscolinha.Application.Financeiro;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
+using MinhaEscolinha.Application.Portal;
 using MinhaEscolinha.Application.Presencas;
 using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Infrastructure.Acesso;
@@ -28,6 +29,7 @@ using MinhaEscolinha.Infrastructure.Integracao.Stripe;
 using MinhaEscolinha.Infrastructure.Integracao.WhatsApp;
 using MinhaEscolinha.Infrastructure.Mensageria;
 using MinhaEscolinha.Infrastructure.Plataforma;
+using MinhaEscolinha.Infrastructure.Portal;
 using MinhaEscolinha.Infrastructure.Presencas;
 using MinhaEscolinha.Infrastructure.Seguranca;
 using MinhaEscolinha.Infrastructure.Tempo;
@@ -95,6 +97,7 @@ public static class DependencyInjection
 
         // S5 — eventos e convocações
         services.AddScoped<IEventosRepositorio, EventosRepositorio>();
+        services.AddScoped<IPortalRepositorio, PortalRepositorio>();
         services.AddScoped<JobsConvocacoes>();
 
         // Plataforma: pacotes de créditos vendidos pelo Stripe da LDNA

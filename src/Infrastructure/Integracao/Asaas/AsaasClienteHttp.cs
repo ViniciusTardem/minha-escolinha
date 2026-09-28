@@ -74,6 +74,16 @@ public sealed class AsaasClienteHttp(HttpClient http, ILogger<AsaasClienteHttp> 
         return resposta is null ? null : EventoAsaas.LerPagamento(resposta.RootElement);
     }
 
+    public async Task<PixAsaas?> ObterPixAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default)
+    {
+        using var resposta = await EnviarAsync(conta, HttpMethod.Get, $"payments/{Uri.EscapeDataString(id)}/pixQrCode", null, ct, aceitar404: true);
+        if (resposta is null || Texto(resposta.RootElement, "payload") is not { Length: > 0 } copiaECola) return null;
+        // A validade vem no horário de Brasília, como as demais datas da Asaas.
+        DateTime? expiraEm = DateTime.TryParseExact(Texto(resposta.RootElement, "expirationDate"), "yyyy-MM-dd HH:mm:ss",
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out var data) ? data : null;
+        return new PixAsaas(copiaECola, expiraEm);
+    }
+
     public async Task ExcluirCobrancaAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default)
     {
         using var _ = await EnviarAsync(conta, HttpMethod.Delete, $"payments/{Uri.EscapeDataString(id)}", null, ct, aceitar404: true);

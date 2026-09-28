@@ -54,6 +54,7 @@ public class EmissaoCobrancas(
     IGatewayAsaas gateway,
     ConciliacaoCobrancas conciliacao,
     IParametros parametros,
+    IAgendadorFinanceiro agendador,
     OpcoesAsaas opcoes,
     IAmbienteExecucao ambiente,
     IRelogioBrasil relogio,
@@ -94,6 +95,8 @@ public class EmissaoCobrancas(
             cobranca.RegistrarEmissao(pagamento.Id, pagamento.UrlFatura, conta.Identificador, relogio.Agora());
             if (existente is not null && (existente.Recebida || existente.Excluida)) await conciliacao.AplicarAsync(cobranca, existente, null, ct);
             await repositorio.SalvarAsync(ct);
+            // O Pix do portal num job à parte: a falha dele não refaz a emissão.
+            if (cobranca.EmAberto) agendador.ObterPix(conta.EscolinhaId, cobranca.Cobranca_ID);
             logger.LogInformation("Cobrança {Cobranca} emitida na Asaas ({IdAsaas}{Reencontrada}).", cobranca.Cobranca_ID, pagamento.Id,
                 existente is null ? string.Empty : ", reencontrada pela referência");
             return $"Emitida na Asaas ({pagamento.Id}).";
@@ -137,6 +140,50 @@ public class EmissaoCobrancas(
         var turma = (await repositorio.TurmasAsync(ct)).FirstOrDefault(t => t.Id == cobranca.Turma_ID)?.Nome;
         var texto = $"Mensalidade {Cobranca.RotuloCompetencia(cobranca.Competencia)} · {aluno}" + (turma is null ? string.Empty : $" · {turma}");
         return TextoHelper.Truncar(texto, 450) ?? texto;
+    }
+}
+
+/// <summary>
+/// O Pix copia e cola da mensalidade em aberto (BL-M10-06): buscado na Asaas por um job, depois da emissão e na rotina
+/// diária (quando falta ou venceu), e guardado com a validade, para o portal mostrar sem chamar a Asaas no request (regra
+/// de ouro 2). Sem Pix, o portal oferece a fatura, que também tem o Pix.
+/// </summary>
+public class PixCobrancas(
+    IFinanceiroRepositorio repositorio,
+    ServicoAcessoAsaas contas,
+    IGatewayAsaas gateway,
+    OpcoesAsaas opcoes,
+    IRelogioBrasil relogio,
+    ILogger<PixCobrancas> logger)
+{
+    /// <returns>O que aconteceu (vai para o log do job).</returns>
+    /// <exception cref="FalhaIntegracaoException">Retentável: o job tenta de novo.</exception>
+    public async Task<string> AtualizarAsync(Guid cobrancaId, CancellationToken ct = default)
+    {
+        if (await repositorio.ObterAsync(cobrancaId, ct) is not { IdAsaas: { } idAsaas } cobranca || !cobranca.EmAberto || cobranca.ComSinal)
+            return "Nada a buscar: a mensalidade não está em aberto na Asaas.";
+        if (cobranca.PixValidoEm(relogio.Agora())) return "O Pix já está guardado.";
+        if (!opcoes.Habilitado) return "A integração com a Asaas está desligada nesta instalação.";
+        if (await contas.AcessoAsync(ct) is not { } conta || cobranca.ContaAsaas != conta.Identificador)
+            return "A mensalidade é de outra conta Asaas: sem Pix pelo portal.";
+
+        try
+        {
+            if (await gateway.ObterPixAsync(conta, idAsaas, ct) is not { } pix) return "A Asaas não tem Pix para esta cobrança.";
+            if (!cobranca.RegistrarPix(pix.CopiaECola, pix.ExpiraEm))
+            {
+                logger.LogWarning("Pix da cobrança {Cobranca} não guardado: {Tamanho} caracteres (o máximo é {Maximo}).", cobrancaId,
+                    pix.CopiaECola.Length, Cobranca.TamanhoPix);
+                return "Pix grande demais: não guardado (a fatura continua com o Pix).";
+            }
+            await repositorio.SalvarAsync(ct);
+            return "Pix guardado.";
+        }
+        catch (FalhaIntegracaoException ex) when (!ex.Retentavel)
+        {
+            logger.LogWarning("A Asaas recusou o Pix da cobrança {Cobranca}: {Erro}", cobrancaId, ex.Message);
+            return $"Sem Pix: {ex.Message}";
+        }
     }
 }
 

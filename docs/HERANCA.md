@@ -105,6 +105,16 @@ O S5 não trouxe dependência nova. O SignalR faz parte do ASP.NET Core, e o cli
 | Alertas de agenda do jogo | `DetectorConflitos.ParaCompromisso` e `LocalOcupado` (datado) | O detector do S1 (EX-02), reaproveitado com datas (D83). |
 | Avisos do EF como erro nos testes | `BancoDeTestes` (`ConfigureWarnings`) | Novo (D86). O DP deixa os avisos no log. |
 
+### 2.6 O que o S6 acrescentou (28/09/2026)
+
+O S6 não trouxe dependência nova. O portal usa o layout `_LayoutPortal` do F0 e o botão de copiar do `app.js` (`data-esc-copiar`).
+
+| Peça | Onde | Relação com o DP |
+|---|---|---|
+| Portal do responsável | `Application/Portal` (`ServicoPortal`, contratos); `Infrastructure/Portal/PortalRepositorio`; `Web/Controllers/PortalController` e `Views/Portal` | Novo: o DP não tem área da família. A leitura segue o padrão dos repositórios do DP (projeção sem rastreio, escopo na consulta), e a única gravação é a resposta, pelo repositório dos eventos (D87). |
+| Pix copia e cola | `PixCobrancas` (job `ObterPix`, fila de integrações), `IGatewayAsaas.ObterPixAsync` (`GET /payments/{id}/pixQrCode`) | O padrão de integração do DP: a chamada externa só em job, com retentativa e a separação entre falha retentável e definitiva (regras de ouro 2 e 8). O dado de terceiro é guardado com a validade e buscado de novo quando vence (regra de ouro 3, D90). |
+| Resposta pelo portal | `Convocacao.Responder` com a origem "portal" | A regra do S5 (D78), com a mudança da própria resposta (D88). O aviso ao painel sai pelo interceptor do tempo real do S5. |
+
 ## 3. Integrações existentes nos projetos locais
 
 Varredura por **conteúdo** em todo `C:\Users\vinic\Documents\Projetos`, em 26/09/2026:

@@ -1,0 +1,88 @@
+@model ConvocacaoNoPortal
+@{
+    var encerrado = Model.SituacaoEvento is SituacaoEvento.Cancelado or SituacaoEvento.Adiado;
+    var vai = Model.Situacao == SituacaoConvocacao.Confirmada;
+    var naoVai = Model.Situacao == SituacaoConvocacao.Recusada;
+    var pelaEscolinha = Model.Origem == OrigemResposta.RegistroManual;
+}
+@* A convocação de um filho (BL-M10-07): de qual filho se trata, o jogo, quando, onde e a resposta. "Vai" e "Não vai" com
+   48 px, os dois neutros até a resposta; preenchido é só o que vale. Quem respondeu muda a própria resposta; a de outro
+   responsável ou a registrada pela escolinha continua valendo, e a outra fica para a escolinha conferir (D88). *@
+<article class="kt-card scroll-mt-28" id="convocacao-@Model.ConvocacaoId.ToString("N")">
+    <div class="kt-card-content flex flex-col gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="flex items-center gap-1.5 text-sm font-semibold text-mono"><i class="ki-filled ki-people text-primary"></i> @Model.Aluno</span>
+            @if (encerrado)
+            {
+                <selo-status valor="Model.SituacaoEvento"></selo-status>
+            }
+            else
+            {
+                <selo-status valor="Model.Situacao"></selo-status>
+            }
+        </div>
+        <div class="flex flex-col gap-1">
+            <span class="text-lg font-semibold text-mono wrap-anywhere">@Model.Jogo</span>
+            <span class="text-sm text-secondary-foreground flex items-center gap-1.5">
+                <i class="ki-filled ki-calendar"></i> @Formatacao.DiaPorExtenso(DateOnly.FromDateTime(Model.Inicio)) · @Formatacao.Horario(Model.Inicio, Model.Fim)
+            </span>
+            <span class="text-sm text-secondary-foreground flex items-start gap-1.5">
+                <i class="ki-filled ki-geolocation mt-0.5"></i>
+                <span class="min-w-0 wrap-anywhere">
+                    @Model.Local@if (Model.LinkMapa is not null)
+                    {
+                        <text> · </text><a class="kt-link" href="@Model.LinkMapa" target="_blank" rel="noopener noreferrer">ver no mapa</a>
+                    }
+                </span>
+            </span>
+            @if (Model.Logistica is not null)
+            {
+                <p class="text-sm wrap-anywhere">@Model.Logistica</p>
+            }
+            @if (encerrado && Model.MotivoEvento is not null)
+            {
+                <p class="text-sm text-secondary-foreground">Motivo: @Model.MotivoEvento</p>
+            }
+        </div>
+
+        @if (Model.Origem is { } origem && !encerrado)
+        {
+            <span class="text-xs text-secondary-foreground">
+                @if (pelaEscolinha)
+                {
+                    <text>Registrada pela escolinha em @Formatacao.DataHora(Model.RespondidaEm).</text>
+                }
+                else
+                {
+                    <text>Resposta de @Model.RespondidoPor, @Formatacao.DataHora(Model.RespondidaEm), pelo @Convocacao.Rotulo(origem).</text>
+                }
+            </span>
+        }
+        @if (Model.OutraResposta is not null && !encerrado)
+        {
+            <span class="text-xs text-secondary-foreground">Outra resposta da família: @Model.OutraResposta. A escolinha confere.</span>
+        }
+
+        @if (Model.PodeResponder)
+        {
+            <form method="post" asp-controller="Portal" asp-action="Responder" asp-route-id="@Model.ConvocacaoId" class="esc-resposta">
+                <button class="kt-btn @(vai ? "kt-btn-primary" : "kt-btn-outline")" type="submit" name="vai" value="true"
+                        aria-pressed="@(vai ? "true" : "false")" aria-label="@($"{Model.Aluno} vai")">
+                    <i class="ki-filled ki-check"></i> Vai
+                </button>
+                <button class="kt-btn @(naoVai ? "kt-btn-primary" : "kt-btn-outline")" type="submit" name="vai" value="false"
+                        aria-pressed="@(naoVai ? "true" : "false")" aria-label="@($"{Model.Aluno} não vai")">
+                    <i class="ki-filled ki-cross"></i> Não vai
+                </button>
+            </form>
+            @if ((vai || naoVai) && Model.PropriaResposta)
+            {
+                <span class="text-xs text-secondary-foreground">Mudou de ideia? Toque na outra opção.</span>
+            }
+            else if (vai || naoVai)
+            {
+                <span class="text-xs text-secondary-foreground">Se a resposta mudou, toque na outra opção: a escolinha confere.</span>
+            }
+        }
+    </div>
+</article>

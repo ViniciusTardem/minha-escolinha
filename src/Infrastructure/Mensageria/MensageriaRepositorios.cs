@@ -321,31 +321,6 @@ public class ConvitesRepositorio(EscolinhaDbContext contexto) : IConvitesReposit
             ? contexto.Responsaveis.AnyAsync(r => r.Cpf == cpf && r.Responsavel_ID != fichaId, ct)
             : contexto.Professores.AnyAsync(p => p.Cpf == cpf && p.Professor_ID != fichaId, ct);
 
-    public async Task<IReadOnlyList<FilhoDaPessoa>> FilhosDaPessoaAsync(Guid pessoaId, CancellationToken ct = default)
-    {
-        var vinculos = await contexto.VinculosResponsavel.AsNoTracking()
-            .Where(v => v.Responsavel!.Pessoa_ID == pessoaId)
-            .Select(v => new { v.Aluno_ID, v.Aluno!.Nome, v.Aluno.Situacao, v.Verificacao })
-            .ToListAsync(ct);
-        var alunos = vinculos.Select(v => v.Aluno_ID).Distinct().ToList();
-        var turmas = (await contexto.Matriculas.AsNoTracking()
-                .Where(m => alunos.Contains(m.Aluno_ID) && m.Situacao == SituacaoMatricula.Ativa)
-                .Select(m => new { m.Aluno_ID, m.Turma!.Nome }).ToListAsync(ct))
-            .ToLookup(m => m.Aluno_ID, m => m.Nome);
-
-        return vinculos
-            .GroupBy(v => v.Aluno_ID)
-            .Select(g =>
-            {
-                var v = g.First();
-                // Mais de uma ficha da mesma pessoa (raro): vale o vínculo mais adiantado.
-                var verificacao = g.Max(x => x.Verificacao);
-                return new FilhoDaPessoa(v.Aluno_ID, v.Nome, v.Situacao, turmas[v.Aluno_ID].Order().ToList(), verificacao);
-            })
-            .OrderBy(f => f.Nome)
-            .ToList();
-    }
-
     public Task<bool> AcessoAtivoAsync(Guid pessoaId, PapelAtuacao papel, CancellationToken ct = default) =>
         contexto.VinculosAtuacao.AnyAsync(v => v.Pessoa_ID == pessoaId && v.Papel == papel && v.Situacao == SituacaoVinculo.Ativo, ct);
 

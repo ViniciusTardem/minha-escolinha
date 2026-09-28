@@ -1,0 +1,12 @@
+@model IReadOnlyList<FilhoNoPortal>
+@* Os filhos numa conta só (CA-15), no topo das abas: só os de vínculo confirmado (BL-M10-11). Etiquetas, não filtros:
+   cada cartão diz de qual filho se trata. *@
+@if (Model.Count > 1)
+{
+    <div class="esc-chips" role="list" aria-label="Filhos">
+        @foreach (var f in Model)
+        {
+            <span class="esc-chip" role="listitem">@EmissorGatilhos.PrimeiroNome(f.Nome)@(f.Turmas.Count == 0 ? "" : $" · {f.Turmas[0]}")</span>
+        }
+    </div>
+}

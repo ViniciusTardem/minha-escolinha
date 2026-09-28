@@ -31,6 +31,14 @@
                 </span>
             </div>
             <p class="text-sm text-foreground wrap-anywhere">@a.Conteudo</p>
+            @if (a.Gatilho is GatilhoMensagem.ConvocacaoCriada or GatilhoMensagem.ConvocacaoSemResposta or GatilhoMensagem.EventoAlterado)
+            {
+                <a class="kt-link text-sm self-start" href="/Portal/Jogos"><i class="ki-filled ki-cup"></i> Ver na aba Jogos</a>
+            }
+            else if (a.Gatilho is GatilhoMensagem.MensalidadeAVencer or GatilhoMensagem.MensalidadeVencida)
+            {
+                <a class="kt-link text-sm self-start" href="/Portal/Pagamentos"><i class="ki-filled ki-dollar"></i> Pagar na aba Pagamentos</a>
+            }
         </div>
     </div>
 }

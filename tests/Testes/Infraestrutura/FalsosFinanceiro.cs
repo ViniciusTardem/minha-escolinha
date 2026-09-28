@@ -82,6 +82,25 @@ public sealed class GatewayAsaasFalso : IGatewayAsaas
         return Task.FromResult(Cobrancas.FirstOrDefault(c => c.EscolinhaId == conta.EscolinhaId && c.Id == id)?.Pagamento());
     }
 
+    /// <summary>A conta não tem chave Pix: a Asaas não devolve o copia e cola.</summary>
+    public bool SemPix { get; set; }
+
+    /// <summary>A validade que a Asaas informa para o próximo Pix (vazio: sem validade).</summary>
+    public DateTime? ValidadeDoPix { get; set; }
+
+    public List<string> PixConsultados { get; } = [];
+
+    public static string PixDe(string id) => $"00020126580014br.gov.bcb.pix0136teste-{id}5204000053039865802BR6304ABCD";
+
+    public Task<PixAsaas?> ObterPixAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default)
+    {
+        Falhar();
+        PixConsultados.Add(id);
+        var cobranca = Cobrancas.FirstOrDefault(c => c.EscolinhaId == conta.EscolinhaId && c.Id == id);
+        var emAberto = cobranca is { Excluida: false, Status: StatusAsaas.Pendente or StatusAsaas.Vencida };
+        return Task.FromResult(SemPix || !emAberto ? null : new PixAsaas(PixDe(id), ValidadeDoPix));
+    }
+
     public Task ExcluirCobrancaAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default)
     {
         Falhar();
@@ -139,8 +158,10 @@ public sealed class AgendadorFinanceiroDeTeste : IAgendadorFinanceiro
     public List<(Guid EscolinhaId, Guid CobrancaId)> RecebimentosEmDinheiro { get; } = [];
     public List<Guid> Webhooks { get; } = [];
     public List<Guid> RegistrosDeWebhook { get; } = [];
+    public List<(Guid EscolinhaId, Guid CobrancaId)> BuscasDePix { get; } = [];
 
     public void Projetar(Guid escolinhaId) => Projecoes.Add(escolinhaId);
+    public void ObterPix(Guid escolinhaId, Guid cobrancaId) => BuscasDePix.Add((escolinhaId, cobrancaId));
     public void Emitir(Guid escolinhaId, Guid cobrancaId) => Emissoes.Add((escolinhaId, cobrancaId));
     public void Conferir(Guid escolinhaId, Guid cobrancaId) => Conferencias.Add((escolinhaId, cobrancaId));
     public void ExcluirNaAsaas(Guid escolinhaId, Guid cobrancaId) => Exclusoes.Add((escolinhaId, cobrancaId));

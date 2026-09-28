@@ -38,7 +38,9 @@ public class ChamadaController(ServicoChamada servico, IAntiforgery antiforgery)
     [Permissao(Recurso.RegistroPresenca, Operacao.Alterar)]
     public IActionResult Token()
     {
-        Response.Headers.CacheControl = "no-store";
+        // Os mesmos cabeçalhos que o antiforgery põe: com outros, ele sobrescreve e avisa no log.
+        Response.Headers.CacheControl = "no-cache, no-store";
+        Response.Headers.Pragma = "no-cache";
         return Json(new { token = antiforgery.GetAndStoreTokens(HttpContext).RequestToken });
     }
 

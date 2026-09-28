@@ -8,6 +8,7 @@ using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
+using MinhaEscolinha.Application.Portal;
 using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Domain.Alunos;

@@ -249,6 +249,9 @@ public interface IAgendadorFinanceiro
 
     void Emitir(Guid escolinhaId, Guid cobrancaId);
 
+    /// <summary>Busca na Asaas o Pix copia e cola da mensalidade em aberto, para o portal (BL-M10-06).</summary>
+    void ObterPix(Guid escolinhaId, Guid cobrancaId);
+
     /// <summary>Relê a cobrança na Asaas e concilia (o envio que viu a cobrança paga lá, o retorno do simulador).</summary>
     void Conferir(Guid escolinhaId, Guid cobrancaId);
 

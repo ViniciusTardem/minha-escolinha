@@ -39,6 +39,7 @@ public class CobrancaConfiguracao : IEntityTypeConfiguration<Cobranca>
         builder.Property(c => c.PagadorNome).HasMaxLength(Cobranca.TamanhoNome);
         builder.Property(c => c.IdAsaas).HasMaxLength(Cobranca.TamanhoIdAsaas).IsUnicode(false);
         builder.Property(c => c.UrlFatura).HasMaxLength(Cobranca.TamanhoUrl).IsUnicode(false);
+        builder.Property(c => c.PixCopiaECola).HasMaxLength(Cobranca.TamanhoPix); // o nome do recebedor pode ter acento
         builder.Property(c => c.ErroEmissao).HasMaxLength(Cobranca.TamanhoErro);
         builder.Property(c => c.Motivo).HasMaxLength(Cobranca.TamanhoMotivo);
         builder.Property(c => c.EncerradaPorNome).HasMaxLength(Cobranca.TamanhoNome);

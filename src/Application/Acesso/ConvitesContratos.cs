@@ -64,9 +64,6 @@ public interface IConvitesRepositorio
 
     Task<bool> CpfDeOutraFichaAsync(TipoConvite tipo, string cpf, Guid fichaId, CancellationToken ct = default);
 
-    /// <summary>Os alunos ligados à pessoa (pelas fichas de responsável dela nesta escolinha), com a verificação de cada vínculo.</summary>
-    Task<IReadOnlyList<FilhoDaPessoa>> FilhosDaPessoaAsync(Guid pessoaId, CancellationToken ct = default);
-
     /// <summary>A pessoa tem o papel ativo na escolinha do contexto.</summary>
     Task<bool> AcessoAtivoAsync(Guid pessoaId, PapelAtuacao papel, CancellationToken ct = default);
 

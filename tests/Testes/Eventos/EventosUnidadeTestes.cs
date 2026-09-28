@@ -85,6 +85,29 @@ public class EventosUnidadeTestes
 
     // ── Convocação (§6, P03, P19) ──
 
+    /// <summary>D87: quem respondeu muda a própria resposta, por qualquer canal; a de outra pessoa, ou depois do registro por fora, não.</summary>
+    [Fact]
+    public void Quem_respondeu_muda_a_propria_resposta_e_a_de_outra_pessoa_fica_para_quem_convocou()
+    {
+        var maria = Guid.NewGuid();
+        var c = Enviada();
+        Assert.Equal(ResultadoResposta.Aplicada, c.Responder(true, OrigemResposta.WhatsApp, "Maria", maria, Agora, Agora));
+        Assert.Equal(ResultadoResposta.Repetida, c.Responder(true, OrigemResposta.Portal, "Maria", maria, Agora.AddMinutes(1), Agora));
+        Assert.Equal(ResultadoResposta.Aplicada, c.Responder(false, OrigemResposta.Portal, "Maria", maria, Agora.AddMinutes(2), Agora));
+        Assert.Equal((SituacaoConvocacao.Recusada, OrigemResposta.Portal), (c.Situacao, c.Origem!.Value));
+        Assert.Contains(c.Historico, h => h.Detalhe?.EndsWith("mudou de \"Vai\"") == true);
+
+        Assert.Equal(ResultadoResposta.Posterior, c.Responder(true, OrigemResposta.WhatsApp, "João", Guid.NewGuid(), Agora.AddMinutes(3), Agora));
+        Assert.Equal(SituacaoConvocacao.Recusada, c.Situacao);
+        Assert.StartsWith("Vai · João", c.OutraResposta);
+
+        // Depois do registro por fora, a decisão é de quem convocou: a família muda só a "outra resposta".
+        c.RegistrarPorFora(true, "Carlos Treinador", null, Agora.AddMinutes(4));
+        Assert.Equal(ResultadoResposta.Posterior, c.Responder(false, OrigemResposta.Portal, "Maria", maria, Agora.AddMinutes(5), Agora));
+        Assert.Equal(SituacaoConvocacao.Confirmada, c.Situacao);
+        Assert.StartsWith("Não vai · Maria", c.OutraResposta);
+    }
+
     [Fact]
     public void Vale_a_primeira_resposta_a_diferente_fica_visivel_e_o_professor_sobrescreve()
     {

@@ -12,7 +12,7 @@ Registro de progresso exigido pela seção 12.4 da spec. Os 81 entregáveis e os
 
 Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-ABERTO.md).
 
-## Resumo (28/09/2026, fim do S5)
+## Resumo (28/09/2026, fim do S6)
 
 | Fatia | Itens | Concluídos | Parciais | Situação |
 |---|---:|---:|---:|---|
@@ -22,10 +22,10 @@ Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-
 | S2 — Mensageria e acesso | 14 | 14 | 0 | **Pronto no simulador** e commitado (c642f2f). A prova com um número real espera a conta na Meta (P34). |
 | S3 — Presença e evasão | 6 | 6 | 0 | **Pronto** e commitado (c6bdbc4). A reabertura da chamada sem sinal, pelo service worker, espera um navegador que confie no certificado (P37). |
 | S4 — Financeiro | 8 | 8 | 0 | **Pronto no simulador** e commitado (44df87a). A prova com a sandbox da Asaas espera a conta da escolinha piloto (P41). |
-| S5 — Eventos e convocações | 10 | 10 | 0 | **Pronto no simulador** (28/09/2026). A resposta de uma família real pelo WhatsApp espera a conta na Meta (P34). |
-| S6 — Portal do responsável | 6 | 0 | 0 | — |
+| S5 — Eventos e convocações | 10 | 10 | 0 | **Pronto no simulador** e commitado (ec42cc3). A resposta de uma família real pelo WhatsApp espera a conta na Meta (P34). |
+| S6 — Portal do responsável | 6 | 6 | 0 | **Pronto no simulador** (28/09/2026). A prova com a sandbox da Asaas espera a conta (P41). |
 | S7 — Carga inicial | 5 | 0 | 0 | — |
-| **Total** | **81** | **70** | **0** | |
+| **Total** | **81** | **76** | **0** | |
 
 ---
 
@@ -290,16 +290,61 @@ Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-
 - **R8:** o evento é genérico (tipo e recursos pelo perfil da modalidade). O adversário só existe quando o perfil permite.
 - **R9:** os alertas de agenda, os sinais da montagem e o aluno em dois jogos sinalizam; o bloqueio de inadimplente só com o parâmetro ligado.
 
-## S6 — Portal do responsável · 6 itens · A fazer
+## S6 — Portal do responsável · 6 itens · **Pronto no simulador em 28/09/2026**
 
-| ID | Entregável | Status |
-|---|---|---|
-| `BL-M10-01` | Operação por WhatsApp e acesso web sem instalação | A fazer |
-| `BL-M10-05` | Pagamentos, pendências e total do mês | A fazer |
-| `BL-M10-06` | Pagamento no app via Asaas | A fazer |
-| `BL-M10-07` | Receber e responder convocação | A fazer |
-| `BL-M10-11` | Verificação de vínculo antes da exibição de dados | A fazer |
-| `BL-M10-12` | Mediação obrigatória do responsável | A fazer (I08) |
+**Critério de pronto da spec:** um responsável com dois filhos vê os dois numa conta só, paga a mensalidade e responde a convocação identificando de qual filho se trata.
+
+**Situação:** o critério é coberto por teste no banco (`PortalBancoTestes`, com a Asaas falsa e o webhook de verdade) e foi demonstrado no navegador com os simuladores da Asaas e do WhatsApp. A prova com a sandbox da Asaas espera a conta (P41), como no S4.
+
+**Demonstrado no navegador em 28/09/2026, na escolinha A** (celular emulado em 375 px):
+- **Acesso:**
+  - a gestão convidou a Sabrina Pacheco, que é a pagadora dos três filhos: Anthony (Sub-11), Benjamin (Sub-13) e Raul (Sub-9);
+  - o link chegou ao simulador do WhatsApp, e a ativação pelo CPF levou direto ao portal.
+- **Antes da confirmação (BL-M10-11):**
+  - o Início disse que a escolinha estava confirmando os vínculos com 3 alunos, sem nenhum nome;
+  - Jogos e Pagamentos ficaram vazios;
+  - as presenças do Benjamin, pelo endereço direto, deram **404**.
+- **Uma conta, três filhos (CA-15):** depois da confirmação em `/Vinculos`, o Início mostrou os três, com as turmas, "2 convocações esperam a sua resposta" e "2 mensalidades em aberto: R$ 280,00".
+- **Jogos (BL-M10-07):**
+  - cada convocação mostrou o nome do filho, o jogo, o dia, o local e o mapa;
+  - a Sabrina tocou em "Vai" para o Benjamin. Com o painel do jogo aberto pela gestão, os contadores mudaram sozinhos ("Vão 1", com "Sabrina Pacheco · portal"), e uma marca na janela provou que a página não recarregou;
+  - no jogo do Anthony, com a resposta registrada pela escolinha, o "Vai" da Sabrina ficou como outra resposta, e a tela disse isso.
+- **Pagamentos (CA-16, BL-M10-06):**
+  - as mensalidades de outubro do Benjamin e do Raul foram confirmadas pela gestão e emitidas, com a emissão ajustada para 15 dias antes só para a validação. O job guardou o Pix das duas;
+  - o total do mês mostrou R$ 280,00, com o Anthony "sem mensalidade no mês" (a dele foi cancelada no S4), e o botão copiou o código Pix inteiro;
+  - a Sabrina abriu a fatura do Raul no simulador e pagou com Pix. A mensalidade passou a paga sozinha, o total mostrou R$ 120,00 pagos e R$ 160,00 a pagar, e o "Pagamento confirmado" chegou também aos Avisos do portal.
+- **Presenças:** a página de cada filho, vazia e com a explicação. A presença marcada hoje para o treino das 19:00 aparece depois do início do treino.
+- **Telas:** Início, Jogos, Pagamentos, Avisos e Presenças conferidos em 320, 375 e 1280 px, no claro e no escuro, sem rolagem horizontal, sem botão transbordando e sem erro no console. Achados, todos corrigidos:
+  - a aba Jogos, sem filho confirmado, dizia "Nenhuma convocação", e não que os filhos aparecem depois da confirmação;
+  - no jogo ainda sem resposta, o "Vai" vinha preenchido, como se já tivesse sido escolhido. Agora os dois ficam neutros até a resposta;
+  - na resposta registrada pela escolinha, a tela dizia "Mudou de ideia? Toque na outra opção" e "(registrado por fora)". Agora diz "Registrada pela escolinha", e a mensagem depois do toque explica que a escolinha confere (D88);
+  - o valor em reais quebrava entre "R$" e o número, em qualquer tela. Agora o espaço não quebra;
+  - em 320 px, o botão "Abrir a fatura: Pix, boleto ou cartão" transbordava, a linha de cada filho quebrava e o rótulo "Justificadas" passava do cartão;
+  - o painel do jogo dizia que atualiza "quando a família responde pelo WhatsApp"; agora diz "pelo WhatsApp ou pelo portal";
+  - o token da chamada (S3) gerava um aviso do antiforgery no log a cada pedido.
+- **Dados de validação:** a janela de silêncio (mudada para 22:00 às 23:00) e a emissão (15 dias antes) voltaram pela tela, com histórico. Ficam no banco de desenvolvimento:
+  - o acesso da Sabrina Pacheco, com os três vínculos confirmados;
+  - as mensalidades de outubro do Benjamin (em aberto, com o Pix) e do Raul (paga);
+  - a resposta "Vai" do Benjamin pelo portal e a outra resposta no jogo do Anthony;
+  - a presença do Benjamin no treino de 28/09, às 19:00.
+
+| ID | Entregável | Status | Onde está | Testes |
+|---|---|---|---|---|
+| `BL-M10-01` | Operação por WhatsApp e acesso web sem instalação | Concluído | <ul><li>Portal `/Portal` no celular e no computador, sem instalar nada (R2): Início, Jogos, Pagamentos, Avisos e as presenças de cada filho (D87).</li><li>Convocação, cobrança e aviso continuam saindo pelo WhatsApp para todos (S2, S4, S5). O portal mostra as mesmas coisas e aceita a resposta e o pagamento.</li><li>As "três superfícies" do item são, no piloto, o WhatsApp e o portal (I15).</li></ul> | `PortalBancoTestes` (a convocação e a cobrança saem pelo WhatsApp e aparecem no portal, CA-17) |
+| `BL-M10-05` | Pagamentos, pendências e total do mês | Concluído | Aba Pagamentos (`ServicoPortal.PagamentosAsync`): o total do mês com o total, o pago e o que falta de cada filho (CA-16), as mensalidades para pagar, as próximas e as pagas dos últimos 3 meses. Só os filhos de quem a pessoa cuida das mensalidades (pagadora ou "recebe cobrança"); o outro responsável vê o aviso, sem valores (D89, P50). | `PortalBancoTestes` (o total do mês e o detalhamento por filho, antes e depois do pagamento; quem não cuida das mensalidades não vê valores) |
+| `BL-M10-06` | Pagamento no app via Asaas | Concluído (a prova na sandbox espera a P41) | <ul><li>Pix copia e cola com o botão de copiar, e a fatura da Asaas para Pix, boleto ou cartão. O dinheiro cai na conta da escolinha (R1), e nenhum dado de cartão passa pelo sistema.</li><li>O Pix é buscado por job depois da emissão (`PixCobrancas`, `GET /payments/{id}/pixQrCode`) e de novo pela rotina das 06:30 quando falta ou vence; ele só aparece na mensalidade em aberto, sem sinal e dentro da validade (D90).</li><li>O pagamento é conciliado pelo webhook, como no S4, e a mensalidade passa para as pagas.</li></ul> | `AsaasClienteHttpTestes` (contrato do QR code); `FinanceiroUnidadeTestes` (quando o Pix vale); `PortalBancoTestes` (o job depois da emissão, a conta sem Pix, a rotina que busca de novo, a paga que não busca; o pagamento conciliado some do "para pagar") |
+| `BL-M10-07` | Receber e responder convocação | Concluído | Aba Jogos: cada convocação com o nome do filho, o jogo, o dia e a hora, o local com o link de mapa e as informações; "Vai" e "Não vai" até o início do jogo. A mesma regra do WhatsApp: vale a primeira da família (P03), quem respondeu muda a própria resposta, a registrada por fora não muda pela família, e a fila da família é recolhida. O painel do jogo aberto é avisado (D88). | `PortalBancoTestes` (a resposta pelo portal com a origem, o nome e o tempo real; a primeira resposta pelo WhatsApp vale e a do portal fica visível; quem respondeu muda; depois do início não muda); `EventosUnidadeTestes` (a própria resposta muda, a de outra pessoa e a registrada por fora não) |
+| `BL-M10-11` | Verificação de vínculo antes da exibição de dados | Concluído | Tudo do portal passa pelos filhos com vínculo confirmado (D87, D53): antes da confirmação, nenhum nome, jogo, mensalidade nem presença; o endereço direto de outro aluno dá "não encontrada" ou 404. | `PortalBancoTestes` (nada antes da confirmação; com um vínculo confirmado, só aquele filho, até pelo endereço direto); `MensageriaBancoTestes` (S2) |
+| `BL-M10-12` | Mediação obrigatória do responsável | Concluído (I08) | A mesma garantia do `BL-M09-13`: o portal é do responsável, o aluno não tem acesso, e toda mensagem vai aos responsáveis. | `PortalBancoTestes` (as mensagens do fluxo vão aos responsáveis, CA-19); `CatalogoGatilhosTestes` |
+
+**Critérios de aceite tocados no S6:**
+- **CA-15:** coberto. A Maria vê o Pedro (Sub-11) e a Ana (Sub-13) numa conta só, com as convocações e as mensalidades de cada um.
+- **CA-16:** coberto. O total do mês e o detalhamento por filho, com o pago e o que falta, antes e depois do pagamento.
+- **CA-17:** repetido no S6. A convocação e a cobrança que aparecem no portal também saíram pelo WhatsApp.
+- **CA-19:** repetido no S6. As mensagens do fluxo vão aos responsáveis, e o portal é só do responsável.
+- **CA-20:** repetido no S6. O portal não cria mensagem: a resposta só recolhe a fila, pelo emissor.
+- **R1:** o Pix e a fatura são da conta Asaas da escolinha.
+- **R4:** nada do portal é dirigido ao aluno.
 
 ## S7 — Carga inicial da escolinha piloto · 5 itens · A fazer
 
@@ -342,10 +387,10 @@ Pendências do EX-01: P25 (plano recorrente), P26 (pacotes e preços comerciais)
 | CA-12 | Resposta no WhatsApp aparece no painel sem atualizar | S5 | **Coberto no S5** (webhook assinado no teste; no navegador, o painel mudou sem recarregar). Com um número real, espera a P34. |
 | CA-13 | Dois filhos convocados: mensagens distinguíveis | S5 | **Coberto no S5** (uma mensagem por filho, com o nome e o jogo dele) |
 | CA-14 | Evento cancelado avisa todos e cancela as convocações | S5 | **Coberto no S5** (um aviso por família, com os filhos dela; convocações canceladas; a fila recolhida) |
-| CA-15 | Uma conta mostra os dois filhos | S6 | A fazer (P10) |
-| CA-16 | Total do mês e detalhamento por filho | S6 | A fazer |
-| CA-17 | Nada essencial só no app | S2 (e S5, S6) | **Coberto no S2** (toda mensagem vai pelo WhatsApp; o portal é cópia). **Repetido no S5** (a convocação e a resposta pelo WhatsApp). O S6 repete. |
+| CA-15 | Uma conta mostra os dois filhos | S6 | **Coberto no S6** (`PortalBancoTestes` e navegador: os dois filhos confirmados no Início, com as convocações e as mensalidades de cada um; P10) |
+| CA-16 | Total do mês e detalhamento por filho | S6 | **Coberto no S6** (o total do mês com o total, o pago e o que falta de cada filho, antes e depois do pagamento) |
+| CA-17 | Nada essencial só no app | S2 (e S5, S6) | **Coberto no S2** (toda mensagem vai pelo WhatsApp; o portal é cópia). **Repetido no S5** (a convocação e a resposta pelo WhatsApp) e **no S6** (a convocação e a cobrança do portal também saíram pelo WhatsApp). |
 | CA-18 | Nenhum parâmetro exige nova entrega | S0 (+ um teste por consumidor em cada fatia) | **Parcial**: catálogo e "vale sem reiniciar" testados; no S1, o consumidor `turma.*` (a turma nova usa o valor alterado); no S2, o `mensagem.*` (janela de silêncio lida na hora do envio); no S3, o `presenca.*` (o limite alterado vale na falta seguinte); no S4, o `financeiro.*` (o dia de vencimento alterado vale na projeção seguinte, e a multa emitida fica a da emissão); no S5, o `convocacao.*` (a janela de disparo e o bloqueio de inadimplente valem no disparo e na escolha seguintes) |
-| CA-19 | Nenhuma comunicação dirigida ao menor | S2 (e S5, S6) | **Coberto no S2** (destinatário nunca é o aluno: enum e restrição no banco). **Repetido no S5** (as 50 convocações do CA-10 vão aos responsáveis). O S6 repete. |
-| CA-20 | Nenhum envio fora do catálogo de gatilhos | S2 (e S5, S6) | **Coberto no S2** (regra 1:1 por gatilho e teste de arquitetura: só o emissor cria mensagem, só o motor envia). **Repetido no S5** (convocação, lembrete, jogo alterado e jogo cancelado pelo emissor; o teste de arquitetura continua valendo) |
+| CA-19 | Nenhuma comunicação dirigida ao menor | S2 (e S5, S6) | **Coberto no S2** (destinatário nunca é o aluno: enum e restrição no banco). **Repetido no S5** (as 50 convocações do CA-10 vão aos responsáveis) e **no S6** (as mensagens do fluxo do portal vão aos responsáveis, e o portal é só do responsável). |
+| CA-20 | Nenhum envio fora do catálogo de gatilhos | S2 (e S5, S6) | **Coberto no S2** (regra 1:1 por gatilho e teste de arquitetura: só o emissor cria mensagem, só o motor envia). **Repetido no S5** (convocação, lembrete, jogo alterado e jogo cancelado pelo emissor; o teste de arquitetura continua valendo) e **no S6** (o portal não cria mensagem: a resposta só recolhe a fila, pelo emissor) |
 | CA-21 | Chamada sem sinal, registro da quadra prevalece | S3 | **Coberto no S3** no servidor (teste) e na fila do aparelho (navegador). A reabertura da página sem sinal, pelo service worker, espera a validação (P37). |

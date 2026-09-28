@@ -178,6 +178,21 @@ public sealed class SimuladorAsaas(ArmazemSimuladorAsaas armazem, OpcoesAsaas op
     public Task<PagamentoAsaas?> ObterCobrancaAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default) =>
         armazem.AlterarAsync(d => d.Cobrancas.FirstOrDefault(c => c.EscolinhaId == conta.EscolinhaId && c.Id == id)?.ParaPagamento());
 
+    /// <summary>Um copia e cola com a forma do Pix (não paga nada): para pagar no simulador, use a fatura.</summary>
+    public Task<PixAsaas?> ObterPixAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default) =>
+        armazem.AlterarAsync(d => d.Cobrancas.FirstOrDefault(c => c.EscolinhaId == conta.EscolinhaId && c.Id == id) is { Excluida: false } c
+                                  && !StatusPago(c.Status)
+            ? new PixAsaas(PixSimulado(c), null)
+            : null);
+
+    public static string PixSimulado(ArmazemSimuladorAsaas.CobrancaSimulada c)
+    {
+        var valor = c.Valor.ToString("0.00", CultureInfo.InvariantCulture);
+        var chave = $"simulador.minhaescolinha/{c.Id}";
+        return $"00020126{26 + chave.Length:D2}0014br.gov.bcb.pix25{chave.Length:D2}{chave}52040000530398654{valor.Length:D2}{valor}" +
+               "5802BR5909SIMULADOR6008LONDRINA62070503***6304SIMU";
+    }
+
     public Task ExcluirCobrancaAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default) =>
         armazem.AlterarAsync(d =>
         {

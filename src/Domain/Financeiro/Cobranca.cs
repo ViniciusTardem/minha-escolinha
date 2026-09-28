@@ -92,6 +92,9 @@ public class Cobranca : IEntidadeAuditavel, IEntidadeDaEscolinha
     public const int TamanhoErro = 500;
     public const int TamanhoEtapa = 20;
 
+    /// <summary>O copia e cola do Pix nunca é cortado (cortado, não paga): maior que isto, não é guardado.</summary>
+    public const int TamanhoPix = 1000;
+
     private static readonly CultureInfo PtBr = new("pt-BR");
 
     public Guid Cobranca_ID { get; set; }
@@ -141,6 +144,15 @@ public class Cobranca : IEntidadeAuditavel, IEntidadeDaEscolinha
 
     public DateTime? ConferidaEm { get; private set; }
 
+    // ── Pix no portal (BL-M10-06) ──
+    /// <summary>
+    /// O Pix copia e cola da cobrança, buscado na Asaas por um job depois da emissão, para o portal mostrar sem chamar a
+    /// Asaas no request (regra de ouro 2). Não é link: é o conteúdo do QR code, com a validade que a Asaas informar.
+    /// </summary>
+    public string? PixCopiaECola { get; private set; }
+
+    public DateTime? PixExpiraEm { get; private set; }
+
     // ── Pagamento ──
     public MeioPagamento? Meio { get; private set; }
     public decimal? ValorPago { get; private set; }
@@ -175,6 +187,18 @@ public class Cobranca : IEntidadeAuditavel, IEntidadeDaEscolinha
     public Guid? UsuarioAtualizacao_ID { get; set; }
 
     public bool EmAberto => Situacao is SituacaoCobranca.Emitida or SituacaoCobranca.Vencida;
+
+    /// <summary>O Pix que o portal pode mostrar agora: a cobrança em aberto, sem divergência, e o copia e cola dentro da validade.</summary>
+    public bool PixValidoEm(DateTime agora) => EmAberto && !ComSinal && PixCopiaECola is not null && (PixExpiraEm is null || PixExpiraEm > agora);
+
+    /// <returns>Se guardou (o copia e cola grande demais não é cortado nem guardado: quem chama registra no log).</returns>
+    public bool RegistrarPix(string copiaECola, DateTime? expiraEm)
+    {
+        if (string.IsNullOrWhiteSpace(copiaECola) || copiaECola.Length > TamanhoPix) return false;
+        PixCopiaECola = copiaECola;
+        PixExpiraEm = expiraEm;
+        return true;
+    }
     public bool Quitada => Situacao is SituacaoCobranca.Paga or SituacaoCobranca.PagaEmAtraso;
     public bool Encerrada => Situacao is SituacaoCobranca.Cancelada or SituacaoCobranca.Isenta;
     public bool AguardandoConfirmacao => Situacao == SituacaoCobranca.Prevista && PrimeiraDaMatricula && ConfirmadaEm is null;

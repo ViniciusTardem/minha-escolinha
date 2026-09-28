@@ -288,4 +288,26 @@ public class FinanceiroUnidadeTestes
         Assert.Equal("43988887777", AsaasClienteHttp.CelularNacional("+5543988887777"));
         Assert.Null(AsaasClienteHttp.CelularNacional("123"));
     }
+
+    /// <summary>BL-M10-06: o Pix do portal vale só na mensalidade em aberto, sem divergência e dentro da validade; nunca é cortado.</summary>
+    [Fact]
+    public void O_pix_do_portal_vale_so_na_mensalidade_em_aberto_sem_divergencia_e_dentro_da_validade()
+    {
+        var c = Emitida(new DateOnly(2026, 10, 10), Agora);
+        Assert.False(c.PixValidoEm(Agora));
+        Assert.False(c.RegistrarPix(new string('9', Cobranca.TamanhoPix + 1), null));
+        Assert.Null(c.PixCopiaECola);
+
+        Assert.True(c.RegistrarPix("00020126580014br.gov.bcb.pix", Agora.AddDays(1)));
+        Assert.True(c.PixValidoEm(Agora));
+        Assert.False(c.PixValidoEm(Agora.AddDays(2))); // venceu: a rotina busca de novo
+
+        var comDivergencia = Emitida(new DateOnly(2026, 10, 10), Agora);
+        comDivergencia.RegistrarPix("00020126580014br.gov.bcb.pix", null);
+        comDivergencia.Sinalizar(SinalCobranca.ValorDivergente, "Entrou R$ 100,00", Agora);
+        Assert.False(comDivergencia.PixValidoEm(Agora));
+
+        c.RegistrarPagamento(150m, 150m, Hoje, MeioPagamento.Pix, Agora);
+        Assert.False(c.PixValidoEm(Agora)); // paga: o Pix sai da tela
+    }
 }
