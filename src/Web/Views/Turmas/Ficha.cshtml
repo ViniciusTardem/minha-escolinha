@@ -139,6 +139,7 @@
                                 <selo-status valor="s.Situacao"></selo-status>
                                 @if (Model.Pode.CancelarSessao && s.Situacao == SituacaoSessao.Prevista)
                                 {
+                                    <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" href="/Sessoes/Remarcar/@s.Id" aria-label="@($"Remarcar o treino de {Formatacao.DiaCurto(s.Data)}")"><i class="ki-filled ki-calendar-edit"></i></a>
                                     <a class="kt-btn kt-btn-sm kt-btn-ghost" href="/Sessoes/Cancelar/@s.Id" aria-label="@($"Cancelar o treino de {Formatacao.DiaCurto(s.Data)}")"><i class="ki-filled ki-cross-circle"></i> Cancelar</a>
                                 }
                             </span>

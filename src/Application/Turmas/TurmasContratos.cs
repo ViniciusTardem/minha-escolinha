@@ -229,6 +229,31 @@ public class CancelarSessaoRequisicaoValidador : AbstractValidator<CancelarSessa
     }
 }
 
+/// <summary>Remarcar uma sessão para outro dia ou hora (BL-M04-07).</summary>
+public class RemarcarSessaoRequisicao
+{
+    public Guid SessaoId { get; set; }
+    public DateOnly? Data { get; set; }
+    public TimeOnly? Inicio { get; set; }
+    public TimeOnly? Fim { get; set; }
+    public string Motivo { get; set; } = string.Empty;
+}
+
+public class RemarcarSessaoRequisicaoValidador : AbstractValidator<RemarcarSessaoRequisicao>
+{
+    public RemarcarSessaoRequisicaoValidador()
+    {
+        RuleFor(x => x.SessaoId).NotEmpty();
+        RuleFor(x => x.Data).NotNull().WithMessage("Informe o novo dia do treino.");
+        RuleFor(x => x.Inicio).NotNull().WithMessage("Informe o novo horário de início.");
+        RuleFor(x => x.Fim).NotNull().WithMessage("Informe o novo horário de fim.")
+            .GreaterThan(x => x.Inicio).When(x => x.Inicio is not null && x.Fim is not null).WithMessage("O fim precisa ser depois do início.");
+        RuleFor(x => x.Motivo)
+            .NotEmpty().WithMessage("Informe o motivo da remarcação (ele fica no histórico).")
+            .MaximumLength(SessaoTreino.TamanhoMotivo).WithMessage($"O motivo pode ter no máximo {SessaoTreino.TamanhoMotivo} caracteres.");
+    }
+}
+
 public enum RecorteAgenda
 {
     Turma = 10,

@@ -66,6 +66,7 @@ public class ServicoChamada(
 
         var aviso = sessao.Situacao == SituacaoSessao.Cancelada
             ? $"Treino cancelado{(sessao.MotivoCancelamento is { } motivo ? $": {motivo}" : "")}. Não há chamada."
+            : sessao.Situacao == SituacaoSessao.Remarcada ? "Treino remarcado: a chamada é na sessão nova, no dia combinado."
             : sessao.Data > hoje ? "A chamada abre no dia do treino." : null;
         return new ChamadaDaSessao(sessao.SessaoTreino_ID, sessao.Turma_ID, sessao.Turma?.Nome ?? "—", sessao.Data, sessao.Inicio, sessao.Fim,
             sessao.Local?.Nome ?? "—", sessao.Professor?.Nome ?? "—", sessao.Situacao, sessao.AceitaChamada(hoje), aviso, alunos);
@@ -89,6 +90,7 @@ public class ServicoChamada(
             var sessao = await PodeMarcarAsync(grupo.Key, ct) ? await repositorio.ObterSessaoAsync(grupo.Key, ct) : null;
             var recusa = sessao is null ? "Sessão não encontrada ou fora do seu acesso."
                 : sessao.Situacao == SituacaoSessao.Cancelada ? "O treino foi cancelado: a chamada não vale."
+                : sessao.Situacao == SituacaoSessao.Remarcada ? "O treino foi remarcado: marque na sessão nova."
                 : sessao.Data > hoje ? "A chamada só vale no dia do treino ou depois."
                 : null;
             if (recusa is not null)

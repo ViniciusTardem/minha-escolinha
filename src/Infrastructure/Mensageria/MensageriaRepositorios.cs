@@ -64,6 +64,22 @@ public class MensageriaRepositorio(EscolinhaDbContext contexto) : IMensageriaRep
     public Task<int> ContarRetidasAsync(CancellationToken ct = default) =>
         contexto.Mensagens.CountAsync(m => m.Situacao == SituacaoMensagem.Retida, ct);
 
+    private IQueryable<RespostaEmAberto> RespostasEmAberto(DateTime desde) =>
+        from r in contexto.RespostasMensagem.AsNoTracking()
+        where !r.Tratada && r.Canal == CanalMensagem.WhatsApp && r.RecebidaEm >= desde
+        join m in contexto.Mensagens.AsNoTracking() on r.Mensagem_ID equals m.Mensagem_ID
+        orderby r.RecebidaEm descending
+        select new RespostaEmAberto(r.RespostaMensagem_ID, m.Mensagem_ID, r.RecebidaEm, m.DestinatarioNome, m.Aluno_ID, m.Gatilho, r.Texto,
+            r.Observacao);
+
+    public async Task<IReadOnlyList<RespostaEmAberto>> RespostasEmAbertoAsync(DateTime desde, int limite, CancellationToken ct = default) =>
+        await RespostasEmAberto(desde).Take(limite).ToListAsync(ct);
+
+    public Task<int> ContarRespostasEmAbertoAsync(DateTime desde, CancellationToken ct = default) => RespostasEmAberto(desde).CountAsync(ct);
+
+    public Task<RespostaMensagem?> ObterRespostaAsync(Guid id, CancellationToken ct = default) =>
+        contexto.RespostasMensagem.SingleOrDefaultAsync(r => r.RespostaMensagem_ID == id, ct);
+
     public async Task<Pagina<Mensagem>> ListarMensagensAsync(FiltroMensagens filtro, int pagina, int tamanho, CancellationToken ct = default)
     {
         var consulta = contexto.Mensagens.AsNoTracking();

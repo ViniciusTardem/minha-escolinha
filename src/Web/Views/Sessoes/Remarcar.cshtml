@@ -1,0 +1,60 @@
+@model RemarcarSessaoRequisicao
+@{
+    var sessao = (SessaoResposta)ViewData["Sessao"]!;
+    ViewData["Title"] = "Remarcar treino";
+    var voltar = Context.Request.Query["voltar"].ToString();
+    var destino = Url.IsLocalUrl(voltar) ? voltar : $"/Turmas/Ficha/{sessao.TurmaId}";
+}
+
+@* Remarcação (BL-M04-07): a sessão fica como remarcada e uma nova, avulsa, ocupa o dia e a hora combinados, no mesmo
+   local e com o mesmo professor. As famílias recebem o "Treino remarcado". *@
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Remarcar treino" meta="@($"{sessao.Turma} · {Formatacao.DiaCurto(sessao.Data)} · {Formatacao.Horario(sessao.Inicio, sessao.Fim)}")"
+                      voltar-href="@destino" voltar-texto="Voltar"
+                      descricao="O treino muda de dia ou de hora só desta vez: o horário da turma continua o mesmo. A remarcação fica registrada com o motivo e quem remarcou, e as famílias da turma recebem o aviso pelo WhatsApp e, quem já ativou o acesso, no portal."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[640px]">
+        <form method="post" asp-action="Remarcar" asp-route-id="@sessao.Id" novalidate>
+            @if (Url.IsLocalUrl(voltar))
+            {
+                <input type="hidden" name="voltar" value="@voltar" />
+            }
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <dl class="esc-dados">
+                    <dt>Turma</dt>
+                    <dd>@sessao.Turma</dd>
+                    <dt>Era</dt>
+                    <dd>@Formatacao.DiaPorExtenso(sessao.Data), @Formatacao.Horario(sessao.Inicio, sessao.Fim)</dd>
+                    <dt>Onde</dt>
+                    <dd>@sessao.Local</dd>
+                    <dt>Professor</dt>
+                    <dd>@sessao.Professor</dd>
+                </dl>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Data">Novo dia</label>
+                        <input class="kt-input" asp-for="Data" type="date" required />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Inicio">Início</label>
+                        <input class="kt-input" asp-for="Inicio" type="time" required />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Fim">Fim</label>
+                        <input class="kt-input" asp-for="Fim" type="time" required />
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="kt-form-label" asp-for="Motivo">Motivo</label>
+                    <textarea class="kt-textarea" asp-for="Motivo" rows="2" maxlength="300" required placeholder="Ex.: a quadra estará ocupada nesse dia"></textarea>
+                    <span class="text-xs text-muted-foreground">O motivo fica no histórico da turma.</span>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="@destino">Voltar</a>
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-calendar-edit"></i> Remarcar</button>
+            </div>
+        </form>
+    </div>
+</div>

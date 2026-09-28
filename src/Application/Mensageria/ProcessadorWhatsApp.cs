@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
+using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Plataforma;
 using MinhaEscolinha.Domain.Comum;
 using MinhaEscolinha.Domain.Integracao;
@@ -15,6 +17,9 @@ namespace MinhaEscolinha.Application.Mensageria;
 public class ServicoRetornoMensagens(
     IMensageriaRepositorio repositorio,
     IEnumerable<IReceptorResposta> receptores,
+    IAlunosRepositorio alunos,
+    IParametros parametros,
+    RegistroDeAlteracoes registro,
     IRelogioBrasil relogio)
 {
     public async Task<bool> AtualizarEntregaAsync(Guid mensagemId, RetornoEntrega retorno, DateTime em, string? detalhe,
@@ -45,6 +50,10 @@ public class ServicoRetornoMensagens(
             resposta.Tratada = efeito is not null;
             resposta.Observacao = TextoHelper.Truncar(efeito ?? "O módulo de origem não mudou nada com esta resposta.", RespostaMensagem.TamanhoObservacao);
         }
+        else if (payload is null && Descadastro.Pediu(texto) && await DescadastrarAsync(mensagem, texto!, ct) is { } descadastro)
+        {
+            resposta.Observacao = TextoHelper.Truncar(descadastro, RespostaMensagem.TamanhoObservacao);
+        }
         else
         {
             resposta.Observacao = regra.EsperaResposta
@@ -53,6 +62,30 @@ public class ServicoRetornoMensagens(
         }
         await repositorio.SalvarAsync(ct);
         return resposta.Tratada ? "Resposta tratada." : "Resposta registrada.";
+    }
+
+    /// <summary>
+    /// P36: a família pediu para sair. Os vínculos do responsável deixam de receber os avisos (faltas, treino, convocação),
+    /// com o registro de alterações; a cobrança continua para quem paga (é obrigação, não aviso). A resposta fica no painel
+    /// da gestão, que decide se liga de novo. Desligado pela escolinha, fica só no log.
+    /// </summary>
+    private async Task<string?> DescadastrarAsync(Mensagem mensagem, string texto, CancellationToken ct)
+    {
+        if (mensagem.TipoDestinatario != TipoDestinatario.Responsavel) return null;
+        if (!(await parametros.ObterAsync(ct)).Mensagem.DescadastroPorPalavra)
+            return $"Pediu para sair (\"{texto.Trim()}\"), mas a escolinha não desliga os avisos sozinha: confira na ficha.";
+
+        var desligados = 0;
+        foreach (var vinculo in (await alunos.VinculosDoResponsavelAsync(mensagem.Destinatario_ID, ct)).Where(v => v.RecebeNotificacao))
+        {
+            vinculo.RecebeNotificacao = false;
+            registro.Registrar(ServicoAlunos.Entidade, vinculo.Aluno_ID, "Avisos pelo WhatsApp", $"{mensagem.DestinatarioNome}: recebe",
+                $"{mensagem.DestinatarioNome}: não recebe", $"Pediu pelo WhatsApp (\"{texto.Trim()}\")");
+            desligados++;
+        }
+        return desligados == 0
+            ? "Pediu para sair: os avisos já estavam desligados."
+            : $"Pediu para sair: os avisos foram desligados em {desligados} vínculo(s). A cobrança continua para quem paga.";
     }
 }
 

@@ -35,6 +35,7 @@ public class EmissorGatilhos(
     private static readonly CultureInfo PtBr = new("pt-BR");
 
     public const string OrigemSessao = "Sessao";
+    public const string OrigemTurma = "Turma";
     public const string OrigemConvite = "Convite";
     public const string OrigemAlertaFaltas = "AlertaFaltas";
     public const string OrigemCobranca = "Cobranca";
@@ -69,6 +70,38 @@ public class EmissorGatilhos(
             criadas += await CriarAsync(regra, template, OrigemSessao, sessao.SessaoTreino_ID, TipoDestinatario.Responsavel,
                 d.ResponsavelId, d.Nome, d.Telefone, d.AcessoAtivo && d.TodosVerificados ? d.PessoaId : null,
                 d.Alunos.Count == 1 ? d.Alunos[0].Id : null, valores, urgente, sessao.Inicio, agora, ct);
+        }
+        return criadas;
+    }
+
+    /// <summary>
+    /// Treino remarcado (§8.3): os responsáveis que recebem notificação, dos alunos da turma, um aviso por responsável com os
+    /// nomes dos filhos dele. Vale para a remarcação de uma sessão (BL-M04-07, origem = a sessão nova) e para a mudança do
+    /// horário da turma (P33, origem = a turma, uma etapa por mudança). Urgente se o treino afetado é nas próximas 24 horas.
+    /// </summary>
+    public async Task<int> TreinoRemarcadoAsync(Guid turmaId, string turma, string tipoOrigem, Guid origemId, string de, string para,
+        bool urgente, DateTime? referencia, string? etapa, CancellationToken ct = default)
+    {
+        var regra = CatalogoGatilhos.Obter(GatilhoMensagem.TreinoRemarcado);
+        var template = await TemplateAsync(regra.Gatilho, await TomDosAvisosAsync(ct), ct);
+        var escolinha = await NomeEscolinhaAsync(ct);
+        var agora = relogio.Agora();
+
+        var criadas = 0;
+        foreach (var d in await repositorio.ResponsaveisDaTurmaAsync(turmaId, ct))
+        {
+            var valores = new Dictionary<string, string>
+            {
+                ["responsavel"] = PrimeiroNome(d.Nome),
+                ["escolinha"] = escolinha,
+                ["turma"] = turma,
+                ["de"] = de,
+                ["para"] = para,
+                ["alunos"] = Juntar(d.Alunos.Select(a => PrimeiroNome(a.Nome)))
+            };
+            criadas += await CriarAsync(regra, template, tipoOrigem, origemId, TipoDestinatario.Responsavel, d.ResponsavelId, d.Nome,
+                d.Telefone, d.AcessoAtivo && d.TodosVerificados ? d.PessoaId : null, d.Alunos.Count == 1 ? d.Alunos[0].Id : null,
+                valores, urgente, referencia, agora, ct, etapa);
         }
         return criadas;
     }

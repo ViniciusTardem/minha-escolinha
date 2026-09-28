@@ -1,0 +1,68 @@
+@model IReadOnlyList<RespostaEmAberto>
+@inject ServicoMensagens Servico
+@{
+    ViewData["Title"] = "Respostas das famílias";
+}
+
+@* P35: as respostas pelo WhatsApp que nenhum módulo tratou. Só os botões mudam o estado de algo (a convocação); o texto
+   livre, o pedido para sair e o botão de uma mensagem antiga ficam aqui até a gestão ler. *@
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Respostas das famílias" meta="@($"últimos {ServicoMensagens.DiasRespostasEmAberto} dias")"
+                      descricao="O que as famílias escreveram no WhatsApp e nenhum botão resolveu: um recado, um pedido para sair, a resposta a uma mensagem antiga. Leia e marque como vista.">
+        <a class="kt-btn kt-btn-outline" href="/Mensagens"><i class="ki-filled ki-message-text-2"></i> Mensagens</a>
+    </cabecalho-pagina>
+
+    <div class="kt-card">
+        @if (Model.Count == 0)
+        {
+            <estado-vazio icone="ki-double-check" titulo="Nenhuma resposta esperando"
+                          texto="Quando uma família escrever no WhatsApp algo que nenhum botão resolve, a resposta aparece aqui."></estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[130px] hidden sm:table-cell">Quando</th>
+                            <th class="min-w-[200px]">Resposta</th>
+                            <th class="min-w-[150px] hidden md:table-cell">Sobre</th>
+                            <th class="w-[60px]"><span class="sr-only">Ações</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            <tr>
+                                <td class="hidden sm:table-cell text-secondary-foreground">@Formatacao.DataHora(r.RecebidaEm)</td>
+                                <td>
+                                    <div class="flex flex-col gap-1 min-w-0">
+                                        <span class="font-medium text-mono">@r.De</span>
+                                        <span class="wrap-anywhere">“@(r.Texto ?? "—")”</span>
+                                        @if (!string.IsNullOrWhiteSpace(r.Observacao))
+                                        {
+                                            <span class="text-xs text-secondary-foreground">@r.Observacao</span>
+                                        }
+                                        <span class="text-xs text-secondary-foreground sm:hidden">@Formatacao.DataHora(r.RecebidaEm) · @CatalogoGatilhos.Rotulo(r.Gatilho)</span>
+                                        <a class="kt-link text-xs" href="/Mensagens/Detalhe/@r.MensagemId">Ver a mensagem</a>
+                                    </div>
+                                </td>
+                                <td class="hidden md:table-cell">@CatalogoGatilhos.Rotulo(r.Gatilho)</td>
+                                <td>
+                                    @if (Servico.PodeMarcarResposta)
+                                    {
+                                        <form method="post" asp-action="MarcarVista" asp-route-id="@r.Id">
+                                            <button class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" type="submit" aria-label="@($"Marcar como vista a resposta de {r.De}")">
+                                                <i class="ki-filled ki-check-squared"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

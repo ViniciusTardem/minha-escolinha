@@ -12,7 +12,7 @@ public enum GatilhoMensagem
     /// <summary>Treino cancelado (S1, avisado pelo motor desde o S2).</summary>
     TreinoCancelado = 20,
 
-    /// <summary>Treino remarcado. Sem emissor no piloto: a remarcação (BL-M04-07) foi adiada (P11).</summary>
+    /// <summary>Treino remarcado: a remarcação de uma sessão (BL-M04-07) e a mudança do horário da turma (P33).</summary>
     TreinoRemarcado = 25,
 
     /// <summary>Mensalidade a vencer (S4).</summary>
@@ -98,7 +98,7 @@ public static class CatalogoGatilhos
         new(GatilhoMensagem.TreinoCancelado, "Treino cancelado", "Treino cancelado", DestinatarioGatilho.ResponsaveisDaTurma,
             "Imediato", false, "S2", CategoriaTemplate.Utilidade, true, true, true),
         new(GatilhoMensagem.TreinoRemarcado, "Treino remarcado", "Treino remarcado", DestinatarioGatilho.ResponsaveisDaTurma,
-            "Imediato", false, "adiado (P11)", CategoriaTemplate.Utilidade, true, true, true),
+            "Imediato", false, "S1 (BL-M04-07, P33)", CategoriaTemplate.Utilidade, true, true, true),
         new(GatilhoMensagem.MensalidadeAVencer, "Mensalidade a vencer", "Mensalidade a vencer", DestinatarioGatilho.ResponsavelFinanceiro,
             "Janela configurável antes do vencimento", false, "S4", CategoriaTemplate.Utilidade, true, false, true),
         new(GatilhoMensagem.MensalidadeVencida, "Mensalidade vencida", "Mensalidade vencida", DestinatarioGatilho.ResponsavelFinanceiro,
@@ -125,4 +125,19 @@ public static class CatalogoGatilhos
             : throw new InvalidOperationException($"Gatilho fora do catálogo: {gatilho}.");
 
     public static string Rotulo(GatilhoMensagem gatilho) => Obter(gatilho).Nome;
+}
+
+/// <summary>
+/// O pedido para não receber mais avisos (P36): a resposta que é só uma destas palavras, sem acento e sem pontuação. A
+/// família continua podendo escrever "não vou poder sair mais cedo": só a palavra sozinha conta.
+/// </summary>
+public static class Descadastro
+{
+    public static readonly IReadOnlyList<string> Palavras = ["sair", "parar", "stop", "descadastrar"];
+
+    public static bool Pediu(string? texto)
+    {
+        var limpo = new string(Comum.TextoHelper.NormalizarParaBusca(texto).Where(c => char.IsLetter(c) || c == 32).ToArray()).Trim();
+        return Palavras.Contains(limpo);
+    }
 }

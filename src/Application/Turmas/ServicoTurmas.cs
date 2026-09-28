@@ -122,6 +122,7 @@ public class ServicoTurmas(
     IAutorizacao autorizacao,
     ServicoSessoes sessoes,
     RegistroDeAlteracoes registro,
+    Mensageria.EmissorGatilhos emissor,
     IRelogioBrasil relogio,
     IValidator<TurmaRequisicao> validador)
 {
@@ -240,8 +241,10 @@ public class ServicoTurmas(
 
         var mensalidadeAntes = turma.Mensalidade;
         var antes = Descrever(turma, turma.Professor?.Nome);
+        var horariosAntes = turma.ResumoHorarios();
         Aplicar(turma, r);
         SincronizarHorarios(turma, r);
+        var horariosDepois = turma.ResumoHorarios();
         turma.Professor = professor;
         var depois = Descrever(turma, professor.Nome);
 
@@ -257,6 +260,11 @@ public class ServicoTurmas(
         if (conflitos.Count > 0) RegistrarAlertas(id, conflitos);
 
         var plano = await sessoes.SincronizarAsync(turma, ct);
+        // P33: mudou o horário da turma, as famílias recebem o "Treino remarcado", um aviso por família, na mesma gravação.
+        var avisos = horariosAntes != horariosDepois
+            ? await emissor.TreinoRemarcadoAsync(turma.Turma_ID, turma.Nome, Mensageria.EmissorGatilhos.OrigemTurma, turma.Turma_ID,
+                horariosAntes, horariosDepois, false, null, $"H{relogio.Agora():yyMMddHHmmss}", ct)
+            : 0;
         try
         {
             await repositorio.SalvarAsync(ct);
@@ -268,7 +276,8 @@ public class ServicoTurmas(
 
         var ajuste = plano.Vazio ? string.Empty
             : $" Sessões previstas: {plano.Criar.Count} nova(s), {plano.Ajustar.Count} ajustada(s), {plano.Remover.Count} retirada(s).";
-        return ResultadoOperacao.Ok($"Turma {turma.Nome} atualizada.{ajuste}");
+        var aviso = avisos > 0 ? $" {avisos} aviso(s) de horário novo às famílias na fila de mensagens." : string.Empty;
+        return ResultadoOperacao.Ok($"Turma {turma.Nome} atualizada.{ajuste}{aviso}");
     }
 
     /// <summary>Encerra a turma sem matrícula ativa: as sessões previstas que ainda não aconteceram saem da agenda.</summary>
@@ -317,9 +326,9 @@ public class ServicoTurmas(
             t.Situacao, t.EncerradaEm, t.MotivoEncerramento,
             t.Horarios.Select(h => h.Semanal).OrderBy(h => DiasSemana.Posicao(h.Dia)).ThenBy(h => h.Inicio).ToList(),
             composicao,
-            sessoesTurma.Where(s => s.Fim >= agora && s.Situacao != SituacaoSessao.Cancelada).OrderBy(s => s.Inicio).Take(12)
+            sessoesTurma.Where(s => s.Fim >= agora && !s.Encerrada).OrderBy(s => s.Inicio).Take(12)
                 .Select(ServicoSessoes.Resposta).ToList(),
-            sessoesTurma.Where(s => s.Situacao == SituacaoSessao.Cancelada).OrderByDescending(s => s.Inicio).Take(10)
+            sessoesTurma.Where(s => s.Encerrada).OrderByDescending(s => s.Inicio).Take(10)
                 .Select(ServicoSessoes.Resposta).ToList(),
             pode);
     }

@@ -26,6 +26,7 @@ public class ServicoSessoes(
     IUsuarioAtual usuarioAtual,
     IRelogioBrasil relogio,
     IValidator<CancelarSessaoRequisicao> validadorCancelar,
+    IValidator<RemarcarSessaoRequisicao> validadorRemarcar,
     ILogger<ServicoSessoes> logger)
 {
     private static readonly CultureInfo PtBr = new("pt-BR");
@@ -97,13 +98,48 @@ public class ServicoSessoes(
                                     (avisos == 0 ? " Nenhuma família a avisar nesta turma." : $" {avisos} aviso(s) às famílias na fila de mensagens."));
     }
 
+    /// <summary>
+    /// Remarca uma sessão (BL-M04-07): a sessão fica como remarcada, com motivo e autor, e uma sessão avulsa ocupa o novo dia
+    /// e hora, no mesmo local e com o mesmo professor. As famílias recebem o "Treino remarcado" (§8.3), urgente se o treino
+    /// de antes ou o novo é nas próximas 24 horas. A chamada é feita na sessão nova.
+    /// </summary>
+    public async Task<ResultadoOperacao> RemarcarAsync(RemarcarSessaoRequisicao r, CancellationToken ct = default)
+    {
+        var validacao = await validadorRemarcar.ValidateAsync(r, ct);
+        if (!validacao.IsValid) return ResultadoOperacao.Invalido(validacao);
+        if (!await autorizacao.PodeAsync(Recurso.RegistroPresenca, Operacao.Alterar, new AlvoEscopo(TipoAlvoEscopo.Sessao, r.SessaoId), ct)
+            || await repositorio.ObterSessaoAsync(r.SessaoId, ct) is not { } sessao)
+            return ResultadoOperacao.Erro("Sessão não encontrada.");
+        var agora = relogio.Agora();
+        if (!sessao.PodeRemarcar(agora)) return ResultadoOperacao.Erro($"Esta sessão já está {Rotulo(sessao.Situacao)} ou já começou: não dá para remarcar.");
+        var novoInicio = r.Data!.Value.ToDateTime(r.Inicio!.Value);
+        if (novoInicio <= agora) return ResultadoOperacao.Erro("O novo horário precisa ser no futuro.", nameof(RemarcarSessaoRequisicao.Data));
+        if (novoInicio == sessao.Inicio && r.Data.Value.ToDateTime(r.Fim!.Value) == sessao.Fim)
+            return ResultadoOperacao.Erro("O dia e a hora são os mesmos de antes.", nameof(RemarcarSessaoRequisicao.Data));
+
+        var antes = Descrever(sessao);
+        var deQuando = Quando(sessao.Inicio);
+        var nova = sessao.Remarcar(r.Data.Value, r.Inicio.Value, r.Fim!.Value, r.Motivo, agora, usuarioAtual.Id, usuarioAtual.Nome);
+        repositorio.AdicionarSessao(nova);
+        registro.Registrar(ServicoTurmas.Entidade, sessao.Turma_ID, "Sessão remarcada", antes, Descrever(nova), r.Motivo);
+        var urgente = (sessao.Inicio < nova.Inicio ? sessao.Inicio : nova.Inicio) <= agora.AddHours(24);
+        var avisos = await emissor.TreinoRemarcadoAsync(sessao.Turma_ID, sessao.Turma?.Nome ?? "—", EmissorGatilhos.OrigemSessao,
+            nova.SessaoTreino_ID, deQuando, Quando(nova.Inicio), urgente, nova.Inicio, null, ct);
+        await repositorio.SalvarAsync(ct);
+        return ResultadoOperacao.Ok($"Treino de {antes} remarcado para {Descrever(nova)}." +
+                                    (avisos == 0 ? " Nenhuma família a avisar nesta turma." : $" {avisos} aviso(s) às famílias na fila de mensagens."));
+    }
+
+    /// <summary>"sábado, 03/10 às 09:00": como o quando entra no texto do aviso.</summary>
+    public static string Quando(DateTime inicio) => inicio.ToString("dddd, dd/MM 'às' HH:mm", PtBr);
+
     public static SessaoResposta Resposta(SessaoTreino s) => new(
         s.SessaoTreino_ID, s.Turma_ID, s.Turma?.Nome ?? "—", s.Data, s.Inicio, s.Fim, s.Local?.Nome ?? "—", s.Professor?.Nome ?? "—",
         s.Situacao, s.MotivoCancelamento, s.CanceladaEm, s.CanceladaPorNome);
 
     public static Compromisso Compromisso(SessaoTreino s) => new(
         TipoCompromisso.Treino, s.SessaoTreino_ID, s.Turma?.Nome ?? "Treino", s.Inicio, s.Fim, s.Local_ID, s.Professor_ID, s.Turma_ID,
-        s.Situacao == SituacaoSessao.Cancelada);
+        s.Encerrada);
 
     private static string Descrever(SessaoTreino s) => $"{s.Inicio.ToString("dd/MM (ddd) HH:mm", PtBr)}–{s.Fim:HH\\:mm}";
 
@@ -205,7 +241,7 @@ public class ServicoAgenda(
     private static IReadOnlyList<string> Alertas(SessaoTreino s, Domain.Equipe.Professor? professor, IReadOnlySet<Guid> sobrepostos,
         IReadOnlySet<Guid> localOcupado)
     {
-        if (s.Situacao == SituacaoSessao.Cancelada) return [];
+        if (s.Encerrada) return [];
         var alertas = new List<string>();
         if (sobrepostos.Contains(s.SessaoTreino_ID)) alertas.Add("Professor com outro treino no mesmo horário");
         if (localOcupado.Contains(s.SessaoTreino_ID)) alertas.Add("Local com outro treino no mesmo horário");

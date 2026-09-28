@@ -105,6 +105,10 @@ public class PainelController(
                     "ki-message-text-2", "/Creditos", "Comprar créditos"));
             else if (resumo.SaldoBaixo)
                 pendencias.Add(new("Saldo de créditos baixo", $"Restam {Formatacao.Numero(resumo.Saldo)} crédito(s) de mensagem.", "ki-wallet", "/Creditos", "Ver créditos"));
+            // P35: o que a família escreveu e nenhum botão resolveu (um recado, um pedido para sair).
+            if (await mensagens.ContarRespostasEmAbertoAsync(ct) is > 0 and var respostas)
+                pendencias.Add(new("Respostas das famílias", $"{respostas} resposta(s) pelo WhatsApp esperando alguém ler: um recado, um pedido para sair.",
+                    "ki-message-text-2", "/Mensagens/Respostas", "Ler respostas"));
         }
 
         var hoje = DateOnly.FromDateTime(relogio.Hoje());

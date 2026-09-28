@@ -2,6 +2,7 @@ using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Domain.Acesso;
+using MinhaEscolinha.Domain.Comum;
 using MinhaEscolinha.Domain.Mensageria;
 
 namespace MinhaEscolinha.Application.Mensageria;
@@ -125,6 +126,32 @@ public class ServicoMensagens(
         var novos = avisos.Where(a => a.MarcarLidaNoPortal(agora)).Select(a => a.Mensagem_ID).ToHashSet();
         if (novos.Count > 0) await repositorio.SalvarAsync(ct);
         return avisos.Select(a => new AvisoDoPortal(a.Mensagem_ID, a.CriadaEm, a.Gatilho, a.Conteudo, novos.Contains(a.Mensagem_ID))).ToList();
+    }
+
+    /// <summary>Quantos dias as respostas em aberto ficam à vista da gestão (P35).</summary>
+    public const int DiasRespostasEmAberto = 30;
+
+    public bool PodeMarcarResposta => autorizacao.Pode(Recurso.ConfiguracaoEscolinha, Operacao.Alterar);
+
+    /// <summary>
+    /// As respostas das famílias que nenhum módulo tratou: o texto livre ("não vou poder ir"), o pedido para sair e o
+    /// botão de uma mensagem antiga (P35). A gestão lê e marca como vista.
+    /// </summary>
+    public async Task<IReadOnlyList<RespostaEmAberto>> RespostasEmAbertoAsync(CancellationToken ct = default) =>
+        PodeVer ? await repositorio.RespostasEmAbertoAsync(relogio.Agora().AddDays(-DiasRespostasEmAberto), 200, ct) : [];
+
+    public async Task<int> ContarRespostasEmAbertoAsync(CancellationToken ct = default) =>
+        PodeVer ? await repositorio.ContarRespostasEmAbertoAsync(relogio.Agora().AddDays(-DiasRespostasEmAberto), ct) : 0;
+
+    public async Task<ResultadoOperacao> MarcarRespostaVistaAsync(Guid id, CancellationToken ct = default)
+    {
+        if (!PodeMarcarResposta) return ResultadoOperacao.Erro("Só a gestão marca as respostas.");
+        if (await repositorio.ObterRespostaAsync(id, ct) is not { Tratada: false } resposta) return ResultadoOperacao.Erro("Resposta não encontrada ou já vista.");
+        resposta.Tratada = true;
+        resposta.Observacao = TextoHelper.Truncar(
+            $"{resposta.Observacao} Vista por {usuarioAtual.Nome ?? "gestão"} em {relogio.Agora():dd/MM/yyyy HH:mm}.".Trim(), RespostaMensagem.TamanhoObservacao);
+        await repositorio.SalvarAsync(ct);
+        return ResultadoOperacao.Ok("Resposta marcada como vista.");
     }
 
     public async Task<int> AvisosNaoLidosAsync(CancellationToken ct = default) =>

@@ -13,6 +13,7 @@ using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Domain.Alunos;
 using MinhaEscolinha.Domain.Configuracao;
+using MinhaEscolinha.Domain.Configuracao.Parametros;
 using MinhaEscolinha.Domain.Integracao;
 using MinhaEscolinha.Domain.Mensageria;
 using MinhaEscolinha.Infrastructure.Integracao.WhatsApp;
@@ -392,7 +393,10 @@ public sealed class MensageriaBancoTestes(BancoDeTestes banco) : IAsyncLifetime,
 
         Task<string> ResponderAsync(string texto, string? payload, string idExterno) =>
             _app.NaEscolinhaAsync(b.Escolinha, [], sp =>
-                new ServicoRetornoMensagens(sp.GetRequiredService<IMensageriaRepositorio>(), [receptor], sp.GetRequiredService<IRelogioBrasil>())
+                new ServicoRetornoMensagens(sp.GetRequiredService<IMensageriaRepositorio>(), [receptor],
+                        sp.GetRequiredService<MinhaEscolinha.Application.Alunos.IAlunosRepositorio>(),
+                        sp.GetRequiredService<MinhaEscolinha.Application.Configuracao.IParametros>(),
+                        sp.GetRequiredService<MinhaEscolinha.Application.Configuracao.RegistroDeAlteracoes>(), sp.GetRequiredService<IRelogioBrasil>())
                     .RegistrarRespostaAsync(mensagemId, CanalMensagem.WhatsApp, texto, payload, idExterno, sp.GetRequiredService<IRelogioBrasil>().Agora()));
 
         Assert.Equal("Resposta tratada.", await ResponderAsync("Vai", PayloadBotao.Montar(mensagemId, 0), "wamid.B1"));
@@ -652,5 +656,128 @@ public sealed class MensageriaBancoTestes(BancoDeTestes banco) : IAsyncLifetime,
         Assert.Empty(await Gestor(escolinhaB, sp => sp.GetRequiredService<ServicoConvites>().CandidatosAsync()));
         var qualquer = (await MensagensAsync(a.Escolinha))[0].Mensagem_ID;
         Assert.Null(await Gestor(escolinhaB, sp => sp.GetRequiredService<ServicoMensagens>().DetalheAsync(qualquer)));
+    }
+
+    // ── Depois do S7: respostas à gestão (P35), "SAIR" (P36), tom dos avisos (P02), remarcação (BL-M04-07) e horário (P33) ──
+
+    private Task<string> ResponderTextoAsync(Guid escolinha, Guid mensagem, string texto, string idExterno) =>
+        _app.NaEscolinhaAsync(escolinha, [], sp => sp.GetRequiredService<ServicoRetornoMensagens>().RegistrarRespostaAsync(mensagem,
+            CanalMensagem.WhatsApp, texto, null, idExterno, sp.GetRequiredService<IRelogioBrasil>().Agora()));
+
+    [FatoComBanco]
+    public async Task Quem_responde_sair_deixa_de_receber_os_avisos_e_a_gestao_ve_as_respostas_em_texto()
+    {
+        var b = await MontarAsync();
+        await CancelarAsync(b.Escolinha, await SessaoAsync(b.Escolinha, b.Turma, new DateOnly(2026, 9, 29)));
+        var mensagens = await MensagensAsync(b.Escolinha);
+        var daMaria = mensagens.Single(m => m.Destinatario_ID == b.Maria);
+        var daRita = mensagens.Single(m => m.Destinatario_ID == b.Rita);
+
+        // P36: "Sair." sozinho desliga os avisos dos vínculos da Maria; a cobrança continua.
+        await ResponderTextoAsync(b.Escolinha, daMaria.Mensagem_ID, "Sair.", "wamid.S1");
+        await using (var db = BancoDeTestes.NovoContextoSemEscolinha())
+        {
+            var vinculos = await db.VinculosResponsavel.IgnoreQueryFilters().Where(v => v.Responsavel_ID == b.Maria).ToListAsync();
+            Assert.Equal(2, vinculos.Count);
+            Assert.All(vinculos, v => Assert.False(v.RecebeNotificacao));
+            Assert.All(vinculos, v => Assert.True(v.RecebeCobranca));
+            Assert.Equal(2, await db.RegistrosAlteracao.IgnoreQueryFilters()
+                .CountAsync(r => r.Escolinha_ID == b.Escolinha && r.Campo == "Avisos pelo WhatsApp"));
+        }
+        // Uma frase com a palavra no meio não é pedido para sair.
+        await ResponderTextoAsync(b.Escolinha, daRita.Mensagem_ID, "Não vou poder sair mais cedo do trabalho para levar o Bruno", "wamid.S2");
+
+        // P35: as duas respostas esperam a gestão, com o efeito do pedido para sair.
+        var abertas = await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoMensagens>().RespostasEmAbertoAsync());
+        Assert.Equal(2, abertas.Count);
+        Assert.Contains("desligados em 2 vínculo(s)", abertas.Single(r => r.De == "Maria Lima").Observacao);
+        Assert.Equal(2, await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoMensagens>().ContarRespostasEmAbertoAsync()));
+        var vista = await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoMensagens>()
+            .MarcarRespostaVistaAsync(abertas.Single(r => r.De == "Rita Alves").Id));
+        Assert.True(vista.Sucesso, vista.Mensagem);
+        Assert.Equal(1, await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoMensagens>().ContarRespostasEmAbertoAsync()));
+
+        // O próximo aviso de treino vai só para a Rita.
+        await CancelarAsync(b.Escolinha, await SessaoAsync(b.Escolinha, b.Turma, new DateOnly(2026, 10, 1)));
+        var segundo = (await MensagensAsync(b.Escolinha)).Where(m => m.Gatilho == GatilhoMensagem.TreinoCancelado).Skip(2).ToList();
+        Assert.Equal([b.Rita], segundo.Select(m => m.Destinatario_ID));
+    }
+
+    [FatoComBanco]
+    public async Task O_tom_direto_da_escolinha_troca_o_template_dos_avisos()
+    {
+        var b = await MontarAsync();
+        var alterou = await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoParametros>().AlterarAsync(
+            new AlterarParametrosRequisicao { Valores = { [ChavesParametro.MensagemTom] = "Direto" } }));
+        Assert.True(alterou.Sucesso, alterou.Mensagem);
+        await CancelarAsync(b.Escolinha, await SessaoAsync(b.Escolinha, b.Turma, new DateOnly(2026, 9, 29)));
+        var maria = (await MensagensAsync(b.Escolinha)).Single(m => m.Destinatario_ID == b.Maria);
+        Assert.Equal("treino_cancelado_direto_v1", maria.Template);
+        Assert.StartsWith("Atenção, Maria: Bola na Rede cancelou o treino da turma Sub-9", maria.Conteudo);
+    }
+
+    [FatoComBanco]
+    public async Task Remarcar_o_treino_cria_a_sessao_avulsa_avisa_as_familias_e_a_geracao_nao_mexe_nela()
+    {
+        var b = await MontarAsync();
+        var terca = await SessaoAsync(b.Escolinha, b.Turma, new DateOnly(2026, 9, 29));
+        var remarcou = await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoSessoes>().RemarcarAsync(new RemarcarSessaoRequisicao
+        {
+            SessaoId = terca, Data = new DateOnly(2026, 9, 30), Inicio = new TimeOnly(17, 0), Fim = new TimeOnly(18, 0),
+            Motivo = "Quadra ocupada na terça"
+        }));
+        Assert.True(remarcou.Sucesso, remarcou.Mensagem);
+        Assert.Contains("2 aviso(s)", remarcou.Mensagem);
+
+        var avisos = (await MensagensAsync(b.Escolinha)).Where(m => m.Gatilho == GatilhoMensagem.TreinoRemarcado).ToList();
+        Assert.Equal(new[] { b.Maria, b.Rita }.Order(), avisos.Select(m => m.Destinatario_ID).Order());
+        Assert.Contains("Antes: terça-feira, 29/09 às 18:00. Agora: quarta-feira, 30/09 às 17:00. Este aviso é sobre Ana e Pedro.",
+            avisos.Single(m => m.Destinatario_ID == b.Maria).Conteudo);
+
+        // A geração diária não recria a de terça nem retira a de quarta.
+        await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoSessoes>().GerarHorizonteAsync());
+        await using (var db = BancoDeTestes.NovoContextoSemEscolinha())
+        {
+            var sessoes = await db.Sessoes.IgnoreQueryFilters()
+                .Where(s => s.Turma_ID == b.Turma && (s.Data == new DateOnly(2026, 9, 29) || s.Data == new DateOnly(2026, 9, 30))).ToListAsync();
+            Assert.Equal(2, sessoes.Count);
+            var antiga = sessoes.Single(s => s.SessaoTreino_ID == terca);
+            var nova = sessoes.Single(s => s.SessaoTreino_ID != terca);
+            Assert.Equal((Domain.Turmas.SituacaoSessao.Remarcada, nova.SessaoTreino_ID, "Quadra ocupada na terça"),
+                (antiga.Situacao, antiga.RemarcadaPara_ID!.Value, antiga.MotivoCancelamento));
+            Assert.Equal((Domain.Turmas.SituacaoSessao.Prevista, (Guid?)terca, new DateTime(2026, 9, 30, 17, 0, 0)),
+                (nova.Situacao, nova.RemarcadaDe_ID, nova.Inicio));
+        }
+
+        // A remarcada não remarca de novo.
+        Assert.False((await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoSessoes>().RemarcarAsync(new RemarcarSessaoRequisicao
+        {
+            SessaoId = terca, Data = new DateOnly(2026, 10, 2), Inicio = new TimeOnly(17, 0), Fim = new TimeOnly(18, 0), Motivo = "De novo"
+        }))).Sucesso);
+    }
+
+    [FatoComBanco]
+    public async Task Mudar_o_horario_da_turma_avisa_as_familias_uma_vez()
+    {
+        var b = await MontarAsync();
+        var edicao = (await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoTurmas>().ParaEdicaoAsync(b.Turma)))!;
+        foreach (var h in edicao.Horarios)
+        {
+            h.Inicio = new TimeOnly(19, 0);
+            h.Fim = new TimeOnly(20, 0);
+        }
+        var editou = await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoTurmas>().EditarAsync(edicao));
+        Assert.True(editou.Sucesso, editou.Mensagem);
+        Assert.Contains("2 aviso(s) de horário novo", editou.Mensagem);
+
+        var avisos = (await MensagensAsync(b.Escolinha)).Where(m => m.Gatilho == GatilhoMensagem.TreinoRemarcado).ToList();
+        Assert.Equal(2, avisos.Count);
+        Assert.Contains("mudou de horário. Antes:", avisos[0].Conteudo);
+
+        // Salvar de novo sem mudar o horário não avisa outra vez.
+        var edicao2 = (await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoTurmas>().ParaEdicaoAsync(b.Turma)))!;
+        edicao2.Mensalidade = 160m;
+        Assert.True((await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoTurmas>().EditarAsync(edicao2))).Sucesso);
+        Assert.Equal(2, (await MensagensAsync(b.Escolinha)).Count(m => m.Gatilho == GatilhoMensagem.TreinoRemarcado));
     }
 }

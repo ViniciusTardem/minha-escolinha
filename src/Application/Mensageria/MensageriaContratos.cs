@@ -89,6 +89,10 @@ public sealed class FiltroMensagens
     public Guid? AlunoId { get; set; }
 }
 
+/// <summary>Uma resposta que ninguém tratou ainda, com a mensagem a que responde (P35).</summary>
+public sealed record RespostaEmAberto(Guid Id, Guid MensagemId, DateTime RecebidaEm, string De, Guid? AlunoId, GatilhoMensagem Gatilho,
+    string? Texto, string? Observacao);
+
 /// <summary>Mensagens, templates e o índice global do WhatsApp.</summary>
 public interface IMensageriaRepositorio
 {
@@ -118,6 +122,16 @@ public interface IMensageriaRepositorio
 
     Task<IReadOnlyList<Guid>> RetidasAsync(int limite, CancellationToken ct = default);
     Task<int> ContarRetidasAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// As respostas pelo WhatsApp que nenhum módulo tratou (texto livre, pedido de saída, botão de mensagem antiga) desde a
+    /// data, das mais novas para as mais antigas, com a mensagem a que respondem (P35).
+    /// </summary>
+    Task<IReadOnlyList<RespostaEmAberto>> RespostasEmAbertoAsync(DateTime desde, int limite, CancellationToken ct = default);
+    Task<int> ContarRespostasEmAbertoAsync(DateTime desde, CancellationToken ct = default);
+
+    /// <summary>A resposta para marcar como vista (rastreada).</summary>
+    Task<RespostaMensagem?> ObterRespostaAsync(Guid id, CancellationToken ct = default);
 
     Task<Pagina<Mensagem>> ListarMensagensAsync(FiltroMensagens filtro, int pagina, int tamanho, CancellationToken ct = default);
     Task<IReadOnlyDictionary<SituacaoMensagem, int>> ContarPorSituacaoAsync(DateTime desde, CancellationToken ct = default);

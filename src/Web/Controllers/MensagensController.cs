@@ -22,6 +22,23 @@ public class MensagensController(ServicoMensagens servico) : Controller
         return View(new MensagensViewModel(filtro, await servico.ListarAsync(filtro, pagina, ct), resumo));
     }
 
+    /// <summary>As respostas das famílias que nenhum módulo tratou (P35).</summary>
+    [HttpGet]
+    public async Task<IActionResult> Respostas(CancellationToken ct)
+    {
+        ViewData["ModuloAtivo"] = "mensagens";
+        return View(await servico.RespostasEmAbertoAsync(ct));
+    }
+
+    [HttpPost]
+    [Permissao(Recurso.ConfiguracaoEscolinha, Operacao.Alterar)]
+    public async Task<IActionResult> MarcarVista(Guid id, CancellationToken ct)
+    {
+        var resultado = await servico.MarcarRespostaVistaAsync(id, ct);
+        TempData[resultado.Sucesso ? ChavesTempData.Sucesso : ChavesTempData.Erro] = resultado.Mensagem;
+        return RedirectToAction(nameof(Respostas));
+    }
+
     [HttpGet]
     public async Task<IActionResult> Detalhe(Guid id, CancellationToken ct)
     {

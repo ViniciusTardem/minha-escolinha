@@ -189,6 +189,9 @@ public class SessaoTreinoConfiguracao : IEntityTypeConfiguration<SessaoTreino>
 
         builder.Property(s => s.MotivoCancelamento).HasMaxLength(SessaoTreino.TamanhoMotivo);
         builder.Property(s => s.CanceladaPorNome).HasMaxLength(SessaoTreino.TamanhoAutor);
+        builder.HasOne<SessaoTreino>().WithMany().HasForeignKey(s => s.RemarcadaDe_ID).OnDelete(DeleteBehavior.NoAction)
+            .HasConstraintName("FK_SessaoTreino_RemarcadaDe");
+        builder.HasIndex(s => s.RemarcadaDe_ID).HasDatabaseName("IX_SessaoTreino_RemarcadaDe").HasFilter("[RemarcadaDe_ID] IS NOT NULL");
         builder.Ignore(s => s.PodeCancelar);
 
         // A chave da geração: um horário gera uma sessão por data (rodar a geração de novo não duplica).

@@ -12,7 +12,7 @@ public enum SituacaoSessao
 
     Cancelada = 30,
 
-    /// <summary>Existe na máquina da spec, mas a remarcação (BL-M04-07) foi adiada: no piloto, remarcar = cancelar + criar (P11).</summary>
+    /// <summary>A sessão mudou de data ou hora (BL-M04-07): ela fica no histórico e aponta a sessão nova, avulsa.</summary>
     Remarcada = 40
 }
 
@@ -47,10 +47,22 @@ public class SessaoTreino : IEntidadeAuditavel, IEntidadeDaEscolinha
 
     public SituacaoSessao Situacao { get; set; } = SituacaoSessao.Prevista;
 
+    /// <summary>O motivo do cancelamento ou da remarcação (com quem e quando, nos campos abaixo).</summary>
     public string? MotivoCancelamento { get; set; }
     public DateTime? CanceladaEm { get; set; }
     public Guid? CanceladaPor_ID { get; set; }
     public string? CanceladaPorNome { get; set; }
+
+    /// <summary>Remarcada: a sessão nova, no dia e hora combinados (BL-M04-07).</summary>
+    public Guid? RemarcadaPara_ID { get; set; }
+
+    /// <summary>
+    /// A sessão avulsa que veio de uma remarcação: não pertence a um horário da turma, e a geração nunca a ajusta nem a
+    /// retira (ela é um combinado, não o padrão).
+    /// </summary>
+    public Guid? RemarcadaDe_ID { get; set; }
+
+    public bool Avulsa => RemarcadaDe_ID is not null;
 
     public DateTime DataCadastro { get; set; }
     public Guid? UsuarioCadastro_ID { get; set; }
@@ -61,12 +73,49 @@ public class SessaoTreino : IEntidadeAuditavel, IEntidadeDaEscolinha
     /// O que a geração pode refazer quando o padrão da turma muda: só a sessão ainda prevista e que ainda não começou.
     /// Cancelada, realizada ou já começada fica como está (histórico).
     /// </summary>
-    public bool Mutavel(DateTime agora) => Situacao == SituacaoSessao.Prevista && Inicio >= agora;
+    public bool Mutavel(DateTime agora) => Situacao == SituacaoSessao.Prevista && Inicio >= agora && !Avulsa;
 
     public bool PodeCancelar => Situacao == SituacaoSessao.Prevista;
 
+    /// <summary>Só a prevista que ainda não começou muda de data (a realizada tem chamada; a cancelada, o aviso).</summary>
+    public bool PodeRemarcar(DateTime agora) => Situacao == SituacaoSessao.Prevista && Inicio > agora;
+
+    /// <summary>
+    /// Remarca (BL-M04-07): esta sessão fica como remarcada, com motivo e autor, e a nova, avulsa, ocupa o dia e a hora
+    /// combinados, com o mesmo local e professor. A presença é registrada na nova.
+    /// </summary>
+    public SessaoTreino Remarcar(DateOnly data, TimeOnly inicio, TimeOnly fim, string motivo, DateTime agora, Guid? autorId, string? autorNome)
+    {
+        if (!PodeRemarcar(agora)) throw new InvalidOperationException($"Sessão {Situacao} não pode ser remarcada.");
+        if (string.IsNullOrWhiteSpace(motivo)) throw new ArgumentException("A remarcação exige motivo.", nameof(motivo));
+        if (fim <= inicio) throw new ArgumentException("O fim precisa ser depois do início.", nameof(fim));
+        var nova = new SessaoTreino
+        {
+            SessaoTreino_ID = Guid.NewGuid(),
+            Turma_ID = Turma_ID,
+            Data = data,
+            Inicio = data.ToDateTime(inicio),
+            Fim = data.ToDateTime(fim),
+            Local_ID = Local_ID,
+            Professor_ID = Professor_ID,
+            Situacao = SituacaoSessao.Prevista,
+            RemarcadaDe_ID = SessaoTreino_ID
+        };
+        if (nova.Inicio <= agora) throw new ArgumentException("A nova data precisa ser no futuro.", nameof(data));
+        Situacao = SituacaoSessao.Remarcada;
+        RemarcadaPara_ID = nova.SessaoTreino_ID;
+        MotivoCancelamento = TextoHelper.Truncar(motivo, TamanhoMotivo);
+        CanceladaEm = agora;
+        CanceladaPor_ID = autorId;
+        CanceladaPorNome = TextoHelper.Truncar(autorNome ?? "Sistema", TamanhoAutor);
+        return nova;
+    }
+
     /// <summary>A chamada vale no dia do treino e depois (correção); nunca antes, nem em sessão cancelada (S3).</summary>
-    public bool AceitaChamada(DateOnly hoje) => Situacao != SituacaoSessao.Cancelada && Data <= hoje;
+    public bool AceitaChamada(DateOnly hoje) => !Encerrada && Data <= hoje;
+
+    /// <summary>Cancelada ou remarcada: não acontece mais nesta data, e não ocupa a agenda.</summary>
+    public bool Encerrada => Situacao is SituacaoSessao.Cancelada or SituacaoSessao.Remarcada;
 
     /// <summary>A primeira marcação registrada faz a sessão acontecer: prevista → realizada (§6).</summary>
     public void RegistrarChamada()
@@ -145,7 +194,7 @@ public static class GeradorSessoes
             : [];
 
         var porChave = existentes
-            .Where(s => s.HorarioTurma_ID is not null)
+            .Where(s => s.HorarioTurma_ID is not null && !s.Avulsa)
             .GroupBy(s => (Horario: s.HorarioTurma_ID!.Value, s.Data))
             .ToDictionary(g => g.Key, g => g.First());
 

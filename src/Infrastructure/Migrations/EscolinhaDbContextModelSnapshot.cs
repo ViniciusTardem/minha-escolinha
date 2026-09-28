@@ -3000,6 +3000,12 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Property<Guid>("Professor_ID")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("RemarcadaDe_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RemarcadaPara_ID")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Situacao")
                         .HasColumnType("int");
 
@@ -3020,6 +3026,10 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.HasIndex("Local_ID");
 
                     b.HasIndex("Professor_ID");
+
+                    b.HasIndex("RemarcadaDe_ID")
+                        .HasDatabaseName("IX_SessaoTreino_RemarcadaDe")
+                        .HasFilter("[RemarcadaDe_ID] IS NOT NULL");
 
                     b.HasIndex("Turma_ID");
 
@@ -3802,6 +3812,12 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_SessaoTreino_Professor");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.SessaoTreino", null)
+                        .WithMany()
+                        .HasForeignKey("RemarcadaDe_ID")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_SessaoTreino_RemarcadaDe");
 
                     b.HasOne("MinhaEscolinha.Domain.Turmas.Turma", "Turma")
                         .WithMany()
