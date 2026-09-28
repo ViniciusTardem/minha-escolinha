@@ -155,6 +155,7 @@ Varredura por **conteúdo** em todo `C:\Users\vinic\Documents\Projetos`, em 26/0
 |---|---|
 | Regra de ouro 8, "todo WhatsApp gera cópia ao atendente" | Violaria R3 e o CA-20 e gastaria crédito (X05) |
 | Leitura do banco legado de R&S (`Infrastructure/Legado`, Dapper) | Não existe legado aqui. A carga inicial vem por planilha (S7, com o ClosedXML do DP). |
-| ZapSign, GoHighLevel e o e-mail com caixa de saída local | Fora do escopo. As integrações do produto são só Asaas e WhatsApp (§8). |
+| ZapSign e GoHighLevel | Fora do escopo. As integrações do produto são Asaas e WhatsApp (§8), mais o Stripe da LDNA (X08). |
+| A fila de e-mails e os alertas por e-mail do DP | O e-mail aqui não é canal de aviso (R3). Do DP veio só o envio (`EnvioEmailCaixaLocal` e `EnvioEmailSmtp`, com as mesmas opções `Email:*`), usado apenas no link de nova senha, por job (D107). |
 | Parâmetros em linha única tipada (`ParametrosDp`) | A spec pede catálogo por domínio (X03) |
 | Swashbuckle, `FluentValidation.AspNetCore`, pin de `System.Private.Uri` | Sem API pública; pacote descontinuado. Pin desnecessário: com o EF Core 9.0.20, o build não acusa a vulnerabilidade (NU1903) que motivou o pin no DP. |

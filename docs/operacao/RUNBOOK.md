@@ -94,6 +94,20 @@ A chave de API é **de cada escolinha**, vinculada por ela na tela Conta de rece
 
 No painel do Stripe: o endpoint `https://<site>/api/v1/webhooks/stripe`, com os 4 eventos de Checkout que a tela Plataforma › Pacotes de créditos lista. Recomendado um sandbox próprio para a Minha Escolinha (P27).
 
+### 4.5 E-mail (só a recuperação de senha)
+
+O e-mail serve só para o link de nova senha de quem entra com e-mail. Não é canal de aviso: os avisos são do WhatsApp e do portal (R3). Quem entra só pelo CPF recebe o link da gestão, na ficha, e isso funciona sem e-mail.
+
+| Variável | Para quê |
+|---|---|
+| `Email__Modo` | `CaixaLocal` (padrão: grava o e-mail em disco, nada sai) ou `Smtp`. Em `Production`, `CaixaLocal` desliga o e-mail, com aviso no log: a recuperação fica só com o link da gestão |
+| `Email__SmtpHost`, `Email__SmtpPorta` (587), `Email__SmtpSsl` (true) | O servidor SMTP |
+| `Email__SmtpUsuario`, `Email__SmtpSenha` | A conta do SMTP (a senha só em variável de ambiente) |
+| `Email__Remetente` | O endereço que aparece como remetente (obrigatório com `Smtp`) |
+| `Email__RedirecionarPara` | **Fora de `Production` é obrigatório com `Smtp`:** todo e-mail vai para este endereço. Em `Production` é ignorado |
+| `Email__UrlPublica` | O endereço https do site: vai no link de nova senha. Em `Production`, o log avisa se for http ou localhost |
+| `Email__Pasta` | A pasta da caixa local (padrão `%LOCALAPPDATA%\MinhaEscolinha\emails`) |
+
 ## 5. Primeira subida
 
 1. Iniciar o site. No log (`logs/startup-*.log` e `logs/app-*.log`, na pasta do site): "Aplicando migrations…", os parâmetros reconciliados e os templates gravados.
@@ -145,6 +159,7 @@ No painel do Stripe: o endpoint `https://<site>/api/v1/webhooks/stripe`, com os 
   |---|---|---|
   | `sessoes-gerar-horizonte` | 03:15 | as sessões de treino até o fim do mês seguinte |
   | `webhooks-limpar-corpo` | 04:30 | apaga o corpo bruto dos webhooks encerrados há mais de 90 dias; a linha fica (P22) |
+  | `importacao-descartar-esquecidos` | 04:45 | descarta o lote de importação aberto há mais de 7 dias e apaga a planilha cifrada (P53) |
   | `mensalidades-rotina` | 06:30 | projeção, vencidas, régua, emissões e o Pix do portal |
   | `mensalidades-varredura` | de hora em hora (:40) | confere na Asaas o que o webhook não trouxe |
   | `mensagens-varredura` | a cada 5 min | solta as retidas quando o saldo volta e reenfileira as vencidas |
@@ -164,6 +179,7 @@ No painel do Stripe: o endpoint `https://<site>/api/v1/webhooks/stripe`, com os 
 | Pagamento não concilia | Webhook da Asaas: `Asaas__UrlPublica` https, a fila penalizada no painel da Asaas (§6.1), a varredura de hora em hora. A mensalidade com valor diferente fica na fila de Divergências, de propósito. |
 | Painel do jogo não atualiza sozinho | Um proxy que bloqueia WebSocket faz o SignalR cair para long polling (funciona, mais lento); a tela também busca de novo a cada minuto. |
 | Chamada não abre sem sinal no celular | O service worker só registra com HTTPS válido; o aparelho precisa ter aberto a lista do dia com sinal antes. |
+| Link de nova senha não chega | Ver o job na fila `esc_integracoes` (`/jobs`): a falha do SMTP é tentada 5 vezes. Conferir `Email__*`. Em `Production` com `CaixaLocal`, o e-mail está desligado: a gestão gera o link na ficha da pessoa (botão "Link de nova senha"). Quem entra só pelo CPF sempre recebe o link da gestão. |
 | Lote de importação "não encontrado" | O certificado do Data Protection mudou: descarte e envie a planilha de novo. |
 
 ## 9. Voltar uma versão

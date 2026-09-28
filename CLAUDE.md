@@ -49,7 +49,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - `Web` depende de `Application` e `Infrastructure`.
 - **Módulos:** a mesma pasta aparece nas camadas.
   - Hoje:
-    - `Comum`, `Acesso` (M01), `Configuracao` (M02), `Eventos` e `Auditoria`;
+    - `Comum`, `Acesso` (M01, com a recuperação de senha por e-mail ou link da gestão, D107), `Configuracao` (M02), `Eventos` e `Auditoria`;
     - `Turmas` (M04), `Alunos` (M03) e `Equipe` (M08), do S1; `Agenda`, só no domínio: compromisso datado e conflitos;
     - `Plataforma` e `Integracao` (Stripe, EX-01; WhatsApp, S2; Asaas, S4);
     - `Mensageria` (M09), do S2: motor, templates e convites (em `Acesso`);
@@ -86,7 +86,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - o `EscolinhaInterceptor` carimba a escolinha no insert e lança exceção em gravação sem contexto, em outra escolinha ou trocando `Escolinha_ID`;
   - na requisição, o contexto vem do `ContextoEscolinhaMiddleware`; em plataforma, jobs e startup, do `IExecutorEscolinha`, que abre um escopo com o contexto definido;
   - `IgnoreQueryFilters()` só em `AcessoRepositorio.cs` e `ConsultasPlataforma.cs`. Um teste falha em qualquer outro arquivo. Aumentar a lista é decisão registrada, nunca atalho;
-  - globais de propósito, fora do filtro: a identidade (`Pessoa`, `Credencial`), o webhook bruto (`WebhookRecebido`, que guarda a escolinha do aviso da Asaas numa coluna comum; o corpo do encerrado sai depois de 90 dias, D96), os templates da plataforma (`TemplateMensagem`, D48) e o índice `RastreioWhatsApp`, que guarda só o id da Meta, a escolinha e a mensagem (D50).
+  - globais de propósito, fora do filtro: a identidade (`Pessoa`, `Credencial`), o webhook bruto (`WebhookRecebido`, que guarda a escolinha do aviso da Asaas numa coluna comum; o corpo do encerrado sai depois de 90 dias, D96), os templates da plataforma (`TemplateMensagem`, D48), o índice `RastreioWhatsApp`, que guarda só o id da Meta, a escolinha e a mensagem (D50), e o pedido de nova senha (`RecuperacaoSenha`, que guarda só o hash do segredo, D107).
 - **Credenciais só em user-secrets** (dev) ou variável de ambiente (produção). O login `sa` do SQL local só vale para desenvolvimento.
 
 ---
@@ -191,7 +191,8 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - **consulta com mais de uma coleção** declara `AsSplitQuery` ou `AsSingleQuery`, e `First` sem ordem nem filtro vira `Single` (os testes tratam os dois avisos do EF como erro, D86).
 - **Testes:**
   - xUnit + `FakeTimeProvider`;
-  - com banco, `[FatoComBanco]` e a coleção `BancoDeTestes`, com `AmbienteAplicacao.ComoPlataformaAsync`, `NaEscolinhaAsync` e `SemContextoAsync`. O WhatsApp é o `GatewayWhatsAppFalso` e os jobs vão para o `AgendadorMensageriaDeTeste`; a Asaas é o `GatewayAsaasFalso` e os jobs do financeiro vão para o `AgendadorFinanceiroDeTeste`; o tempo real é o `NotificadorConvocacoesDeTeste` (`AmbienteAplicacao.TempoReal`);
+  - com banco, `[FatoComBanco]` e a coleção `BancoDeTestes`, com `AmbienteAplicacao.ComoPlataformaAsync`, `NaEscolinhaAsync` e `SemContextoAsync`. O WhatsApp é o `GatewayWhatsAppFalso` e os jobs vão para o `AgendadorMensageriaDeTeste`; a Asaas é o `GatewayAsaasFalso` e os jobs do financeiro vão para o `AgendadorFinanceiroDeTeste`; o tempo real é o `NotificadorConvocacoesDeTeste` (`AmbienteAplicacao.TempoReal`); o e-mail é o `EnvioEmailFalso` e o job dele vai para o `AgendadorEmailDeTeste`;
+  - teste de navegador (CA-21, D108): `[FatoComNavegador]`, com o `Microsoft.Playwright` e o Chrome instalado, contra o app rodando. Só roda com `ESC_E2E_URL`, `ESC_E2E_LOGIN`, `ESC_E2E_SENHA` e `ESC_E2E_SESSAO`; sem elas, é ignorado;
   - toda regra de negócio tem teste, e toda regra de ouro que pode ser verificada no código tem teste em `Arquitetura/RegrasDeOuroTestes.cs`.
 
 ---
@@ -274,6 +275,18 @@ dotnet user-secrets set "Asaas:Modo" "Api" --project src/Web
 dotnet user-secrets set "Asaas:UrlPublica" "https://<endereço público>" --project src/Web     # o webhook de cada escolinha usa este endereço
 dotnet user-secrets set "Asaas:EmailAvisosWebhook" "<e-mail>" --project src/Web             # opcional: a Asaas avisa quando o webhook falha
 
+# E-mail (só o link de nova senha). Padrão: CaixaLocal (%LOCALAPPDATA%\MinhaEscolinha\emails, nada sai). Para SMTP:
+dotnet user-secrets set "Email:Modo" "Smtp" --project src/Web
+dotnet user-secrets set "Email:SmtpHost" "<host>" --project src/Web
+dotnet user-secrets set "Email:SmtpUsuario" "<usuário>" --project src/Web
+dotnet user-secrets set "Email:SmtpSenha" "<senha>" --project src/Web
+dotnet user-secrets set "Email:Remetente" "<e-mail>" --project src/Web
+dotnet user-secrets set "Email:RedirecionarPara" "<e-mail de teste>" --project src/Web      # obrigatório fora de Production
+
+# Teste de navegador do CA-21 (com o app rodando em outro terminal; PowerShell)
+$env:ESC_E2E_URL='https://localhost:7186'; $env:ESC_E2E_LOGIN='<login>'; $env:ESC_E2E_SENHA='<senha>'; $env:ESC_E2E_SESSAO='<id da sessão>'
+dotnet test tests/Testes --filter "FullyQualifiedName~Navegador"
+
 # Certificado HTTPS de desenvolvimento do SDK novo (uma vez; o Windows pede confirmação)
 dotnet dev-certs https --trust
 ```
@@ -313,11 +326,13 @@ dotnet dev-certs https --trust
   - em A, desde o S6: a responsável Sabrina Pacheco tem acesso (login pelo CPF), com os vínculos do Anthony, do Benjamin e do Raul confirmados, e as mensalidades de outubro do Benjamin (em aberto, com o Pix) e do Raul (paga) emitidas;
   - em A, desde o S7: 4 alunos de uma planilha de validação (a Sophia entrou no cadastro da Sabrina), com as mensalidades de outubro a confirmar, e dois envios na Importação (um importado, um descartado);
   - em A, desde a validação da P37: a presença do Caio Wagner na sessão de 28/09, às 19:00, da turma "Sub-13 · noite", marcada sem sinal.
+- **E-mail:** serve só para o link de nova senha (D107); não é canal de aviso (R3). Trava de ambiente (`GuardaEmail`): `CaixaLocal` em Production desliga o e-mail, com aviso (a gestão gera o link na ficha); `Smtp` exige `SmtpHost` e `Remetente` e, fora de Production, `RedirecionarPara`.
 - **Importação (S7):** o lote aberto guarda a planilha cifrada com o Data Protection, como a chave Asaas. Perder o certificado em produção torna o lote aberto ilegível: é só enviar a planilha de novo.
 - **Chamada sem sinal:** o navegador só registra o service worker com certificado confiável. Em desenvolvimento, rode `dotnet dev-certs https --trust`; sem isso, a fila funciona com a página aberta, mas a página não reabre sem sinal (P37). Para validar sem confiar o certificado, abra pelo Playwright um Chrome separado com `--ignore-certificate-errors` (`browserType().launch({ channel: 'chrome', args: [...] })`), feche-o no fim e confira que não sobrou processo. Falta o teste num Android e num iPhone, no servidor com HTTPS.
 - **Jobs recorrentes** (horário de Brasília, registrados no startup):
   - `sessoes-gerar-horizonte`, às 03:15: gera as sessões de treino até o fim do mês seguinte, uma escolinha por vez (D31);
   - `webhooks-limpar-corpo`, às 04:30: apaga o corpo bruto dos webhooks encerrados (processados, ignorados ou com falha definitiva) recebidos há mais de 90 dias; a linha fica (P22, D96);
+  - `importacao-descartar-esquecidos`, às 04:45, uma escolinha por vez: descarta o lote de importação aberto há mais de 7 dias e apaga a planilha (P53, D105);
   - `stripe-varredura-compras`, a cada 20 minutos: confere as compras de créditos pendentes. Sai quando o Stripe está desligado (`Stripe:Habilitado = false`);
   - `mensagens-varredura`, a cada 5 minutos, uma escolinha por vez: solta as mensagens retidas quando o saldo volta e reenfileira as que venceram (D45);
   - `mensalidades-rotina`, às 06:30, uma escolinha por vez: projeção, vencidas, régua e emissões (D66), e a busca do Pix das mensalidades em aberto sem Pix ou com o Pix vencido (D90). As mensagens da régua esperam o fim da janela de silêncio;

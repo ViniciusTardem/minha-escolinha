@@ -90,6 +90,8 @@ O registro completo, com data, está em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-AB
 | S6 — Portal do responsável | 6 | **Pronto no simulador** e commitado (`f9699c8`), com os 6 concluídos. O pagamento na sandbox da Asaas espera a conta (P41). | 28/09/2026 |
 | S7 — Carga inicial da escolinha piloto | 5 | **Pronto** e commitado (`a262578`), com os 5 concluídos, sem a planilha real: o modelo e o mapeamento das colunas a recebem sem código novo (P21). | 28/09/2026 |
 
+| Depois do S7 — pendências decididas pelo responsável e os 4 itens adiados liberados (EX-03 a EX-07) | — | **Pronto** e commitado em blocos (`1b93862`, `6d8c103`, `1447f10`, `bdd6716`, `311f7c5`, `0a3793e`, `1896994` e o bloco final), com as decisões D97 a D110 | 28/09/2026 |
+
 Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [`BACKLOG.md`](BACKLOG.md).
 
 ---
@@ -109,12 +111,12 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
    - os templates aprovados;
    - os números de teste.
 
-   O passo a passo da conta na Meta está no runbook (§6.2), e a revisão dos templates, em [`operacao/TEMPLATES-WHATSAPP.md`](operacao/TEMPLATES-WHATSAPP.md). Com isso, grave em user-secrets os comandos do CLAUDE.md §7 (`WhatsApp:Modo = Api`, as 4 chaves, `WhatsApp:NumerosTeste` e `WhatsApp:UrlPublica`). Então:
+   O passo a passo da conta na Meta está no runbook (§6.2), e os 22 textos decididos (D97), em [`operacao/TEMPLATES-WHATSAPP.md`](operacao/TEMPLATES-WHATSAPP.md). Com isso, grave em user-secrets os comandos do CLAUDE.md §7 (`WhatsApp:Modo = Api`, as 4 chaves, `WhatsApp:NumerosTeste` e `WhatsApp:UrlPublica`). Então:
    - convide um número de teste;
    - responda pelo celular;
    - confira a resposta e o log em Mensagens;
    - convoque um aluno cujo responsável tenha o número de teste, toque em "Vai" no celular e confira o painel do jogo mudando sozinho.
-5. **A chamada sem sinal num Android e num iPhone** (P37), no servidor com HTTPS (roteiro de homologação §5). Nesta máquina ela já foi validada, com um Chrome que aceita o certificado de desenvolvimento (§9).
+5. **A chamada sem sinal num Android e num iPhone** (P37), no servidor com HTTPS (roteiro de homologação §5). Nesta máquina ela já foi validada, com um Chrome que aceita o certificado de desenvolvimento (§9), e virou teste de navegador (`ChamadaSemSinalNavegadorTestes`, D108): rode-o contra o servidor com as variáveis `ESC_E2E_*`.
 6. **Stripe em modo de teste**, quando o responsável quiser sair do simulador:
    - criar um sandbox próprio no painel do Stripe (P27);
    - gravar em user-secrets `Stripe:Modo = Teste` e `Stripe:ChaveSecreta` (chave de teste, `sk_test_` ou `rk_test_` restrita);
@@ -331,10 +333,9 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 |---|---|---|
 | A planilha real da escolinha piloto | A carga da base real. O S7 está pronto sem ela: o modelo segue os campos da §5 da spec, e a planilha real pede só o mapeamento das colunas; conferir se ela traz algo a mais (P54). | P21 |
 | Conta WhatsApp Business da LDNA na Cloud API, URL HTTPS pública, templates aprovados e números de teste | A prova do S2 e do S5 com um número real e todo envio real | P14, P34 |
-| Validar a categoria e os textos dos 13 templates (a revisão, com as propostas e os exemplos da submissão, está em [`operacao/TEMPLATES-WHATSAPP.md`](operacao/TEMPLATES-WHATSAPP.md)) | Submissão à Meta | P02 |
-| Decidir: trocada a versão de um template aprovado, o envio aceita o nome anterior até a fila esvaziar? | Nada bloqueia: a troca é feita fora de um disparo | P55 |
+| Submeter os 22 templates à Meta, com os textos decididos (D97) e os exemplos de [`operacao/TEMPLATES-WHATSAPP.md`](operacao/TEMPLATES-WHATSAPP.md) | Envio real pelo WhatsApp | P34 |
+| Conta de e-mail (SMTP) para o link de nova senha (`Email:*`, runbook §4.5) | Só o e-mail de nova senha: sem ele, a gestão gera o link na ficha | D107 |
 | Conta Asaas sandbox (da escolinha piloto ou da LDNA, para o teste) e endereço https público; para produção, a conta da escolinha | A prova do S4 fora do simulador; a cobrança real | P21, P41 |
-| Confirmar com a escolinha: os grupos do painel de pagamentos; se alguma turma é cobrada fora do mês; se a mudança no cadastro atualiza o cliente na Asaas; se o piloto precisa reabrir a mensalidade estornada | Nada bloqueia; seguem os encaminhamentos provisórios | P40, P42, P43, P44 |
 | Pacote de créditos (comercial) | Envio real (S2) | P06, P21 |
 | Hospedagem com HTTPS público (o passo a passo está no [`operacao/RUNBOOK.md`](operacao/RUNBOOK.md)) | Webhooks do WhatsApp e da Asaas; a chamada sem sinal em aparelho real | P21, P37 |
 | Identidade visual (logo, cor) | Trocar a marca provisória | D17 |
@@ -343,12 +344,9 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | Definir o plano recorrente (preço, periodicidade, créditos incluídos) e os pacotes à venda | Cobrança do plano pelo Stripe; venda real dos pacotes | P25, P26 |
 | A "Especificação Funcional e Técnica", se existir | Detalhe de campos por módulo | P21 |
 | Revisão jurídica dos termos de consentimento (tratamento de dados e uso de imagem), incluindo o WhatsApp no termo de tratamento de dados | Produção; opt-in da Meta | P29, P15 |
-| Decidir: a mudança de horário da turma avisa as famílias ("Treino remarcado")? A gestão é avisada das respostas livres? "SAIR" desliga o recebimento? | Nada bloqueia; seguem os encaminhamentos provisórios | P33, P35, P36 |
-| Confirmar com a escolinha: a meta de frequência da turma entra no risco? O risco exige um mínimo de sessões? A quadra usa aparelho compartilhado? | Nada bloqueia; seguem os encaminhamentos provisórios | P32, P38, P39 |
-| Decidir com a escolinha: mudar o horário do jogo pede nova confirmação? O piloto registra o placar? No jogo que junta turmas, cada professor registra só a turma dele? A resposta por texto à convocação aparece no painel? | Nada bloqueia; seguem os encaminhamentos provisórios | P45, P46, P47, P48 |
 | A chamada sem sinal num Android e num iPhone, no servidor com HTTPS (nesta máquina já foi validada) | A reabertura da chamada sem sinal no aparelho real (CA-21) | P37 |
-| Decidir com a escolinha: o portal mostra a imagem do QR code do Pix? Quem não é pagador nem recebe a cobrança vê as mensalidades? A mudança de resposta perto do jogo avisa o professor? | Nada bloqueia; seguem os encaminhamentos provisórios | P49, P50, P51 |
-| Confirmar com a planilha real: ela diz quem paga? Traz endereço ou outro campo fora do modelo? E decidir se o lote de importação esquecido é descartado por um job diário | Nada bloqueia; seguem os encaminhamentos provisórios | P52, P53, P54 |
+| Confirmar com a planilha real: ela diz quem paga? Traz endereço ou outro campo fora do modelo? | Nada bloqueia; seguem os encaminhamentos provisórios | P52, P54 |
+| Antes de 10/11/2026: publicar self-contained com o runtime 9 mais recente; depois dessa data o .NET 9 fica sem correção de segurança, e subir para o .NET 10 é decisão do responsável | Segurança do servidor | P24, D109 |
 
 ---
 
@@ -405,3 +403,4 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | 28/09/2026 | **Commit do S7** na `main` (`a262578`), com a autorização por fatia do responsável ("continuar"). Fim das fatias do piloto; a lista de pendências foi entregue ao responsável, como pedido. |
 | 28/09/2026 | **Pendências sem dependência externa** (pedido do responsável: "deixa o WhatsApp por último, pode seguir"): <ul><li>**P37 validada nesta máquina:** um Chrome separado, sem janela, que aceita o certificado de desenvolvimento, registrou o service worker; a sessão reabriu sem rede, a marcação ficou na fila depois de recarregar, a fila saiu ao voltar a rede e o "Sair" apagou a cópia guardada. Falta o aparelho real.</li><li>**P22 aplicada** (D96): o job diário `webhooks-limpar-corpo` apaga o corpo bruto dos webhooks encerrados há mais de 90 dias, e a linha fica. Migration só aditiva (`WebhookCorpoApagado`), com teste.</li><li>**Operação documentada** em `docs/operacao/`, portada do DP: o runbook (publicação, variáveis, integrações, jobs, problemas e volta de versão), o script do banco e do login, e o roteiro de homologação por fatia, com os critérios de aceite.</li><li>**Conferência na documentação da Asaas:** os endpoints da sandbox do runbook; e a conta sem chave Pix, que recebe um Pix que só vale até as 23:59 do dia. O sistema já tratava a validade; D90 corrigida e o ponto entrou na prova da P41.</li></ul> Commit local `13fca8f`, com o app conferido: a migration aplicada no banco de desenvolvimento, o `/health` saudável e o job registrado às 04:30. |
 | 28/09/2026 | **Os itens do WhatsApp, por último:** <ul><li>**P02:** a revisão dos 13 templates para a submissão à Meta (`operacao/TEMPLATES-WHATSAPP.md`), conferida nas regras publicadas pela Meta. Utilidade para todos; quatro textos terminam numa variável e ganham a proposta de uma frase fixa; os de 6 ou 7 variáveis correm o risco de "variáveis demais para o tamanho"; os exemplos de cada variável. Nada foi mudado nos textos: a decisão é do responsável.</li><li>**P34 e P14:** o passo a passo da conta na Meta no runbook (§6.2), do app ao webhook, e o que muda para o número de produção.</li><li>**P55, nova:** o envio procura o template pelo nome gravado na mensagem, e trocar a versão na tela descarta o que está na fila com o nome antigo.</li><li>**O teste de contrato instável do WhatsApp (S6):** ao menos 13 rodadas completas seguidas passaram desde a falha (5 delas hoje), e a causa não apareceu. A mensagem daquela falha se perdeu porque a saída do `dotnet test` foi cortada. Na próxima falha, guardar a saída inteira.</li></ul> |
+| 28/09/2026 | **As referências decididas pelo responsável** ("fazer as referências P32, P39, P38, P40, P44, P50, P45, P47, P51, P24, P02, P33, P35, P36, P55, P42, P43, P46, P48, P49, P53, P31, CA-21, D22" e "Item 22, pode fazer"), em blocos commitados: <ul><li>templates nos dois tons e o nome anterior aceito no envio (P02, P55);</li><li>risco com a meta da turma e o mínimo de sessões, fila da chamada por pessoa (P32, P39, P38);</li><li>respostas das famílias, SAIR, remarcação de treino e aviso de horário novo (P35, P36, P33, BL-M04-07);</li><li>nova confirmação, turma do professor, mudança perto do jogo, texto da família e placar (P45, P47, P51, P48, P46);</li><li>cobrar de novo, cliente atualizado na Asaas, QR code, periodicidade e mensalidades no portal (P43, P42, P49, P44, P50);</li><li>horários do local e descarte diário do lote esquecido (P31, P53);</li><li>visão única dos filhos, troca de escolinha e recuperação de senha por e-mail ou link da gestão (BL-M10-02, BL-M01-02, BL-M01-09);</li><li>o CA-21 automatizado no Chrome, com o `Microsoft.Playwright` (D22, D108, X09), aprovado contra o app;</li><li>P24 (continua no .NET 9) e P40 (grupos provisórios) decididas sem código.</li></ul> Decisões D97 a D110. Continuam aguardando o responsável: o servidor, a sandbox da Asaas, a conta na Meta, a revisão jurídica, a identidade visual, o Stripe, a planilha real, os valores dos parâmetros, os aparelhos reais e as fases fora do escopo. |

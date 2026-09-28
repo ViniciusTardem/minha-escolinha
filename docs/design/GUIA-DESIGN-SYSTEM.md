@@ -329,7 +329,7 @@ A utility que falta nasce no `npm run css` quando uma View passa a usá-la; o ve
 | `SituacaoAluno` | `Trial` · Info; `Ativo` · Sucesso; `Inativo` · Neutro; `Desistente` · Neutro | Alunos, ficha do aluno, mudar situação, ficha da turma e do responsável |
 | `SituacaoMatricula` | `Ativa` · Sucesso; `Encerrada` · Neutro | ficha do aluno (Matrículas) |
 | `SituacaoTurma` | `Ativa` · Sucesso; `Encerrada` · Neutro | Turmas, ficha do professor |
-| `SituacaoSessao` | `Prevista` · Info; `Realizada` · Sucesso; `Cancelada` · Perigo; `Remarcada` · Alerta (sem uso, P11) | Agenda, ficha da turma, Painel (próximos treinos) |
+| `SituacaoSessao` | `Prevista` · Info; `Realizada` · Sucesso; `Cancelada` · Perigo; `Remarcada` · Alerta (a sessão que foi para outra data, D100) | Agenda, ficha da turma, Painel (próximos treinos) |
 | `EstadoConsentimento` | `Pendente` · Alerta; `Concedido` → "Autorizado" · Sucesso; `Recusado` · Neutro; `Revogado` · Neutro | ficha do aluno (Consentimentos) |
 | `SituacaoMensagem` | `Pendente` → "Na fila" · Neutro; `Retida` · Alerta; `Enviada` · Info; `Entregue` · Sucesso; `Lida` · Sucesso; `Falhou` · Perigo; `Suprimida` · Neutro | Mensagens (lista e detalhe) |
 | `SituacaoAcesso` | `SemAcesso` → "Sem acesso" · Neutro; `Convidado` · Info; `ConviteExpirado` → "Convite vencido" · Alerta; `Ativo` → "Com acesso" · Sucesso | Convites; fichas do responsável e do professor (`_AcessoDaFicha`) |
@@ -343,7 +343,7 @@ A utility que falta nasce no `npm run css` quando uma View passa a usá-la; o ve
 | `SituacaoCobranca` (S4) | `Prevista` · Neutro; `Emitida` · Info; `Paga` · Sucesso; `PagaEmAtraso` → "Paga em atraso" · Sucesso; `Vencida` · Perigo; `Cancelada` · Neutro; `Isenta` · Neutro | Mensalidades, Divergências, telas de ação, aba Financeiro da ficha |
 | `SinalCobranca` (S4) | `ValorDivergente` → "Valor divergente", `Estorno`, `Chargeback` → "Contestação no cartão", `ExcluidaNaAsaas` → "Excluída na Asaas", `PagaDepoisDeEncerrada` → "Paga depois de encerrada", `ContaAnterior` → "Conta Asaas anterior": todos Alerta. `Nenhum` não aparece | idem, e o cartão do painel (divergências) |
 | `SinalTela`, valores do S4 | `MensalidadeAConfirmar` → "A confirmar" · Alerta; `MensalidadeImpedida` → "Não emitida" · Alerta, com o motivo em texto ao lado; `DebitoRemanescente` → "Débito após o desligamento" · Alerta | Mensalidades, aba Financeiro da ficha, cartão do painel |
-| `SituacaoEvento` (S5) | `Agendado` · Info; `Confirmado` · Info; `Realizado` · Sucesso; `ResultadoHomologado` → "Resultado homologado" · Sucesso; `Cancelado` · Perigo; `Adiado` · Alerta | Jogos da semana, painel do jogo |
+| `SituacaoEvento` (S5) | `Agendado` · Info; `Confirmado` · Info; `Realizado` · Sucesso; `ResultadoHomologado` → "Resultado registrado" · Sucesso (o placar, D103); `Cancelado` · Perigo; `Adiado` · Alerta | Jogos da semana, painel do jogo |
 | `SituacaoConvocacao` (S5) | `Selecionada` → "Não enviada" · Neutro; `Enviada` → "Aguardando resposta" · Info; `Confirmada` → "Vai" · Sucesso; `Recusada` → "Não vai" · Perigo; `SemResposta` → "Sem resposta" · Alerta; `Cancelada` · Neutro | Jogos da semana (na linha do aluno), painel do jogo, vitrine do portal |
 | `SituacaoImportacao` (S7) | `Aberta` → "Em conferência" · Info; `Confirmada` → "Importada" · Sucesso; `Descartada` · Neutro | Importação (envios) e resultado do lote |
 | `ClasseLinha` (S7) | `Apta` · Sucesso; `ComAviso` → "Com aviso" · Alerta; `Bloqueada` · Perigo | Conferência da importação (cada linha) |
@@ -376,7 +376,7 @@ A tabela da §4.2 do plano:
 | Sinais | — | — | risco de evasão | inadimplência (quando ligada) | — |
 
 - A coluna "secondary / mono" do plano é o `Neutro` (`kt-badge-secondary`). O `VarianteSelo` não tem Mono.
-- "Remarcada" (sessão) e "homologado" (evento) existem no domínio, mas ficam sem uso no piloto (P11).
+- "Remarcada" (sessão, D100) e "Resultado registrado" (evento com placar, D103) entraram em uso em 28/09/2026 (P11).
 
 ### 4.4 Etiqueta não é status
 

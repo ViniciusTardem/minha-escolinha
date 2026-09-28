@@ -15,6 +15,9 @@
 - [ ] Criar uma segunda escolinha: o gestor de uma não vê nada da outra, nem colando o endereço de uma ficha (404).
 - [ ] Conceder créditos de mensagem à escolinha piloto (Plataforma › Escolinhas).
 - [ ] 5 senhas erradas → bloqueio temporário com aviso.
+- [ ] "Esqueci a senha" com um login de e-mail → o e-mail chega (com `Email__RedirecionarPara` fora de Production) → o link cria a senha nova e não vale uma segunda vez (D107).
+- [ ] Na ficha de um responsável que entra pelo CPF, "Link de nova senha" → o link aparece uma vez → a pessoa cria a senha e entra.
+- [ ] Quem atua em duas escolinhas troca pelo menu da pessoa, num toque (BL-M01-02).
 
 ## 2. Configuração da escolinha (S0)
 
@@ -45,6 +48,7 @@
 Num **Android** e num **iPhone**, com o professor logado no celular:
 - [ ] Abrir a lista do dia com sinal → modo avião → reabrir a chamada → marcar presença e falta → o selo mostra "Sem sinal" com as pendentes.
 - [ ] Voltar o sinal → a fila sincroniza sozinha; o painel mostra as marcações da quadra (CA-21).
+- [ ] No computador, o teste de navegador contra o servidor (`ESC_E2E_URL` com o endereço https, D108) passa.
 - [ ] Com "Faltas para disparar o alerta" em 3: a 3ª falta no mês manda o alerta ao responsável na hora (CA-4); outra falta dentro da janela anti-duplicidade não manda um segundo (CA-5).
 - [ ] A aba Presença da ficha mostra qual alerta saiu, quando e para quem (CA-6).
 - [ ] Sair do sistema no celular: a lista guardada no aparelho é apagada.

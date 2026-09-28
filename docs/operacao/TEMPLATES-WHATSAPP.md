@@ -1,8 +1,8 @@
 # Templates de WhatsApp — revisão antes da submissão à Meta (P02)
 
 > Para quem valida os textos (o responsável pela LDNA) e para quem submete os templates no WhatsApp Manager da conta da
-> LDNA (P14, P34). Situação em 28/09/2026: os 13 templates estão como **rascunho**, todos na categoria **utilidade**, com
-> textos provisórios. Nada foi submetido.
+> LDNA (P14, P34). Situação em 28/09/2026: os **22 templates** (11 gatilhos, nos tons Cordial e Direto) estão como **rascunho**, todos na
+> categoria **utilidade**, com os **textos decididos** pelo responsável (P02, D97). Nada foi submetido.
 >
 > **Onde ficam os textos:** a tela Plataforma › Templates de WhatsApp (equipe LDNA) é a fonte da verdade; os textos
 > iniciais vêm de `TemplatesPadrao` (`src/Domain/Mensageria/TemplateMensagem.cs`). Aprovado um texto na Meta, marque o
@@ -10,11 +10,10 @@
 
 ## 1. O que decidir
 
-1. **A categoria:** a proposta é **utilidade** para os 13 (§2).
-2. **Os textos:** ler cada um na §4. Quatro deles terminam numa variável e podem ser reprovados (§3.1).
+1. **A categoria:** **utilidade** para os 22 (§2).
+2. **Os textos:** decididos (§4). Os que terminavam numa variável ganharam uma frase fixa no fim (§3.1).
 3. **O que submeter primeiro:** para a prova com o número de teste (P34), `convite_acesso_v1`, `treino_cancelado_v1`,
-   `convocacao_v1` e `convocacao_lembrete_v1`. Os demais antes da produção. O `treino_remarcado_v1` pode esperar: nada o
-   dispara hoje (P33).
+   `convocacao_v1` e `convocacao_lembrete_v1`. Os demais antes da produção. Com o tom Direto na escolinha, submeta também as versões `_direto_v1`.
 
 ## 2. Por que utilidade
 
@@ -34,10 +33,9 @@ para o tamanho da mensagem e a falta do exemplo de cada variável.
 
 ### 3.1 Terminam numa variável
 
-`treino_cancelado_v1`, `treino_remarcado_v1`, `jogo_alterado_v1` e `jogo_cancelado_v1` terminam em "Aviso para: {{n}}.",
-só com o ponto depois da variável. **Proposta:** fechar com uma frase fixa, por exemplo "Qualquer dúvida, fale com a
-equipe." Isso também aumenta o texto fixo (§3.2). Como nada foi submetido ainda, o texto muda na própria tela Templates,
-sem trocar o nome. O texto novo precisa usar as mesmas variáveis, cada uma uma vez e em ordem (a tela confere).
+**Resolvido em 28/09/2026 (D97).** Os avisos de treino e de jogo terminavam em "Aviso para: {{n}}.". Agora fecham com uma
+frase fixa ("Qualquer dúvida, fale com a equipe da escolinha."), e as mensalidades com "Se já pagou, desconsidere esta
+mensagem.". Nenhum dos 22 termina numa variável. Isso também aumenta o texto fixo (§3.2).
 
 ### 3.2 Muitas variáveis para o tamanho
 
@@ -55,25 +53,34 @@ só os encaixa.
 A submissão pede um exemplo por variável. A §4 traz exemplos no formato que o sistema monta. Troque `<site>` pelo
 endereço de produção.
 
-## 4. Os 13 templates
+## 4. Os 22 templates (decididos em 28/09/2026, D97)
 
-Todos em `pt_BR`, categoria utilidade. O `{{2}}` é sempre o nome da escolinha, como sujeito (D48).
+Todos em `pt_BR`, categoria utilidade, pelo número oficial da LDNA (P14). O `{{2}}` é sempre o nome da escolinha, como sujeito (D48). Cada gatilho tem o tom **Cordial** e o **Direto**; o parâmetro `mensagem.tom` escolhe o da escolinha (o alerta de faltas usa o `presenca.alerta.tom`). Nenhum texto termina numa variável (§3.1).
 
-| Template (gatilho) | Texto | Exemplos das variáveis, na ordem | Atenção |
-|---|---|---|---|
-| `convite_acesso_v1` (convite de acesso) | Olá, {{1}}! {{2}} convidou você para acompanhar tudo pelo Minha Escolinha. Ative o seu acesso por este link: {{3}} (vale até {{4}}). Se não reconhece este convite, ignore esta mensagem. | Maria · Escolinha Piloto Londrina · https://&lt;site&gt;/Convite/Xb7kQ2 · 05/10/2026 | — |
-| `treino_cancelado_v1` (treino cancelado) | Olá, {{1}}! {{2}} informa: o treino da turma {{3}} de {{4}} foi cancelado. Motivo: {{5}}. Aviso para: {{6}}. | Maria · Escolinha Piloto Londrina · Sub-11 · sábado, 03/10 às 09:00 · chuva forte · Pedro e Ana | Termina na variável (§3.1); 6 variáveis |
-| `treino_remarcado_v1` (treino remarcado) | Olá, {{1}}! {{2}} informa: o treino da turma {{3}} de {{4}} mudou para {{5}}. Aviso para: {{6}}. | Maria · Escolinha Piloto Londrina · Sub-11 · sábado, 03/10 às 09:00 · domingo, 04/10 às 10:00 · Pedro | Termina na variável; 6 variáveis; nada o dispara hoje (P33) |
-| `faltas_atingidas_cordial_v1` (faltas, tom cordial) | Olá, {{1}}! {{2}} informa: {{3}} teve {{4}} em {{5}} nos treinos da turma {{6}}. Está tudo bem? Se precisar, fale com a equipe. | Maria · Escolinha Piloto Londrina · Pedro · 3 faltas · setembro · Sub-11 | — |
-| `faltas_atingidas_direto_v1` (faltas, tom direto) | Atenção, {{1}}: {{2}} informa que {{3}} já soma {{4}} em {{5}} na turma {{6}}. Por favor, entre em contato com a equipe. | Maria · Escolinha Piloto Londrina · Pedro · 3 faltas · setembro · Sub-11 | — |
-| `mensalidade_a_vencer_v1` (lembrete antes do vencimento) | Olá, {{1}}! {{2}} informa: a mensalidade de {{3}} ({{4}}) vence em {{5}}. Para pagar, acesse {{6}} e escolha Pix, boleto ou cartão. | Maria · Escolinha Piloto Londrina · Pedro · R$ 150,00 · 10/10/2026 · https://www.asaas.com/i/080225913252 | O link é a fatura da Asaas da escolinha |
-| `mensalidade_vencida_cordial_v1` (cobrança, tom cordial) | Olá, {{1}}! {{2}} informa: a mensalidade de {{3}} ({{4}}), com vencimento em {{5}}, ainda está em aberto. Para pagar, acesse {{6}} e escolha Pix, boleto ou cartão. | Maria · Escolinha Piloto Londrina · Pedro · R$ 150,00 · 10/10/2026 · https://www.asaas.com/i/080225913252 | — |
-| `mensalidade_vencida_direto_v1` (cobrança, tom direto) | Atenção, {{1}}: {{2}} informa que a mensalidade de {{3}} ({{4}}) está vencida desde {{5}}. Regularize pelo link {{6}} o quanto antes. | Maria · Escolinha Piloto Londrina · Pedro · R$ 150,00 · 10/10/2026 · https://www.asaas.com/i/080225913252 | Tom firme, sem ameaça (a Meta reprova linguagem ameaçadora) |
-| `pagamento_confirmado_v1` (pagamento confirmado) | Olá, {{1}}! {{2}} confirma o pagamento da mensalidade de {{3}} ({{4}}). Agradecemos! | Maria · Escolinha Piloto Londrina · Pedro · R$ 150,00 | Texto curto para 4 variáveis |
-| `convocacao_v1` (convocação), botões "Vai" e "Não vai" | Olá, {{1}}! {{2}} convoca {{3}} para o {{4}}: {{5}}, no local {{6}} ({{7}}). Confirma a presença? | Maria · Escolinha Piloto Londrina · Pedro · jogo da Sub-11 contra o Tigre · sábado, 03/10 às 09:00 · Ginásio Moringão · https://www.google.com/maps/search/?api=1&query=... | 7 variáveis (§3.2); os botões são de resposta rápida |
-| `convocacao_lembrete_v1` (lembrete a quem não respondeu), botões "Vai" e "Não vai" | Olá, {{1}}! {{2}} ainda espera a resposta da convocação de {{3}} para o {{4}}: {{5}}. Confirma a presença? | Maria · Escolinha Piloto Londrina · Pedro · jogo da Sub-11 contra o Tigre · sábado, 03/10 às 09:00 | — |
-| `jogo_alterado_v1` (jogo alterado) | Atenção, {{1}}: {{2}} informa que o {{3}} mudou. Agora: {{4}}, no local {{5}} ({{6}}). Aviso para: {{7}}. | Maria · Escolinha Piloto Londrina · jogo da Sub-11 contra o Tigre · sábado, 03/10 às 10:00 · Ginásio Moringão · https://www.google.com/maps/search/?api=1&query=... · Pedro e Ana | Termina na variável; 7 variáveis |
-| `jogo_cancelado_v1` (jogo cancelado ou adiado) | Atenção, {{1}}: {{2}} informa que o {{3}} de {{4}} foi {{5}}. Motivo: {{6}}. Aviso para: {{7}}. | Maria · Escolinha Piloto Londrina · jogo da Sub-11 contra o Tigre · sábado, 03/10 às 09:00 · cancelado · o adversário desistiu · Pedro e Ana | Termina na variável; 7 variáveis. O {{5}} é "cancelado" ou "adiado (a nova data será avisada)" |
+| Gatilho | Tom | Template | Texto | Exemplos das variáveis, na ordem |
+|---|---|---|---|---|
+| Faltas atingidas | Cordial | `faltas_atingidas_cordial_v1` | Olá, {{1}}! {{2}} informa: {{3}} teve {{4}} em {{5}} nos treinos da turma {{6}}. Está tudo bem? Se precisar, fale com a equipe da escolinha. | Maria · Escolinha Piloto Londrina · Pedro · 3 faltas · setembro · Sub-11 |
+|  | Direto | `faltas_atingidas_direto_v1` | Atenção, {{1}}: {{2}} informa que {{3}} já soma {{4}} em {{5}} na turma {{6}}. Por favor, entre em contato com a equipe da escolinha. | o mesmo |
+| Treino cancelado | Cordial | `treino_cancelado_v1` | Olá, {{1}}! {{2}} informa: o treino da turma {{3}} marcado para {{4}} foi cancelado. Motivo: {{5}}. Este aviso é sobre {{6}}. Qualquer dúvida, fale com a equipe da escolinha. | Maria · Escolinha Piloto Londrina · Sub-11 · sábado, 03/10 às 09:00 · chuva forte · Pedro e Ana |
+|  | Direto | `treino_cancelado_direto_v1` | Atenção, {{1}}: {{2}} cancelou o treino da turma {{3}} de {{4}}. Motivo: {{5}}. Aviso sobre {{6}}. Dúvidas, fale com a equipe da escolinha. | o mesmo |
+| Treino remarcado | Cordial | `treino_remarcado_v1` | Olá, {{1}}! {{2}} informa que o treino da turma {{3}} mudou de horário. Antes: {{4}}. Agora: {{5}}. Este aviso é sobre {{6}}. Qualquer dúvida, fale com a equipe da escolinha. | Maria · Escolinha Piloto Londrina · Sub-11 · sábado, 03/10 às 09:00 · domingo, 04/10 às 10:00 · Pedro |
+|  | Direto | `treino_remarcado_direto_v1` | Atenção, {{1}}: {{2}} mudou o horário do treino da turma {{3}}. Antes: {{4}}. Agora: {{5}}. Aviso sobre {{6}}. Dúvidas, fale com a equipe da escolinha. | o mesmo |
+| Lembrete antes do vencimento | Cordial | `mensalidade_a_vencer_v1` | Olá, {{1}}! {{2}} lembra que a mensalidade de {{3}}, no valor de {{4}}, vence em {{5}}. Para pagar por Pix, boleto ou cartão, acesse a fatura: {{6}}. Se já pagou, desconsidere esta mensagem. | Maria · Escolinha Piloto Londrina · Pedro · R$ 150,00 · 10/10/2026 · https://www.asaas.com/i/080225913252 |
+|  | Direto | `mensalidade_a_vencer_direto_v1` | Atenção, {{1}}: {{2}} informa que a mensalidade de {{3}}, de {{4}}, vence em {{5}}. Fatura para pagamento: {{6}}. Se já pagou, desconsidere esta mensagem. | o mesmo |
+| Mensalidade vencida (régua) | Cordial | `mensalidade_vencida_cordial_v1` | Olá, {{1}}! {{2}} informa que a mensalidade de {{3}}, no valor de {{4}}, com vencimento em {{5}}, ainda consta em aberto. Para pagar por Pix, boleto ou cartão, acesse a fatura: {{6}}. Se já pagou, desconsidere esta mensagem. | Maria · Escolinha Piloto Londrina · Pedro · R$ 150,00 · 10/10/2026 · https://www.asaas.com/i/080225913252 |
+|  | Direto | `mensalidade_vencida_direto_v1` | Atenção, {{1}}: {{2}} informa que a mensalidade de {{3}}, de {{4}}, está vencida desde {{5}}. Regularize pela fatura: {{6}}. Se já pagou, desconsidere esta mensagem. | o mesmo |
+| Pagamento confirmado | Cordial | `pagamento_confirmado_v1` | Olá, {{1}}! {{2}} confirma o recebimento do pagamento da mensalidade de {{3}}, no valor de {{4}}. Agradecemos, e até o próximo treino! | Maria · Escolinha Piloto Londrina · Pedro · R$ 150,00 |
+|  | Direto | `pagamento_confirmado_direto_v1` | Pagamento confirmado, {{1}}: {{2}} recebeu o pagamento da mensalidade de {{3}}, de {{4}}. Agradecemos. | o mesmo |
+| Convocação (botões Vai e Não vai) | Cordial | `convocacao_v1` | Olá, {{1}}! {{2}} convocou {{3}} para o {{4}}, {{5}}, no local {{6}}. Como chegar: {{7}}. Toque em Vai ou Não vai para confirmar a presença. | Maria · Escolinha Piloto Londrina · Pedro · jogo da Sub-11 contra Tigre FC · sábado, 03/10 às 09:00 · Ginásio Moringão · https://www.google.com/maps/search/?api=1&query=... |
+|  | Direto | `convocacao_direto_v1` | Convocação, {{1}}: {{2}} chamou {{3}} para o {{4}}, {{5}}, no local {{6}}. Como chegar: {{7}}. Responda pelos botões: Vai ou Não vai. | o mesmo |
+| Lembrete a quem não respondeu (botões Vai e Não vai) | Cordial | `convocacao_lembrete_v1` | Olá, {{1}}! {{2}} ainda aguarda a resposta da convocação de {{3}} para o {{4}}, {{5}}. Toque em Vai ou Não vai para confirmar a presença. | Maria · Escolinha Piloto Londrina · Pedro · jogo da Sub-11 contra Tigre FC · sábado, 03/10 às 09:00 |
+|  | Direto | `convocacao_lembrete_direto_v1` | Lembrete, {{1}}: {{2}} precisa da resposta da convocação de {{3}} para o {{4}}, {{5}}. Responda pelos botões: Vai ou Não vai. | o mesmo |
+| Jogo alterado | Cordial | `jogo_alterado_v1` | Atenção, {{1}}: {{2}} informa que o {{3}} mudou. Novo horário: {{4}}, no local {{5}}. Como chegar: {{6}}. Este aviso é sobre {{7}}. Qualquer dúvida, fale com a equipe da escolinha. | Maria · Escolinha Piloto Londrina · jogo da Sub-11 contra Tigre FC · sábado, 03/10 às 10:00 · Ginásio Moringão · https://www.google.com/maps/search/?api=1&query=... · Pedro e Ana |
+|  | Direto | `jogo_alterado_direto_v1` | Mudança de jogo, {{1}}: {{2}} alterou o {{3}}. Agora: {{4}}, no local {{5}}. Como chegar: {{6}}. Aviso sobre {{7}}. Dúvidas, fale com a equipe da escolinha. | o mesmo |
+| Jogo cancelado ou adiado | Cordial | `jogo_cancelado_v1` | Atenção, {{1}}: {{2}} informa que o {{3}}, marcado para {{4}}, foi {{5}}. Motivo: {{6}}. Este aviso é sobre {{7}}. Qualquer dúvida, fale com a equipe da escolinha. | Maria · Escolinha Piloto Londrina · jogo da Sub-11 contra Tigre FC · sábado, 03/10 às 09:00 · cancelado · o adversário desistiu · Pedro e Ana |
+|  | Direto | `jogo_cancelado_direto_v1` | Aviso de jogo, {{1}}: {{2}} informa que o {{3}} de {{4}} foi {{5}}. Motivo: {{6}}. Aviso sobre {{7}}. Dúvidas, fale com a equipe da escolinha. | o mesmo |
+| Convite de acesso | Cordial | `convite_acesso_v1` | Olá, {{1}}! {{2}} convidou você para acompanhar tudo pelo Minha Escolinha. Ative o seu acesso por este link: {{3}} (vale até {{4}}). Se não reconhece este convite, ignore esta mensagem. | Maria · Escolinha Piloto Londrina · https://&lt;site&gt;/Convite/Xb7kQ2 · 05/10/2026 |
+|  | Direto | `convite_acesso_direto_v1` | Convite de acesso, {{1}}: {{2}} liberou o seu acesso ao Minha Escolinha. Ative pelo link {{3}}, válido até {{4}}. Se não reconhece este convite, ignore esta mensagem. | o mesmo |
 
 ## 5. Depois da aprovação
 
@@ -84,5 +91,5 @@ Todos em `pt_BR`, categoria utilidade. O `{{2}}` é sempre o nome da escolinha, 
    a mensagem é encerrada sem envio, com o motivo em Mensagens. Por isso:
    - submeta primeiro a versão nova na Meta e, quando ela for aprovada, troque na tela o nome e o texto, já como
      "Aprovado";
-   - faça a troca fora de um disparo: as mensagens que ainda estão na fila com o nome antigo não saem.
+   - a tela guarda o nome anterior, e o envio aceita os dois nomes até a fila esvaziar (P55, D97).
 3. Seguir a prova com o número de teste: runbook §6.2 e roteiro de homologação §4 e §7.
