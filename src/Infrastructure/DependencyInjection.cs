@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Alunos;
+using MinhaEscolinha.Application.Carga;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
@@ -17,6 +18,7 @@ using MinhaEscolinha.Application.Presencas;
 using MinhaEscolinha.Application.Turmas;
 using MinhaEscolinha.Infrastructure.Acesso;
 using MinhaEscolinha.Infrastructure.Cadastro;
+using MinhaEscolinha.Infrastructure.Carga;
 using MinhaEscolinha.Infrastructure.Comum;
 using MinhaEscolinha.Infrastructure.Configuracao;
 using MinhaEscolinha.Infrastructure.Data.Contexto;
@@ -95,10 +97,14 @@ public static class DependencyInjection
         services.AddScoped<JobsFinanceiro>();
         services.AddAsaas(configuracao, ambiente, aviso);
 
-        // S5 — eventos e convocações
+        // S5 — eventos e convocações; S6 — portal do responsável
         services.AddScoped<IEventosRepositorio, EventosRepositorio>();
         services.AddScoped<IPortalRepositorio, PortalRepositorio>();
         services.AddScoped<JobsConvocacoes>();
+
+        // S7 — carga inicial por planilha
+        services.AddScoped<ICargaRepositorio, CargaRepositorio>();
+        services.AddSingleton<IPlanilhas, PlanilhasClosedXml>();
 
         // Plataforma: pacotes de créditos vendidos pelo Stripe da LDNA
         services.AddScoped<IPlataformaRepositorio, PlataformaRepositorio>();

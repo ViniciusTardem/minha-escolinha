@@ -1,5 +1,6 @@
 using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Alunos;
+using MinhaEscolinha.Application.Carga;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
@@ -105,3 +106,18 @@ public record AtivacaoViewModel(
     IdentificacaoConvite? Identificacao,
     IdentificacaoRequisicao Cpf,
     AtivacaoRequisicao? Ativacao);
+
+/// <summary>A importação (S7): os lotes enviados e se a pessoa pode importar (só a gestão).</summary>
+public record ImportacaoViewModel(IReadOnlyList<LoteNaLista> Lotes, bool PodeImportar);
+
+/// <summary>A conferência de um lote, com o filtro das linhas (todas, com aviso, bloqueadas ou aptas).</summary>
+public record ConferenciaViewModel(ConferenciaLote Conferencia, string? Ver)
+{
+    public IEnumerable<LinhaPlanejada> Linhas => Ver switch
+    {
+        "aviso" => Conferencia.Plano.Linhas.Where(l => l.Classe == ClasseLinha.ComAviso),
+        "bloqueadas" => Conferencia.Plano.Linhas.Where(l => l.Classe == ClasseLinha.Bloqueada),
+        "aptas" => Conferencia.Plano.Linhas.Where(l => l.Classe == ClasseLinha.Apta),
+        _ => Conferencia.Plano.Linhas
+    };
+}

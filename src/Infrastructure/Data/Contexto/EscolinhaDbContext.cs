@@ -5,6 +5,7 @@ using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Domain.Alunos;
 using MinhaEscolinha.Domain.Auditoria;
+using MinhaEscolinha.Domain.Carga;
 using MinhaEscolinha.Domain.Comum;
 using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
@@ -82,6 +83,7 @@ public class EscolinhaDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<EventoTurma> EventosTurma => Set<EventoTurma>();
     public DbSet<Convocacao> Convocacoes => Set<Convocacao>();
     public DbSet<HistoricoConvocacao> HistoricosConvocacao => Set<HistoricoConvocacao>();
+    public DbSet<ImportacaoLote> ImportacaoLotes => Set<ImportacaoLote>();
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

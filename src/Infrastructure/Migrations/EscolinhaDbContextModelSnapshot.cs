@@ -751,6 +751,94 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.ToTable("RegistroAlteracao", (string)null);
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Carga.ImportacaoLote", b =>
+                {
+                    b.Property<Guid>("ImportacaoLote_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<int>("AlunosCriados")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Conteudo")
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(max)");
+
+                    b.Property<string>("Decisoes")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(max)");
+
+                    b.Property<DateTime?>("EncerradoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("EncerradoPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("EncerradoPor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("EnviadoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("EnviadoPorNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("EnviadoPor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Linhas")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LinhasNaoImportadas")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Mapeamento")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(max)");
+
+                    b.Property<string>("NomeArquivo")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("ResponsaveisCriados")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ResponsaveisReaproveitados")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("Versao")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("ImportacaoLote_ID")
+                        .HasName("PK_ImportacaoLote");
+
+                    b.HasIndex("Escolinha_ID", "EnviadoEm")
+                        .HasDatabaseName("IX_ImportacaoLote_Escolinha_EnviadoEm");
+
+                    b.ToTable("ImportacaoLote", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ImportacaoLote_Conteudo", "[Situacao] = 10 OR [Conteudo] IS NULL");
+
+                            t.HasCheckConstraint("CK_ImportacaoLote_Situacao", "[Situacao] IN (10, 20, 30)");
+                        });
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Configuracao.ContaAsaasEscolinha", b =>
                 {
                     b.Property<Guid>("ContaAsaasEscolinha_ID")
@@ -3195,6 +3283,16 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_RegistroAlteracao_Escolinha");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Carga.ImportacaoLote", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ImportacaoLote_Escolinha");
                 });
 
             modelBuilder.Entity("MinhaEscolinha.Domain.Configuracao.ContaAsaasEscolinha", b =>

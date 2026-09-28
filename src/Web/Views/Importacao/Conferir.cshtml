@@ -1,0 +1,272 @@
+@model ConferenciaViewModel
+@{
+    ViewData["Title"] = "Conferir a importação";
+    var c = Model.Conferencia;
+    var plano = c.Plano;
+    var responsaveis = plano.Responsaveis.ToDictionary(r => r.Chave);
+    var parecidos = plano.Responsaveis.Where(r => r.Parecidos.Count > 0).ToList();
+    var alunosParecidos = plano.Linhas.Where(l => l.AlunoParecido && l.Bloqueios.Count == 0).ToList();
+    var temDecisoes = plano.TurmasSemCorrespondencia.Count > 0 || parecidos.Count > 0 || alunosParecidos.Count > 0;
+    var semAutorizacao = !c.Mapeados.Contains(CampoImportacao.ConsentimentoDados);
+    var filtros = new (string? Valor, string Rotulo, int Total)[]
+    {
+        (null, "Todas", plano.Linhas.Count),
+        ("aviso", "Com aviso", plano.Linhas.Count(l => l.Classe == ClasseLinha.ComAviso)),
+        ("bloqueadas", "Bloqueadas", plano.Linhas.Count(l => l.Classe == ClasseLinha.Bloqueada)),
+        ("aptas", "Aptas", plano.Linhas.Count(l => l.Classe == ClasseLinha.Apta))
+    };
+    string Descrever(VinculoPlanejado v)
+    {
+        var r = responsaveis[v.Chave];
+        var origem = r.ExistenteId is null ? "novo" : r.PorCpf ? "cadastro existente, mesmo CPF" : "cadastro existente";
+        return $"{r.ExistenteNome ?? r.Nome} ({origem}){(v.Pagador ? " · paga" : "")}";
+    }
+}
+
+@* A conferência (BL-M12-02 a BL-M12-05): cada linha como vai entrar, os responsáveis sem duplicidade e as escolhas que
+   a planilha não resolve. Nada entrou no cadastro ainda. A saúde só aparece como "informada", nunca o conteúdo. *@
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Conferir a importação" meta="@c.Arquivo"
+                      descricao="Cada linha da planilha, como vai entrar no cadastro. Nada entrou ainda: só depois da confirmação, no fim da página.">
+        <a class="kt-btn kt-btn-outline" href="/Importacao/Mapear/@c.Id"><i class="ki-filled ki-setting-3"></i> Mapeamento</a>
+    </cabecalho-pagina>
+
+    @if (c.Faltando.Count > 0)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3 mb-5" role="status">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <span class="text-sm">Falta a coluna de: @string.Join(", ", c.Faltando.Select(f => CatalogoCamposImportacao.Obter(f).Rotulo)). <a class="kt-link" href="/Importacao/Mapear/@c.Id">Termine o mapeamento</a> para importar.</span>
+        </div>
+    }
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-5">
+        <div class="kt-card"><div class="kt-card-content flex flex-col gap-1">
+            <span class="text-xs text-secondary-foreground">Entram</span>
+            <span class="text-3xl font-semibold text-mono">@plano.AlunosNovos</span>
+            <span class="text-xs text-secondary-foreground">aluno(s) com matrícula</span>
+        </div></div>
+        <div class="kt-card"><div class="kt-card-content flex flex-col gap-1">
+            <span class="text-xs text-secondary-foreground">Responsáveis novos</span>
+            <span class="text-3xl font-semibold text-mono">@plano.ResponsaveisNovos</span>
+            <span class="text-xs text-secondary-foreground">@plano.Vinculos vínculo(s)</span>
+        </div></div>
+        <div class="kt-card"><div class="kt-card-content flex flex-col gap-1">
+            <span class="text-xs text-secondary-foreground">Reaproveitados</span>
+            <span class="text-3xl font-semibold text-mono">@plano.ResponsaveisReaproveitados</span>
+            <span class="text-xs text-secondary-foreground">já cadastrados, sem duplicar</span>
+        </div></div>
+        <div class="kt-card"><div class="kt-card-content flex flex-col gap-1">
+            <span class="text-xs text-secondary-foreground">Ficam de fora</span>
+            <span class="text-3xl font-semibold text-mono">@plano.NaoImportadas</span>
+            <span class="text-xs text-secondary-foreground">bloqueadas ou a decidir</span>
+        </div></div>
+    </div>
+
+    @if (semAutorizacao)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3 mb-5" role="status">
+            <i class="ki-filled ki-shield-tick text-lg shrink-0"></i>
+            <span class="text-sm">A planilha não traz a autorização de tratamento de dados: os consentimentos ficam pendentes nas fichas, para registrar depois (R6).</span>
+        </div>
+    }
+
+    @if (temDecisoes)
+    {
+        <form class="kt-card mb-5" method="post" asp-action="Decidir" asp-route-id="@c.Id">
+            <div class="kt-card-header py-4">
+                <h3 class="kt-card-title">O que a planilha não resolve</h3>
+            </div>
+            <div class="kt-card-content flex flex-col gap-6">
+                @if (plano.TurmasSemCorrespondencia.Count > 0)
+                {
+                    <div class="flex flex-col gap-3">
+                        <span class="text-sm font-semibold text-mono">Turmas da planilha que não existem no sistema</span>
+                        @foreach (var t in plano.TurmasSemCorrespondencia)
+                        {
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
+                                <span class="text-sm wrap-anywhere">"@t.Valor" <span class="text-secondary-foreground">(@t.Linhas linha(s))</span></span>
+                                <input type="hidden" name="turmaChave" value="@t.Chave" />
+                                <select class="kt-select w-full" name="turmaEscolhida" aria-label="@($"Turma do sistema para {t.Valor}")">
+                                    <option value="">Não importar essas linhas</option>
+                                    @foreach (var turma in c.Turmas)
+                                    {
+                                        <option value="@turma.Id" selected="@(t.Escolhida == turma.Id)">@turma.Nome</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                    </div>
+                }
+                @if (parecidos.Count > 0)
+                {
+                    <div class="flex flex-col gap-3">
+                        <span class="text-sm font-semibold text-mono">Responsáveis parecidos com um cadastro da escolinha (mesmo celular ou nome)</span>
+                        @foreach (var r in parecidos)
+                        {
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
+                                <span class="text-sm wrap-anywhere">@r.Nome <span class="text-secondary-foreground">(linha @string.Join(", ", r.Linhas))</span></span>
+                                <input type="hidden" name="responsavelChave" value="@r.Chave" />
+                                <select class="kt-select w-full" name="responsavelEscolha" aria-label="@($"Cadastro de {r.Nome}")">
+                                    <option value="">Criar um cadastro novo</option>
+                                    @foreach (var p in r.Parecidos)
+                                    {
+                                        <option value="@p.Id" selected="@(r.ExistenteId == p.Id)">Usar: @p.Nome · @(p.Telefone is null ? "sem celular" : Formatacao.Telefone(p.Telefone)) · CPF @(CpfMascarado.De(p.Cpf) ?? "não informado")</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                    </div>
+                }
+                @if (alunosParecidos.Count > 0)
+                {
+                    <div class="flex flex-col gap-3">
+                        <span class="text-sm font-semibold text-mono">Alunos com o mesmo nome e nascimento de um aluno da escolinha</span>
+                        @foreach (var l in alunosParecidos)
+                        {
+                            <label class="flex items-center gap-2 text-sm">
+                                <input class="kt-checkbox kt-checkbox-sm" type="checkbox" name="alunosNovos" value="@l.Numero" checked="@l.Importar" />
+                                <span>É outra criança: importar @l.Aluno (linha @l.Numero)</span>
+                            </label>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="kt-card-footer flex justify-end">
+                <button class="kt-btn kt-btn-outline" type="submit"><i class="ki-filled ki-arrows-circle"></i> Aplicar as escolhas</button>
+            </div>
+        </form>
+    }
+
+    <div class="kt-card mb-5">
+        <div class="kt-card-header flex-wrap gap-3 py-4">
+            <h3 class="kt-card-title">Linhas</h3>
+            <div class="flex flex-wrap gap-2">
+                @foreach (var (valor, rotulo, total) in filtros)
+                {
+                    <a class="kt-btn kt-btn-sm @(valor == Model.Ver ? "kt-btn-primary" : "kt-btn-outline")" href="?ver=@valor" aria-current="@(valor == Model.Ver ? "page" : null)">@rotulo (@total)</a>
+                }
+            </div>
+        </div>
+        @if (!Model.Linhas.Any())
+        {
+            <estado-vazio icone="ki-check-circle" titulo="Nenhuma linha neste filtro" texto="Escolha outro filtro para ver as demais linhas."></estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-top text-sm">
+                    <thead>
+                        <tr>
+                            <th class="w-[1%]">Linha</th>
+                            <th class="min-w-[180px] sm:min-w-[260px]">Aluno</th>
+                            <th class="min-w-[220px] hidden md:table-cell">Responsáveis</th>
+                            <th class="min-w-[120px] hidden sm:table-cell">Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var l in Model.Linhas)
+                        {
+                            <tr>
+                                <td class="text-secondary-foreground">@l.Numero</td>
+                                <td>
+                                    <div class="flex flex-col gap-1 min-w-0">
+                                        <span class="font-medium text-mono wrap-anywhere">@l.Aluno</span>
+                                        <span class="text-xs text-secondary-foreground">@(l.Turma ?? "sem turma")@(l.Dados is { } d ? $" · desde {Formatacao.Data(d.Inicio)} · {Formatacao.Moeda(d.Mensalidade)}" : "")</span>
+                                        @if (l.SaudeInformada || l.ContatoEmergenciaInformado)
+                                        {
+                                            <span class="flex flex-wrap gap-1.5">
+                                                @if (l.SaudeInformada)
+                                                {
+                                                    <span class="kt-badge kt-badge-sm kt-badge-outline"><i class="ki-filled ki-heart"></i> Saúde informada</span>
+                                                }
+                                                @if (l.ContatoEmergenciaInformado)
+                                                {
+                                                    <span class="kt-badge kt-badge-sm kt-badge-outline">Contato de emergência</span>
+                                                }
+                                            </span>
+                                        }
+                                        <span class="flex flex-wrap items-center gap-1.5 sm:hidden">
+                                            <selo-status valor="l.Classe"></selo-status>
+                                            @if (!l.Importar && l.Classe != ClasseLinha.Bloqueada)
+                                            {
+                                                <span class="text-xs text-secondary-foreground">não entra</span>
+                                            }
+                                        </span>
+                                        <span class="flex flex-col gap-0.5 text-xs text-secondary-foreground md:hidden">
+                                            @foreach (var v in l.Vinculos)
+                                            {
+                                                <span class="wrap-anywhere">@Descrever(v)</span>
+                                            }
+                                        </span>
+                                        @foreach (var b in l.Bloqueios)
+                                        {
+                                            <span class="flex items-start gap-1.5 text-xs text-destructive"><i class="ki-filled ki-cross-circle mt-0.5"></i> <span class="wrap-anywhere">@b</span></span>
+                                        }
+                                        @foreach (var a in l.Avisos)
+                                        {
+                                            <span class="flex items-start gap-1.5 text-xs text-secondary-foreground"><i class="ki-filled ki-information-2 mt-0.5"></i> <span class="wrap-anywhere">@a</span></span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="hidden md:table-cell">
+                                    <div class="flex flex-col gap-0.5">
+                                        @foreach (var v in l.Vinculos)
+                                        {
+                                            <span class="wrap-anywhere">@Descrever(v)</span>
+                                        }
+                                        @if (l.Vinculos.Count == 0)
+                                        {
+                                            <span class="text-secondary-foreground">—</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="hidden sm:table-cell">
+                                    <div class="flex flex-col gap-1">
+                                        <selo-status class="self-start" valor="l.Classe"></selo-status>
+                                        @if (!l.Importar && l.Classe != ClasseLinha.Bloqueada)
+                                        {
+                                            <span class="text-xs text-secondary-foreground">não entra</span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="kt-card">
+        <div class="kt-card-header py-4">
+            <h3 class="kt-card-title">Confirmar</h3>
+        </div>
+        <div class="kt-card-content flex flex-col gap-4">
+            <p class="text-sm text-secondary-foreground">
+                A importação grava tudo numa operação só: @plano.AlunosNovos aluno(s), @plano.ResponsaveisNovos responsável(is) novo(s),
+                @plano.ResponsaveisReaproveitados reaproveitado(s) e @plano.Vinculos vínculo(s). Depois, a primeira mensalidade de cada matrícula
+                espera a sua confirmação em <a class="kt-link" href="/Mensalidades">Mensalidades</a>, e as famílias recebem o acesso quando você
+                mandar os convites, em <a class="kt-link" href="/Convites">Convites</a>.
+            </p>
+            <form id="form-confirmar" method="post" asp-action="Confirmar" asp-route-id="@c.Id" class="flex flex-col gap-4"
+                  data-esc-confirmar="@($"Importar {plano.AlunosNovos} aluno(s)? A gravação é de uma vez só.")">
+                <input type="hidden" name="assinatura" value="@plano.Assinatura" />
+                @if (plano.TemConsentimento)
+                {
+                    <label class="flex items-start gap-2 text-sm">
+                        <input class="kt-checkbox kt-checkbox-sm mt-0.5" type="checkbox" name="declaracao" value="true" required />
+                        <span>Declaro que as autorizações marcadas na planilha (tratamento de dados e uso de imagem) foram dadas pelos responsáveis. Elas ficam registradas como "Carga inicial", em meu nome.</span>
+                    </label>
+                }
+            </form>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <form method="post" asp-action="Descartar" asp-route-id="@c.Id" data-esc-confirmar="Descartar este envio? Nada entra no cadastro, e a planilha é apagada.">
+                    <button class="kt-btn kt-btn-ghost" type="submit"><i class="ki-filled ki-trash"></i> Descartar</button>
+                </form>
+                <button class="kt-btn kt-btn-primary" type="submit" form="form-confirmar" disabled="@(plano.AlunosNovos == 0 || c.Faltando.Count > 0)">
+                    <i class="ki-filled ki-check-circle"></i> Importar @plano.AlunosNovos aluno(s)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

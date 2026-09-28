@@ -115,6 +115,16 @@ O S6 não trouxe dependência nova. O portal usa o layout `_LayoutPortal` do F0 
 | Pix copia e cola | `PixCobrancas` (job `ObterPix`, fila de integrações), `IGatewayAsaas.ObterPixAsync` (`GET /payments/{id}/pixQrCode`) | O padrão de integração do DP: a chamada externa só em job, com retentativa e a separação entre falha retentável e definitiva (regras de ouro 2 e 8). O dado de terceiro é guardado com a validade e buscado de novo quando vence (regra de ouro 3, D90). |
 | Resposta pelo portal | `Convocacao.Responder` com a origem "portal" | A regra do S5 (D78), com a mudança da própria resposta (D88). O aviso ao painel sai pelo interceptor do tempo real do S5. |
 
+### 2.7 O que o S7 acrescentou (28/09/2026)
+
+O S7 trouxe um pacote NuGet, o **ClosedXML 0.105.1**, na mesma versão que o DP usa nos relatórios (`Infrastructure/Relatorios`). É herança, não desvio: a mesma solução do DP para ler e gerar planilha.
+
+| Peça | Onde | Relação com o DP |
+|---|---|---|
+| Leitura e modelo da planilha | `Infrastructure/Carga/PlanilhasClosedXml` (atrás de `IPlanilhas`, na Application) | O DP gera `.xlsx` com o ClosedXML; aqui ele também lê. A biblioteca fica na Infrastructure, e a Application só vê a planilha em texto. |
+| Conferência e gravação única | `Application/Carga` (`ConferenciaImportacao`, função pura; `ServicoImportacao`) | Os casos de uso do DP com `ResultadoOperacao`. A conferência é refeita na confirmação (regra de ouro 4), e a versão de linha do lote impede a confirmação dupla, como as compras de créditos (D27). |
+| Planilha cifrada | `ImportacaoLote.Conteudo`, com o `IProtetorSegredos` (Data Protection) | O protetor da chave Asaas (X04), usado aqui para o dado de saúde e o CPF enquanto o lote está aberto (D95). |
+
 ## 3. Integrações existentes nos projetos locais
 
 Varredura por **conteúdo** em todo `C:\Users\vinic\Documents\Projetos`, em 26/09/2026:
@@ -133,7 +143,7 @@ Varredura por **conteúdo** em todo `C:\Users\vinic\Documents\Projetos`, em 26/0
 | Do DP | Motivo |
 |---|---|
 | Regra de ouro 8, "todo WhatsApp gera cópia ao atendente" | Violaria R3 e o CA-20 e gastaria crédito (X05) |
-| Leitura do banco legado de R&S (`Infrastructure/Legado`, Dapper) | Não existe legado aqui. A carga inicial vem por planilha (S7). |
+| Leitura do banco legado de R&S (`Infrastructure/Legado`, Dapper) | Não existe legado aqui. A carga inicial vem por planilha (S7, com o ClosedXML do DP). |
 | ZapSign, GoHighLevel e o e-mail com caixa de saída local | Fora do escopo. As integrações do produto são só Asaas e WhatsApp (§8). |
 | Parâmetros em linha única tipada (`ParametrosDp`) | A spec pede catálogo por domínio (X03) |
 | Swashbuckle, `FluentValidation.AspNetCore`, pin de `System.Private.Uri` | Sem API pública; pacote descontinuado. Pin desnecessário: com o EF Core 9.0.20, o build não acusa a vulnerabilidade (NU1903) que motivou o pin no DP. |

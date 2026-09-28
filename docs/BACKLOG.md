@@ -12,7 +12,7 @@ Registro de progresso exigido pela seção 12.4 da spec. Os 81 entregáveis e os
 
 Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-ABERTO.md).
 
-## Resumo (28/09/2026, fim do S6)
+## Resumo (28/09/2026, fim do S7)
 
 | Fatia | Itens | Concluídos | Parciais | Situação |
 |---|---:|---:|---:|---|
@@ -23,9 +23,9 @@ Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-
 | S3 — Presença e evasão | 6 | 6 | 0 | **Pronto** e commitado (c6bdbc4). A reabertura da chamada sem sinal, pelo service worker, espera um navegador que confie no certificado (P37). |
 | S4 — Financeiro | 8 | 8 | 0 | **Pronto no simulador** e commitado (44df87a). A prova com a sandbox da Asaas espera a conta da escolinha piloto (P41). |
 | S5 — Eventos e convocações | 10 | 10 | 0 | **Pronto no simulador** e commitado (ec42cc3). A resposta de uma família real pelo WhatsApp espera a conta na Meta (P34). |
-| S6 — Portal do responsável | 6 | 6 | 0 | **Pronto no simulador** (28/09/2026). A prova com a sandbox da Asaas espera a conta (P41). |
-| S7 — Carga inicial | 5 | 0 | 0 | — |
-| **Total** | **81** | **76** | **0** | |
+| S6 — Portal do responsável | 6 | 6 | 0 | **Pronto no simulador** e commitado (f9699c8). A prova com a sandbox da Asaas espera a conta (P41). |
+| S7 — Carga inicial | 5 | 5 | 0 | **Pronto** (28/09/2026), sem a planilha real: o modelo e o mapeamento das colunas a recebem sem código novo (P21). |
+| **Total** | **81** | **81** | **0** | |
 
 ---
 
@@ -346,15 +346,49 @@ Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-
 - **R1:** o Pix e a fatura são da conta Asaas da escolinha.
 - **R4:** nada do portal é dirigido ao aluno.
 
-## S7 — Carga inicial da escolinha piloto · 5 itens · A fazer
+## S7 — Carga inicial da escolinha piloto · 5 itens · **Pronto em 28/09/2026, sem a planilha real**
 
-| ID | Entregável | Status |
-|---|---|---|
-| `BL-M12-01` | Envio e leitura da planilha de importação | A fazer (depende da planilha real, P21) |
-| `BL-M12-02` | Validação e classificação das linhas | A fazer |
-| `BL-M12-03` | Deduplicação de responsáveis na importação | A fazer |
-| `BL-M12-04` | Tela de conferência e confirmação do lote | A fazer |
-| `BL-M12-05` | Restrição de dado sensível na importação | A fazer |
+**Critério de pronto da spec:** a base real da escolinha piloto entra no sistema em uma operação, com os erros apontados antes da confirmação.
+
+**Situação:** o critério é coberto por teste no banco (`CargaBancoTestes`, com um `.xlsx` de verdade) e foi demonstrado no navegador com uma planilha de validação. A prova com a base real espera a planilha da escolinha piloto (P21): o modelo para baixar e o mapeamento das colunas deixam a planilha real sem retrabalho de código.
+
+**Demonstrado no navegador em 28/09/2026, na escolinha A**, com uma planilha de validação escrita como uma escolinha escreveria ("Aluno", "Nascimento", "WhatsApp", "2º responsável"):
+- **Mapeamento:** 11 das 13 colunas foram reconhecidas pelo nome, e as outras duas foram escolhidas na tela. A coluna de observações médicas não mostrou exemplo.
+- **Conferência:**
+  - a Cláudia Martins virou um cadastro só nas linhas dos dois filhos; numa delas, o CPF e o celular vieram como número;
+  - a Sabrina Pacheco, que já tinha acesso ao portal, foi reaproveitada pelo CPF;
+  - a data "31/02/2015" bloqueou a linha, com o motivo;
+  - a Alice Pereira, com o mesmo nome e nascimento de uma aluna da escolinha, ficou de fora até a gestão decidir;
+  - a turma "Sub 9 sábado" foi escolhida no quadro de turmas;
+  - a saúde apareceu só como "Saúde informada".
+- **Confirmação:** a declaração das autorizações foi pedida, e a gravação levou 4 alunos, 3 responsáveis novos, 1 reaproveitado e 5 vínculos; 2 linhas ficaram de fora. Na ficha do Theo:
+  - a saúde, visível para a gestão;
+  - os consentimentos como "Carga inicial";
+  - a Cláudia "também responsável por Helena Martins";
+  - o histórico com o arquivo e a linha.
+- **Efeitos:**
+  - a Sophia apareceu na hora no portal da Sabrina, porque o vínculo de quem já tem acesso nasce confirmado (D53);
+  - a projeção criou as mensalidades de outubro das 4 matrículas, à espera da confirmação;
+  - a planilha foi apagada do lote.
+- **Telas:** importação, mapeamento, conferência e resultado conferidos em 320, 375 e 1280 px, no claro e no escuro, num contexto de celular, sem rolagem horizontal da página nem das tabelas e sem erro no console. Achados, todos corrigidos:
+  - "2º responsável" e "Celular 2" não eram reconhecidos. Agora o ordinal vira letra, e os nomes curtos do responsável 2 são apelidos;
+  - em 320 px, as tabelas rolavam de 1 a 4 px, e o rótulo "Reaproveitados" passava do cartão.
+- **Dados de validação:** ficam no banco de desenvolvimento os 4 alunos importados, com os responsáveis e as mensalidades de outubro (a confirmar), e os dois envios, um importado e um descartado.
+
+| ID | Entregável | Status | Onde está | Testes |
+|---|---|---|---|---|
+| `BL-M12-01` | Envio e leitura da planilha de importação | Concluído (sem a planilha real, P21) | <ul><li>Tela `/Importacao`: o envio do `.xlsx` (até 2 MB e 1.000 linhas) e o modelo para baixar, com a aba de instruções e as turmas ativas.</li><li>`PlanilhasClosedXml` (ClosedXML 0.105.1, herança do DP) lê a primeira aba: o cabeçalho é a primeira linha com dado.</li><li>Tela `/Importacao/Mapear/{id}`: cada coluna preenche um campo do cadastro ou fica de fora; o cabeçalho sugere o campo (`CatalogoCamposImportacao`, com apelidos) (D92).</li></ul> | `CargaUnidadeTestes` (o modelo mapeado inteiro; nomes comuns de coluna; datas, CPF numérico, sim/não, parentesco); `CargaBancoTestes` (arquivo que não serve, tamanho, modelo sem linhas, turmas nas instruções) |
+| `BL-M12-02` | Validação e classificação das linhas | Concluído | `ConferenciaImportacao` (função pura): apta, com aviso ou bloqueada, com o motivo; as regras do cadastro do S1; a turma pelo nome, ou pela escolha da gestão no quadro de turmas; o aluno parecido só com a confirmação da gestão (D93). | `CargaUnidadeTestes` (bloqueios com o motivo; turma desconhecida e a escolha; aluno parecido; turma cheia); `CargaBancoTestes` |
+| `BL-M12-03` | Deduplicação de responsáveis na importação | Concluído | O mesmo CPF na planilha e no cadastro vira um cadastro só, com o vínculo novo; sem CPF, o nome com o celular de uma linha que trouxe o CPF (irmãos); celular ou nome iguais só sugerem, e a gestão decide (D94). | `CargaUnidadeTestes` (irmãos; reaproveitado pelo CPF; parecido com a decisão); `CargaBancoTestes` (CA-1: a Maria, já cadastrada, com os três filhos e um cadastro só) |
+| `BL-M12-04` | Tela de conferência e confirmação do lote | Concluído | Tela `/Importacao/Conferir/{id}`: o resumo (entram, responsáveis novos, reaproveitados, ficam de fora), o quadro do que a planilha não resolve, as linhas por classe e a confirmação. A conferência é refeita na confirmação, e tudo é gravado numa operação só (`ServicoImportacao.ConfirmarAsync`); o resultado fica em `/Importacao/Lote/{id}` (D92). | `CargaBancoTestes` (o critério do S7; a base que mudou depois da conferência não grava nada; só a gestão importa; o lote de outra escolinha não existe) |
+| `BL-M12-05` | Restrição de dado sensível na importação | Concluído | A saúde vai para os campos restritos da ficha e aparece na conferência só como "Saúde informada"; sem exemplo no mapeamento; a planilha cifrada enquanto o lote está aberto e apagada no fim; nada de saúde no registro de alterações; consentimentos com a declaração da gestão (D95). | `CargaUnidadeTestes` (a saúde entra sem aparecer); `CargaBancoTestes` (saúde gravada na ficha e fora do registro; a planilha apagada no fim; o lote esquecido vence) |
+
+**Critérios de aceite tocados no S7:**
+- **CA-1:** repetido na importação. A Maria, já cadastrada, é reaproveitada pelo CPF numa linha e pelo nome e celular na outra: um cadastro só, com os três filhos.
+- **CA-18:** a turma nova usa os valores dela, e a mensalidade da planilha vale só para a matrícula.
+- **R5:** a saúde não aparece na conferência nem no registro, e vai para a ficha restrita.
+- **R6:** os consentimentos da planilha entram com a declaração da gestão, e os que faltam ficam pendentes nas fichas.
+- **R12:** o modelo segue os campos do S1; o que a planilha real trouxer a mais fica para a P54.
 
 ---
 
@@ -373,7 +407,7 @@ Pendências do EX-01: P25 (plano recorrente), P26 (pacotes e preços comerciais)
 
 | CA | Resumo | Fatia | Status |
 |---|---|---|---|
-| CA-1 | 2º filho reaproveita o responsável, sem duplicidade | S1 (e S7) | **Coberto no S1** (`CadastroBancoTestes` e navegador); a importação repete no S7 |
+| CA-1 | 2º filho reaproveita o responsável, sem duplicidade | S1 (e S7) | **Coberto no S1** (`CadastroBancoTestes` e navegador) e **repetido no S7** (a importação reaproveita pelo CPF e junta os irmãos da planilha; `CargaBancoTestes` e navegador) |
 | CA-2 | Desligamento exige data e motivo e encerra a recorrência | S1 e S4 | **Coberto** (S1: data e motivo, matrículas encerradas; S4: previstas canceladas e débito sinalizado, `FinanceiroBancoTestes`) |
 | CA-3 | Desligado some da chamada e da convocação, fica no histórico | S1, S3 e S5 | **Coberto** (S1 e S3: sai das listas, da turma e da chamada a partir da data; S5: sai das convocações dos próximos jogos, e a do jogo que passou fica; `EventosBancoTestes`) |
 | CA-4 | "3 faltas no mês" dispara na 3ª falta | S3 | **Coberto no S3** (`PresencaBancoTestes` e `PresencaUnidadeTestes`) |

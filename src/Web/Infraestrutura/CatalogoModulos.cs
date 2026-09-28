@@ -165,7 +165,7 @@ public static class CatalogoModulos
             "A base de alunos e responsáveis a partir da planilha.",
             "Envie a planilha, confira as linhas (novas, reaproveitadas, com aviso ou bloqueadas) e só então confirme.",
             ["Validação linha a linha", "Responsáveis sem duplicidade", "Conferência antes de gravar"],
-            "S7", SituacaoModulo.Planejado, "/importacao", Recurso.ConfiguracaoEscolinha),
+            "S7", SituacaoModulo.Disponivel, "/Importacao", Recurso.ConfiguracaoEscolinha),
 
         new("plataforma", "Escolinhas", "ki-grid", SecaoPlataforma,
             "Todas as escolinhas da plataforma: criar, conceder créditos, entrar como equipe.",

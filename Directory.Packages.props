@@ -29,6 +29,8 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.20" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.20" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0" />
+    <!-- Leitura e modelo da planilha da carga inicial (S7): a mesma versão do DP (relatórios). -->
+    <PackageVersion Include="ClosedXML" Version="0.105.1" />
   </ItemGroup>
 
   <ItemGroup Label="Web">

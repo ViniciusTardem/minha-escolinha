@@ -22,6 +22,8 @@
     </PackageReference>
     <!-- Resiliencia (timeout/circuit breaker) dos clientes HTTP: Asaas e WhatsApp (entram nas fatias S2 e S4). -->
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <!-- Planilha da carga inicial (S7): ler o .xlsx e gerar o modelo, como os relatórios do DP. -->
+    <PackageReference Include="ClosedXML" />
   </ItemGroup>
 
   <ItemGroup>

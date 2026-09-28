@@ -70,6 +70,7 @@ public sealed class BancoDeTestes : IAsyncLifetime
         GarantirBancoDeTeste();
         await using var contexto = NovoContextoSemEscolinha();
         await contexto.Database.ExecuteSqlRawAsync("""
+            DELETE FROM ImportacaoLote;
             DELETE FROM HistoricoConvocacao;
             DELETE FROM Convocacao;
             DELETE FROM EventoTurma;
@@ -252,6 +253,8 @@ public sealed class AmbienteAplicacao : IDisposable
         services.AddSingleton<MinhaEscolinha.Application.Financeiro.IAgendadorFinanceiro>(Financeiro);
         services.AddScoped<MinhaEscolinha.Application.Eventos.IEventosRepositorio, MinhaEscolinha.Infrastructure.Eventos.EventosRepositorio>();
         services.AddScoped<MinhaEscolinha.Application.Portal.IPortalRepositorio, MinhaEscolinha.Infrastructure.Portal.PortalRepositorio>();
+        services.AddScoped<MinhaEscolinha.Application.Carga.ICargaRepositorio, MinhaEscolinha.Infrastructure.Carga.CargaRepositorio>();
+        services.AddSingleton<MinhaEscolinha.Application.Carga.IPlanilhas, MinhaEscolinha.Infrastructure.Carga.PlanilhasClosedXml>();
         services.AddSingleton<MinhaEscolinha.Application.Eventos.INotificadorConvocacoes>(TempoReal);
         _servicos = services.BuildServiceProvider();
     }

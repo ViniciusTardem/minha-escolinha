@@ -55,9 +55,10 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
     - `Presencas` (M05), do S3: chamada, alerta de faltas e risco de evasão;
     - `Financeiro` (M06), do S4: mensalidades, régua, conciliação, divergências e, desde o S6, o Pix copia e cola (`PixCobrancas`);
     - `Eventos` (M07), do S5: o evento, a convocação, a rotina (lembrete e "sem resposta") e o tempo real (hub em `Web/Hubs`);
-    - `Portal` (M10), do S6: o portal do responsável (`/Portal`), só leitura, sobre os módulos acima. A única gravação é a resposta à convocação.
+    - `Portal` (M10), do S6: o portal do responsável (`/Portal`), só leitura, sobre os módulos acima. A única gravação é a resposta à convocação;
+    - `Carga` (M12), do S7: a importação da planilha (`/Importacao`), com a conferência pura (`ConferenciaImportacao`) e a gravação única. A leitura do `.xlsx` é o ClosedXML do DP, atrás de `IPlanilhas`.
     - Na `Infrastructure`, os repositórios do cadastro ficam juntos em `Cadastro/`.
-  - Próximo: `Carga` (S7).
+  - As 8 fatias do piloto estão prontas.
 
 ---
 
@@ -307,7 +308,9 @@ dotnet dev-certs https --trust
   - em A, desde o S3: uma sessão de domingo, 27/09, na turma "Sub-11 · segunda e quarta", com a falta da Ana Lima, o alerta e a mensagem à responsável;
   - em A, desde o S4: a conta de recebimento (Sandbox, com o simulador) e as mensalidades de outubro da validação: 50 a confirmar, 1 impedida, 1 paga com divergência aceita e 1 cancelada depois do estorno. As faturas do simulador ficam em `%LOCALAPPDATA%\MinhaEscolinha\simulador-asaas.json`;
   - em A, desde o S5: os jogos do fim de semana de 03 e 04/10 (quatro da gestão, um cancelado e um alterado, e um do professor), com 49 convocações, as respostas da validação e os avisos às famílias;
-  - em A, desde o S6: a responsável Sabrina Pacheco tem acesso (login pelo CPF), com os vínculos do Anthony, do Benjamin e do Raul confirmados, e as mensalidades de outubro do Benjamin (em aberto, com o Pix) e do Raul (paga) emitidas.
+  - em A, desde o S6: a responsável Sabrina Pacheco tem acesso (login pelo CPF), com os vínculos do Anthony, do Benjamin e do Raul confirmados, e as mensalidades de outubro do Benjamin (em aberto, com o Pix) e do Raul (paga) emitidas;
+  - em A, desde o S7: 4 alunos de uma planilha de validação (a Sophia entrou no cadastro da Sabrina), com as mensalidades de outubro a confirmar, e dois envios na Importação (um importado, um descartado).
+- **Importação (S7):** o lote aberto guarda a planilha cifrada com o Data Protection, como a chave Asaas. Perder o certificado em produção torna o lote aberto ilegível: é só enviar a planilha de novo.
 - **Chamada sem sinal:** o navegador só registra o service worker com certificado confiável. Em desenvolvimento, rode `dotnet dev-certs https --trust`; sem isso, a fila funciona com a página aberta, mas a página não reabre sem sinal (P37).
 - **Jobs recorrentes** (horário de Brasília, registrados no startup):
   - `sessoes-gerar-horizonte`, às 03:15: gera as sessões de treino até o fim do mês seguinte, uma escolinha por vez (D31);

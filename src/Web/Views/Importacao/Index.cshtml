@@ -1,0 +1,123 @@
+@model ImportacaoViewModel
+@{
+    ViewData["Title"] = "Importação";
+}
+
+@* A carga inicial (S7): enviar a planilha, e a lista dos envios. Nada entra no cadastro antes da conferência e da
+   confirmação (BL-M12-04). *@
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Importação" meta="Carga inicial por planilha"
+                      descricao="Envie a planilha dos alunos, confira as colunas e as linhas, e só então confirme. Nada entra no cadastro antes da confirmação.">
+        <a class="kt-btn kt-btn-outline" href="/Importacao/Modelo"><i class="ki-filled ki-file-down"></i> Baixar o modelo (.xlsx)</a>
+    </cabecalho-pagina>
+
+    @if (!Model.PodeImportar)
+    {
+        <div class="kt-card">
+            <estado-vazio icone="ki-lock" titulo="Só a gestão importa" texto="A importação cria alunos, mensalidades e dados de saúde de uma vez: fica com quem tem acesso a tudo isso."></estado-vazio>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+            <form class="kt-card lg:col-span-2" method="post" asp-action="Enviar" enctype="multipart/form-data">
+                <div class="kt-card-header py-4">
+                    <h3 class="kt-card-title">Enviar a planilha</h3>
+                </div>
+                <div class="kt-card-content flex flex-col gap-4">
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" for="arquivo">Planilha (.xlsx, até 2 MB)</label>
+                        <input class="kt-input h-auto py-2" id="arquivo" name="arquivo" type="file" required
+                               accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+                        <span class="text-xs text-secondary-foreground">Uma linha por aluno, com o cabeçalho na primeira linha. A primeira aba é a que vale.</span>
+                    </div>
+                    <div>
+                        <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-file-up"></i> Enviar e conferir</button>
+                    </div>
+                </div>
+            </form>
+            <div class="kt-card">
+                <div class="kt-card-header py-4">
+                    <h3 class="kt-card-title">Antes de enviar</h3>
+                </div>
+                <div class="kt-card-content">
+                    <ul class="flex flex-col gap-2.5 text-sm text-secondary-foreground">
+                        <li class="flex gap-2"><i class="ki-filled ki-category text-primary mt-0.5"></i> <span>Cadastre as <a class="kt-link" href="/Turmas">turmas</a>: cada linha diz a turma do aluno.</span></li>
+                        <li class="flex gap-2"><i class="ki-filled ki-users text-primary mt-0.5"></i> <span>Irmãos repetem o responsável: pelo CPF, vira um cadastro só.</span></li>
+                        <li class="flex gap-2"><i class="ki-filled ki-heart text-primary mt-0.5"></i> <span>A saúde vai direto para a ficha, restrita, e não aparece na conferência.</span></li>
+                        <li class="flex gap-2"><i class="ki-filled ki-whatsapp text-primary mt-0.5"></i> <span>Depois, convide as famílias em <a class="kt-link" href="/Convites">Convites</a>.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="kt-card">
+            <div class="kt-card-header py-4">
+                <h3 class="kt-card-title">Envios</h3>
+            </div>
+            @if (Model.Lotes.Count == 0)
+            {
+                <estado-vazio icone="ki-file-up" titulo="Nenhuma planilha enviada" texto="O primeiro envio aparece aqui, com a conferência e o resultado."></estado-vazio>
+            }
+            else
+            {
+                <div class="kt-card-table kt-scrollable-x-auto">
+                    <table class="kt-table kt-table-border align-middle text-sm">
+                        <thead>
+                            <tr>
+                                <th class="min-w-[120px] sm:min-w-[240px]">Planilha</th>
+                                <th class="min-w-[150px] hidden md:table-cell">Enviada</th>
+                                <th class="min-w-[220px] hidden sm:table-cell">Resultado</th>
+                                <th class="w-[1%] text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var l in Model.Lotes)
+                            {
+                                var resultado = l.Situacao switch
+                                {
+                                    SituacaoImportacao.Confirmada => $"{l.AlunosCriados} aluno(s), {l.ResponsaveisCriados} responsável(is) novo(s), {l.ResponsaveisReaproveitados} reaproveitado(s); {l.NaoImportadas} linha(s) de fora",
+                                    SituacaoImportacao.Descartada => "Nada entrou no cadastro.",
+                                    _ => $"{l.Linhas} linha(s) esperando a conferência"
+                                };
+                                <tr>
+                                    <td>
+                                        <div class="flex flex-col gap-0.5 min-w-0">
+                                            <span class="font-medium text-mono wrap-anywhere">@l.Arquivo</span>
+                                            <span class="text-xs text-secondary-foreground md:hidden">@Formatacao.DataHora(l.EnviadoEm) · @l.EnviadoPor</span>
+                                            <span class="flex flex-wrap items-center gap-1.5 sm:hidden">
+                                                <selo-status valor="l.Situacao"></selo-status>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="hidden md:table-cell text-secondary-foreground">@Formatacao.DataHora(l.EnviadoEm)<br />@l.EnviadoPor</td>
+                                    <td class="hidden sm:table-cell">
+                                        <div class="flex flex-col gap-1">
+                                            <selo-status class="self-start" valor="l.Situacao"></selo-status>
+                                            <span class="text-xs text-secondary-foreground">@resultado</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="flex justify-end gap-2">
+                                            @if (l.Situacao == SituacaoImportacao.Aberta)
+                                            {
+                                                <a class="kt-btn kt-btn-sm kt-btn-primary" href="/Importacao/Conferir/@l.Id" aria-label="@($"Continuar a conferência de {l.Arquivo}")"><i class="ki-filled ki-double-check"></i> <span class="hidden sm:inline">Continuar</span></a>
+                                                <form method="post" asp-action="Descartar" asp-route-id="@l.Id" data-esc-confirmar="@($"Descartar o envio de {l.Arquivo}? Nada entra no cadastro, e a planilha é apagada.")">
+                                                    <button class="kt-btn kt-btn-sm kt-btn-ghost" type="submit" aria-label="@($"Descartar {l.Arquivo}")"><i class="ki-filled ki-trash"></i></button>
+                                                </form>
+                                            }
+                                            else if (l.Situacao == SituacaoImportacao.Confirmada)
+                                            {
+                                                <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Importacao/Lote/@l.Id" aria-label="@($"Ver o resultado de {l.Arquivo}")"><i class="ki-filled ki-eye"></i> <span class="hidden sm:inline">Resultado</span></a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+</div>

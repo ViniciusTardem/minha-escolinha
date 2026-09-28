@@ -345,6 +345,8 @@ A utility que falta nasce no `npm run css` quando uma View passa a usá-la; o ve
 | `SinalTela`, valores do S4 | `MensalidadeAConfirmar` → "A confirmar" · Alerta; `MensalidadeImpedida` → "Não emitida" · Alerta, com o motivo em texto ao lado; `DebitoRemanescente` → "Débito após o desligamento" · Alerta | Mensalidades, aba Financeiro da ficha, cartão do painel |
 | `SituacaoEvento` (S5) | `Agendado` · Info; `Confirmado` · Info; `Realizado` · Sucesso; `ResultadoHomologado` → "Resultado homologado" · Sucesso; `Cancelado` · Perigo; `Adiado` · Alerta | Jogos da semana, painel do jogo |
 | `SituacaoConvocacao` (S5) | `Selecionada` → "Não enviada" · Neutro; `Enviada` → "Aguardando resposta" · Info; `Confirmada` → "Vai" · Sucesso; `Recusada` → "Não vai" · Perigo; `SemResposta` → "Sem resposta" · Alerta; `Cancelada` · Neutro | Jogos da semana (na linha do aluno), painel do jogo, vitrine do portal |
+| `SituacaoImportacao` (S7) | `Aberta` → "Em conferência" · Info; `Confirmada` → "Importada" · Sucesso; `Descartada` · Neutro | Importação (envios) e resultado do lote |
+| `ClasseLinha` (S7) | `Apta` · Sucesso; `ComAviso` → "Com aviso" · Alerta; `Bloqueada` · Perigo | Conferência da importação (cada linha) |
 | `SinalTela`, valores do S5 | `Inadimplente` → "Mensalidade em atraso" · Perigo; `ConvocacaoBloqueada` → "Convocação bloqueada" · Perigo; `SemCelular` → "Sem WhatsApp" · Alerta; `OutroJogoNoHorario` → "Outro jogo no horário" · Alerta; `OutraResposta` → "Outra resposta" · Alerta | Jogos da semana (sinais da escolha), painel do jogo (a resposta seguinte) |
 
 Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e sem cor. **Máquina nova entra inteira no mapa, na mesma entrega:**
@@ -1203,11 +1205,24 @@ Todas no `_LayoutQuadra`, para o professor no celular e a gestão no computador.
 - o cartão do jogo: título, dia por extenso, horário, local e endereço, "Ver no mapa" (`ki-geolocation`, nova aba), o professor, as informações e o motivo. "Confirmar jogo" e "Marcar realizado" aparecem só quando cabem;
 - os quatro números em `grid-cols-2` (vão, com o mínimo; não vão; aguardando; sem resposta) e o `kt-alert-warning` "Faltam N confirmação(ões)". **No jogo cancelado ou adiado**, os números saem, e fica um `kt-alert-info` com as convocações canceladas (achado no S5);
 - a lista dos convocados: nome, selo, quem respondeu, quando e por onde, o lembrete, a "outra resposta" (selo `SinalTela.OutraResposta` e o texto) e a "Resposta por fora" num controle segmentado (`esc-segmento`, §6.9) com "Vai" e "Não vai", cada botão com `aria-label` e `aria-pressed`;
-- a nota "Atualiza sozinho quando a família responde pelo WhatsApp", com a hora da última leitura.
+- a nota "Atualiza sozinho quando a família responde pelo WhatsApp ou pelo portal", com a hora da última leitura.
 - **Tempo real:** o `data-esc-painel-jogo` recebe o HTML novo quando o hub avisa o id do jogo (`esc.fetch` e `esc.reinicializarComponentes()`, §6.13); busca de novo a cada minuto com a aba visível e ao voltar para a aba.
 - **Barra inferior:** "Alterar" e "Cancelar ou adiar"; no jogo encerrado, "Voltar aos jogos".
 
 **Cancelar ou adiar** (`/Convocacao/Encerrar/{id}`): o resumo do jogo, com quantos convocados serão avisados; os dois estados em `kt-radio` (`min-h-12`); o motivo, que vai na mensagem. A ação é `kt-btn-destructive` ("Avisar e encerrar"), com confirmação.
+
+### 6.32 Importação da planilha (S7, `Views/Importacao`)
+
+Páginas próprias, e não o assistente em etapas: o lote fica gravado entre uma tela e outra, e a gestão pode voltar depois (§14).
+
+- **Campo de arquivo:** o nativo, `<input class="kt-input h-auto py-2" type="file" accept=".xlsx,...">`, num formulário `enctype="multipart/form-data"`. O `h-auto py-2` deixa o botão do navegador inteiro dentro do campo; o KTUI não tem campo de arquivo além do de imagem.
+- **Mapeamento:** uma linha por coluna da planilha: o cabeçalho, quantas estão preenchidas e até três exemplos (a coluna de saúde diz "Dado de saúde: sem exemplo"). O campo é um `kt-select w-full` com `optgroup` por grupo e "Fica de fora"; o obrigatório leva "*". Todos os selects têm o mesmo `name="campos"`, na ordem das colunas.
+- **Conferência:**
+  - quatro números em `grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5`: o `gap-3` no celular deixa "Reaproveitados" dentro do cartão em 320 px;
+  - o quadro "O que a planilha não resolve", com listas paralelas (`turmaChave`/`turmaEscolhida`, `responsavelChave`/`responsavelEscolha`) e checkboxes `alunosNovos`, num formulário só ("Aplicar as escolhas");
+  - as linhas, com o filtro por classe em botões (`kt-btn-sm`, o atual em `kt-btn-primary` e `aria-current="page"`). Cada linha traz o aluno, a turma, o início e o valor; os selos "Saúde informada" e "Contato de emergência" (`kt-badge-outline`, sem o conteúdo); os bloqueios (`ki-cross-circle`, `text-destructive`) e os avisos (`ki-information-2`, `text-secondary-foreground`). No celular, os responsáveis e a classe descem para a célula do aluno;
+  - a confirmação, num formulário à parte (`id="form-confirmar"`, o botão com `form=`), com a assinatura escondida, a declaração das autorizações (`required`, só quando a planilha marcou alguma) e `data-esc-confirmar`.
+- **Resultado:** o selo do lote, os números e os próximos passos (Mensalidades, Convites, Alunos).
 
 ---
 
@@ -1373,8 +1388,8 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 | acesso | `ki-key` | menu (Convites) e menu da pessoa (Trocar senha); passos do Painel; Convites; ativação; Mensagens |
 | permissões | `ki-security-user` | só a vitrine |
 | vínculo verificado | `ki-user-tick` | passos do Painel; Vínculos; Convites; responsável do aluno; professor |
-| importação | `ki-file-up` | menu (Importação, em breve) |
-| modelo para baixar | `ki-file-down` | só a vitrine (S7) |
+| importação | `ki-file-up` | menu (Importação); "Enviar e conferir"; lista de envios vazia |
+| modelo para baixar | `ki-file-down` | "Baixar o modelo (.xlsx)" na Importação |
 | online (conexão) | `ki-wifi` | selo de conexão da quadra, com sinal |
 | sem sinal / sincronizar | `ki-cloud-change` | selo de conexão da quadra, sem sinal (o `app.js` troca o ícone); página "sem sinal" da chamada |
 | horário, histórico | `ki-time` | Parâmetros e histórico; ficha do aluno; ficha do professor; Mensagens; compra de créditos; total a emitir e "Vencer" no simulador da Asaas |
@@ -1688,8 +1703,9 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita 
 | 22 | "Cor de status nunca é escolhida na View" (4.2) | cumprido: os três estados sem enum de domínio ("Conta vinculada"/"Sem conta", "Vinculada", "abaixo de N") passam pelo `SinalTela` do mapa central | Resolvido em 26/09/2026 |
 | 23 | Ícones: "sem sinal → `wifi`; sincronizar → `cloud-change`" (4.7) | o selo usa `ki-wifi` com sinal e troca para `ki-cloud-change` sem sinal | Diferença de uso |
 | 24 | Ícone "configuração → `setting-2`" (4.7) | nenhum item de menu usa; a seção Escolinha usa `home-3`, `medal-star`, `setting-3`, `bank`, `wallet` e `file-up` | `setting-2` só na vitrine |
-| 25 | Resposta do responsável "Sim/Não" (4.3) | os rótulos da vitrine são "Vai" e "Não vai" | Texto a confirmar no S6 |
+| 25 | Resposta do responsável "Sim/Não" (4.3) | "Vai" e "Não vai", no portal (S6) e nos botões do WhatsApp (S5) | Resolvido no S6 |
 | 26 | `reinicializarComponentes()` depois de todo HTML injetado (4.1, 4.6) | a função existe, mas só reinicia o `KTMenu` e a seleção com busca; os componentes do KTUI precisam do próprio `init()` | Estender antes da primeira tela com AJAX |
+| 27 | Importação em assistente de etapas: enviar → mapear → validar → conferir → confirmar (4.5) | páginas próprias (enviar, mapear, conferir, resultado), porque o lote fica gravado entre uma e outra (§6.32) | Forma diferente, mesma função (S7) |
 
 ### 14.2 Construído e não citado no plano
 

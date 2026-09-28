@@ -1,0 +1,61 @@
+@model LoteNaLista
+@{
+    ViewData["Title"] = "Resultado da importação";
+}
+
+@* O resultado de um envio (BL-M12-04): o que entrou, quem confirmou e os próximos passos. A planilha já foi apagada. *@
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Resultado da importação" meta="@Model.Arquivo">
+        <a class="kt-btn kt-btn-outline" href="/Importacao"><i class="ki-filled ki-arrow-left"></i> Importação</a>
+    </cabecalho-pagina>
+
+    <div class="kt-card mb-5">
+        <div class="kt-card-content flex flex-col gap-4">
+            <div class="flex flex-wrap items-center gap-2">
+                <selo-status valor="Model.Situacao"></selo-status>
+                <span class="text-sm text-secondary-foreground">
+                    Enviada em @Formatacao.DataHora(Model.EnviadoEm) por @Model.EnviadoPor@(Model.EncerradoEm is { } em ? $"; encerrada em {Formatacao.DataHora(em)} por {Model.EncerradoPor}" : "").
+                </span>
+            </div>
+            @if (Model.Situacao == SituacaoImportacao.Confirmada)
+            {
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="flex flex-col gap-1"><span class="text-xs text-secondary-foreground">Alunos com matrícula</span><span class="text-2xl font-semibold text-mono">@Model.AlunosCriados</span></div>
+                    <div class="flex flex-col gap-1"><span class="text-xs text-secondary-foreground">Responsáveis novos</span><span class="text-2xl font-semibold text-mono">@Model.ResponsaveisCriados</span></div>
+                    <div class="flex flex-col gap-1"><span class="text-xs text-secondary-foreground">Reaproveitados</span><span class="text-2xl font-semibold text-mono">@Model.ResponsaveisReaproveitados</span></div>
+                    <div class="flex flex-col gap-1"><span class="text-xs text-secondary-foreground">Linhas de fora</span><span class="text-2xl font-semibold text-mono">@Model.NaoImportadas</span></div>
+                </div>
+                <p class="text-sm text-secondary-foreground">A planilha foi apagada do sistema. O que entrou está nas fichas, com o registro "Carga inicial" no histórico de cada aluno.</p>
+            }
+            else
+            {
+                <p class="text-sm text-secondary-foreground">Nada deste envio entrou no cadastro, e a planilha foi apagada.</p>
+            }
+        </div>
+    </div>
+
+    @if (Model.Situacao == SituacaoImportacao.Confirmada)
+    {
+        <div class="kt-card">
+            <div class="kt-card-header py-4">
+                <h3 class="kt-card-title">Próximos passos</h3>
+            </div>
+            <div class="kt-card-content">
+                <ul class="flex flex-col gap-3 text-sm">
+                    <li class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="flex items-center gap-2"><i class="ki-filled ki-dollar text-primary"></i> Confirmar a primeira mensalidade de cada matrícula</span>
+                        <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Mensalidades">Mensalidades</a>
+                    </li>
+                    <li class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="flex items-center gap-2"><i class="ki-filled ki-whatsapp text-primary"></i> Convidar as famílias para o portal</span>
+                        <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Convites">Convites</a>
+                    </li>
+                    <li class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="flex items-center gap-2"><i class="ki-filled ki-people text-primary"></i> Conferir os alunos e completar o que ficou de fora</span>
+                        <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Alunos">Alunos</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    }
+</div>

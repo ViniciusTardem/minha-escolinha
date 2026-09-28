@@ -1,0 +1,71 @@
+@model MapeamentoLote
+@{
+    ViewData["Title"] = "Mapear as colunas";
+    var grupos = CatalogoCamposImportacao.Todos.GroupBy(c => c.Grupo).ToList();
+}
+
+@* O mapeamento das colunas (BL-M12-01): cada coluna da planilha preenche um campo do cadastro, ou fica de fora. As
+   reconhecidas pelo nome já vêm escolhidas. Coluna de saúde não mostra exemplo (BL-M12-05). *@
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Mapear as colunas" meta="@($"{Model.Arquivo} · {Model.Linhas} linha(s)")"
+                      descricao="Diga o que cada coluna da planilha preenche. As colunas reconhecidas pelo nome já vêm escolhidas; a coluna sem campo fica de fora.">
+        <a class="kt-btn kt-btn-outline" href="/Importacao"><i class="ki-filled ki-arrow-left"></i> Importação</a>
+    </cabecalho-pagina>
+
+    @if (Model.Faltando.Count > 0)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3 mb-5" role="status">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <span class="text-sm">Falta escolher a coluna de: @string.Join(", ", Model.Faltando.Select(f => CatalogoCamposImportacao.Obter(f).Rotulo)). Sem ela, a conferência não abre.</span>
+        </div>
+    }
+
+    <form class="kt-card" method="post" asp-action="Mapear" asp-route-id="@Model.Id">
+        <div class="kt-card-table kt-scrollable-x-auto">
+            <table class="kt-table kt-table-border align-middle text-sm">
+                <thead>
+                    <tr>
+                        <th class="min-w-[100px] sm:min-w-[200px]">Coluna da planilha</th>
+                        <th class="min-w-[220px] hidden sm:table-cell">Exemplos</th>
+                        <th class="min-w-[140px] sm:min-w-[260px]">Campo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Colunas)
+                    {
+                        var exemplos = c.Exemplos.Count > 0 ? string.Join(" · ", c.Exemplos)
+                            : c.Campo is { } campo && CatalogoCamposImportacao.Obter(campo).Sensivel ? "Dado de saúde: sem exemplo" : "—";
+                        <tr>
+                            <td>
+                                <div class="flex flex-col gap-0.5 min-w-0">
+                                    <span class="font-medium text-mono wrap-anywhere">@c.Cabecalho</span>
+                                    <span class="text-xs text-secondary-foreground">@c.Preenchidas preenchida(s)</span>
+                                    <span class="text-xs text-secondary-foreground wrap-anywhere sm:hidden">@exemplos</span>
+                                </div>
+                            </td>
+                            <td class="hidden sm:table-cell text-secondary-foreground"><span class="wrap-anywhere">@exemplos</span></td>
+                            <td>
+                                <select class="kt-select w-full" name="campos" aria-label="@($"Campo da coluna {c.Cabecalho}")">
+                                    <option value="">Fica de fora</option>
+                                    @foreach (var grupo in grupos)
+                                    {
+                                        <optgroup label="@CatalogoCamposImportacao.Rotulo(grupo.Key)">
+                                            @foreach (var d in grupo)
+                                            {
+                                                <option value="@d.Campo" selected="@(c.Campo == d.Campo)">@d.Rotulo@(d.Obrigatorio ? " *" : "")</option>
+                                            }
+                                        </optgroup>
+                                    }
+                                </select>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="kt-card-footer flex flex-wrap items-center justify-between gap-3">
+            <span class="text-xs text-secondary-foreground">* obrigatório: nome e nascimento do aluno, turma, nome e celular do responsável 1.</span>
+            <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-double-check"></i> Salvar e conferir</button>
+        </div>
+    </form>
+</div>

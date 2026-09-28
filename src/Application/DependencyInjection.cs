@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Alunos;
+using MinhaEscolinha.Application.Carga;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
@@ -105,6 +106,9 @@ public static class DependencyInjection
         services.AddScoped<IValidadorOrigemMensagem, ValidadorOrigemEvento>();
         // O tempo real é da web (SignalR); sem ela (testes, jobs), ninguém é avisado.
         services.TryAddSingleton<INotificadorConvocacoes, NotificadorConvocacoesNulo>();
+
+        // S7 — carga inicial da escolinha por planilha (M12-01 a 05)
+        services.AddScoped<ServicoImportacao>();
 
         // Plataforma — a LDNA vende pacotes de créditos às escolinhas (Stripe da LDNA; mensalidade de aluno segue na Asaas)
         services.AddScoped<ServicoPacotesCreditos>();

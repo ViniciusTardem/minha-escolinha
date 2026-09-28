@@ -1,9 +1,11 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using MinhaEscolinha.Application.Acesso;
+using MinhaEscolinha.Application.Carga;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Domain.Alunos;
+using MinhaEscolinha.Domain.Carga;
 using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
 using MinhaEscolinha.Domain.Eventos;
@@ -237,6 +239,14 @@ public static class ApresentacaoStatus
         SituacaoConvocacao.Recusada => ("Não vai", VarianteSelo.Perigo),
         SituacaoConvocacao.SemResposta => ("Sem resposta", VarianteSelo.Alerta),
         SituacaoConvocacao.Cancelada => ("Cancelada", VarianteSelo.Neutro),
+
+        SituacaoImportacao.Aberta => ("Em conferência", VarianteSelo.Info),
+        SituacaoImportacao.Confirmada => ("Importada", VarianteSelo.Sucesso),
+        SituacaoImportacao.Descartada => ("Descartada", VarianteSelo.Neutro),
+
+        ClasseLinha.Apta => ("Apta", VarianteSelo.Sucesso),
+        ClasseLinha.ComAviso => ("Com aviso", VarianteSelo.Alerta),
+        ClasseLinha.Bloqueada => ("Bloqueada", VarianteSelo.Perigo),
 
         _ => (valor.ToString(), VarianteSelo.Neutro)
     };

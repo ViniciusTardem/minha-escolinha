@@ -56,7 +56,7 @@ A tabela da §4.5 do plano, com o status de hoje.
 | S4 | Financeiro › Pagamentos (agrupado por situação, com as ações isentar, cancelar e reenviar); Divergências (resolução manual com autoria); aba Financeiro na ficha; `/dev/asaas` | gestor · Painel | `account/billing/*` | **Pronto** (28/09/2026), no simulador. Com as ações confirmar, receber por fora e tentar de novo, e o cartão no Painel |
 | S5 | **Montar fim de semana** (jogos → convocados por jogo, com alertas → revisar → disparar tudo); **Painel de confirmações** em tempo real (registrar resposta por fora; cancelar, adiar ou alterar em um toque) | professor · **Quadra** (e Painel) | `network/user-cards/*` | **Pronto** (28/09/2026), no simulador. A semana junta a montagem e o disparo numa tela; o painel atualiza pelo hub |
 | S6 | Portal: Início (filhos, pendências, próximos jogos), Jogos (Sim/Não por filho), Pagamentos (total do mês + detalhamento por filho, pagar pela fatura Asaas ou pelo Pix copia-e-cola), Presenças (só leitura), Avisos | responsável · **Portal** | `store-client/checkout/*` (só a forma) | **Pronto** (28/09/2026), no simulador. As presenças abrem pelo Início, sem aba própria |
-| S7 | Importação: enviar planilha → mapear → validar e classificar → **conferência** (novos, reaproveitados, vínculos, bloqueados; saúde mascarada) → confirmar; modelo `.xlsx` para baixar | gestor ou equipe · Painel | `account/members/import-members` | Em breve (`/importacao`) |
+| S7 | Importação: enviar planilha → mapear → validar e classificar → **conferência** (novos, reaproveitados, vínculos, bloqueados; saúde mascarada) → confirmar; modelo `.xlsx` para baixar | gestor (ou a equipe como gestor) · Painel | `account/members/import-members` | **Pronto** (28/09/2026), sem a planilha real (P21) |
 
 As referências ficam em `docs/metronic/html/demo1/` (cópia local, fora do git).
 
@@ -303,16 +303,34 @@ Tudo exige login com o papel Responsável (`[SomenteAutenticado]` e o serviço c
 
 ---
 
+## 3F. S7: telas prontas (28/09/2026)
+
+### 3F.1 Gestão (Painel, `ImportacaoController`)
+
+Tudo exige `ConfiguracaoEscolinha`, `Alterar`, e o serviço confere que é a gestão (cadastro total, financeiro e documento médico). Lote de outra escolinha: 404; lote encerrado: vai para o resultado.
+
+| Tela | Rota | Observações | BL |
+|---|---|---|---|
+| Importação | `GET /Importacao` | o envio do `.xlsx`, o modelo para baixar, as orientações e os envios (em conferência, importado, descartado) | M12-01 |
+| Modelo | `GET /Importacao/Modelo` | o `.xlsx` com a aba Alunos (só o cabeçalho; obrigatórias em azul) e a aba Instruções (cada coluna e as turmas ativas) | M12-01 |
+| Enviar | `POST /Importacao/Enviar` (`arquivo`) | lê a planilha e abre o lote, com o mapeamento sugerido; nada entra no cadastro | M12-01 |
+| Mapear | `GET` e `POST /Importacao/Mapear/{id}` (`campos`, um por coluna) | a coluna, até três exemplos (nenhum de saúde) e o campo; o mesmo campo em duas colunas não vale | M12-01 |
+| Conferir | `GET /Importacao/Conferir/{id}` (`ver`) | o resumo, o quadro do que a planilha não resolve, as linhas por classe (todas, com aviso, bloqueadas, aptas) e a confirmação | M12-02 a M12-05 |
+| Decidir | `POST /Importacao/Decidir/{id}` (listas paralelas `turmaChave`/`turmaEscolhida` e `responsavelChave`/`responsavelEscolha`, e `alunosNovos`) | as escolhas ficam no lote, e a conferência é refeita | M12-02, M12-03 |
+| Confirmar | `POST /Importacao/Confirmar/{id}` (`assinatura`, `declaracao`) | a conferência refeita precisa bater com a vista; grava tudo de uma vez e apaga a planilha | M12-04 |
+| Descartar | `POST /Importacao/Descartar/{id}` | nada entra, e a planilha é apagada | M12-04 |
+| Resultado | `GET /Importacao/Lote/{id}` | o resumo e os próximos passos (mensalidades, convites, alunos) | M12-04 |
+
+---
+
 ## 4. Páginas "em breve" (catálogo de módulos)
 
 A rota `{chave}` (registrada antes da rota padrão) só aceita as chaves dos módulos com situação `Planejado` no `CatalogoModulos`. A página mostra o que o módulo vai fazer, a fatia e a lista de recursos.
 
-| Rota | Módulo | Seção do menu | Fatia | Aparece no menu para (recurso, leitura) | Ícone |
-|---|---|---|---|---|---|
-| `/importacao` | Importação | Escolinha | S7 | `ConfiguracaoEscolinha`: gestor | `ki-file-up` |
+**Desde o S7, nenhum módulo do piloto está "em breve"**: a lista ficou vazia, e a rota `{chave}` só volta a ser usada quando o catálogo ganhar um módulo planejado.
 
 - **A página não confere o recurso** (não mostra dado nenhum): qualquer pessoa logada a abre pela URL. Quem filtra é o menu.
-- **Desde o S1**, Turmas, Alunos, Responsáveis e Agenda (Operação) e Professores e Locais de treino (Escolinha) são módulos prontos no `CatalogoModulos` e saíram desta lista. **Desde o S2**, também Mensagens e Convites de acesso (Comunicação), e Templates (Plataforma). **Desde o S3**, a Chamada (Operação). **Desde o S4**, as Mensalidades (Financeiro). **Desde o S5**, Jogos e convocações (Operação, `/Convocacao`).
+- **Desde o S1**, Turmas, Alunos, Responsáveis e Agenda (Operação) e Professores e Locais de treino (Escolinha) são módulos prontos no `CatalogoModulos` e saíram desta lista. **Desde o S2**, também Mensagens e Convites de acesso (Comunicação), e Templates (Plataforma). **Desde o S3**, a Chamada (Operação). **Desde o S4**, as Mensalidades (Financeiro). **Desde o S5**, Jogos e convocações (Operação, `/Convocacao`). **Desde o S7**, a Importação (Escolinha, `/Importacao`).
 - **Quem é só Responsável não vê o painel:** desde o S2, o painel o leva ao portal (D54).
 - **Quando o módulo ficar pronto:** no `CatalogoModulos`, troque a `Situacao` para `Disponivel` e aponte a `Url` para o controller real. A chave sai da rota `{chave}` sozinha, e o menu, a busca rápida e o Painel acompanham.
 
@@ -372,11 +390,11 @@ O que cada fatia encontra pronto no design system e o que ainda precisa ser cons
 - **Construído no S6** (guia §5.4): `_ConvocacaoPortal`, `_FilhosPortal` (os filhos como etiquetas, sem toque), o Pix copia e cola (`esc-pix`) e as telas de Jogos, Pagamentos e Presenças. As presenças abrem pelo Início, sem aba própria.
 - **Novas regras:** os dois botões de resposta ficam neutros até a resposta; o valor em reais não quebra entre "R$" e o número; a checagem de tela mede também o conteúdo que transborda o próprio botão (guia §12).
 
-### S7 — Carga inicial (gestor ou equipe · Painel)
+### S7 — Carga inicial (gestor · Painel) — **pronto em 28/09/2026** (§3F)
 
-- **Onde entra:** `/importacao` deixa de ser "em breve".
-- **Pronto para usar:** o assistente em etapas para enviar → mapear → validar → conferir → confirmar; o ícone `ki-file-down` para o modelo `.xlsx`.
-- **Na conferência:** a saúde aparece mascarada.
+- **Construído com o que já existia:** a tabela padrão com o dado secundário descendo no celular (§6.17), o `<selo-status>` com as duas máquinas novas (situação do lote e classe da linha, §4.2), o `<estado-vazio>`, a confirmação `data-esc-confirmar` e os ícones `ki-file-up` e `ki-file-down`.
+- **Forma diferente do plano:** o plano previa o assistente em etapas; ficaram páginas próprias (enviar, mapear, conferir, resultado), porque o lote fica gravado entre uma e outra e a gestão pode voltar dias depois. O campo de arquivo é o nativo com `kt-input h-auto py-2` (o Metronic só tem o de imagem).
+- **Na conferência:** a saúde aparece só como "Saúde informada", e os motivos vêm em cada linha (bloqueio em `text-destructive`, aviso em `text-secondary-foreground`).
 
 ---
 
