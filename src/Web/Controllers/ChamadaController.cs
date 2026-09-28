@@ -13,7 +13,7 @@ namespace MinhaEscolinha.Web.Controllers;
 /// As páginas ficam guardadas no aparelho pelo service worker (<c>/sw-chamada.js</c>, escopo <c>/Chamada</c>), e cada toque
 /// vai para uma fila que sincroniza quando há sinal. A gestão usa a mesma tela para corrigir uma chamada.
 /// </summary>
-public class ChamadaController(ServicoChamada servico, IAntiforgery antiforgery) : Controller
+public class ChamadaController(ServicoChamada servico, IAntiforgery antiforgery, IUsuarioAtual usuarioAtual) : Controller
 {
     public const string Modulo = "chamada";
 
@@ -33,7 +33,10 @@ public class ChamadaController(ServicoChamada servico, IAntiforgery antiforgery)
         return chamada is null ? NotFound() : View(chamada);
     }
 
-    /// <summary>O token antiforgery na hora do envio: a página guardada no aparelho pode ter um token antigo.</summary>
+    /// <summary>
+    /// O token antiforgery na hora do envio (a página guardada no aparelho pode ter um token antigo) e quem está logado:
+    /// no aparelho compartilhado, a fila só envia as marcações de quem está logado (P38).
+    /// </summary>
     [HttpGet]
     [Permissao(Recurso.RegistroPresenca, Operacao.Alterar)]
     public IActionResult Token()
@@ -41,7 +44,7 @@ public class ChamadaController(ServicoChamada servico, IAntiforgery antiforgery)
         // Os mesmos cabeçalhos que o antiforgery põe: com outros, ele sobrescreve e avisa no log.
         Response.Headers.CacheControl = "no-cache, no-store";
         Response.Headers.Pragma = "no-cache";
-        return Json(new { token = antiforgery.GetAndStoreTokens(HttpContext).RequestToken });
+        return Json(new { token = antiforgery.GetAndStoreTokens(HttpContext).RequestToken, pessoa = usuarioAtual.Id });
     }
 
     [HttpPost]

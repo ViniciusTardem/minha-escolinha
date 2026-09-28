@@ -16,6 +16,7 @@
   var enviando = false;
   var agendado = null;
   var sessaoAvisada = false;
+  var outraPessoaAvisada = false;
 
   function toast(texto, variante) {
     if (window.esc && typeof window.esc.toast === "function") window.esc.toast(texto, variante);
@@ -130,7 +131,13 @@
       if (resposta.status === 401) { avisarSessao(); throw new Error("sessão"); }
       if (!resposta.ok) throw new Error("token");
       return resposta.json();
-    }).then(function (dados) { return dados.token; });
+    }).then(function (dados) { return dados; });
+  }
+
+  // P38: no aparelho compartilhado, cada marcação guarda quem marcou e só vai com essa pessoa logada. A marcação sem dono
+  // (guardada antes desta versão) vai com quem estiver logado, como antes.
+  function daPessoa(marcacao, pessoa) {
+    return !marcacao.pessoa || !pessoa || marcacao.pessoa === pessoa;
   }
 
   function enviar() {
@@ -140,8 +147,16 @@
 
     return todas().then(function (fila) {
       if (fila.length === 0) return { ok: true };
-      var lote = fila.slice(0, MAXIMO_POR_ENVIO);
-      return buscarToken().then(function (token) {
+      var lote = [];
+      return buscarToken().then(function (dados) {
+        var token = dados.token;
+        lote = fila.filter(function (m) { return daPessoa(m, dados.pessoa); }).slice(0, MAXIMO_POR_ENVIO);
+        var deOutra = fila.length - fila.filter(function (m) { return daPessoa(m, dados.pessoa); }).length;
+        if (deOutra > 0 && !outraPessoaAvisada) {
+          outraPessoaAvisada = true;
+          toast(deOutra + " marcação(ões) de outra pessoa ficam no aparelho e vão quando ela entrar de novo.", "info");
+        }
+        if (lote.length === 0) return null;
         return fetch("/Chamada/Sincronizar", {
           method: "POST",
           credentials: "same-origin",
@@ -155,6 +170,7 @@
           body: JSON.stringify({ marcacoes: lote })
         });
       }).then(function (resposta) {
+        if (resposta === null) return { ok: false };
         if (resposta.status === 401) { avisarSessao(); return { ok: false }; }
         if (!resposta.ok) return { ok: false };
         return resposta.json().then(function (dados) {
@@ -227,6 +243,7 @@
   function marcar(alunoId, situacao, justificativa, saude) {
     var marcacao = {
       id: novoId(),
+      pessoa: raiz.getAttribute("data-pessoa") || null,
       sessaoId: sessaoId,
       alunoId: alunoId,
       situacao: SITUACOES[situacao],

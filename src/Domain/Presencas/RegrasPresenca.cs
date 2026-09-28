@@ -116,6 +116,17 @@ public static class CalculadoraFrequencia
         return new Frequencia(presentes, consideradas);
     }
 
-    public static bool EmRisco(Frequencia frequencia, decimal minimoPercentual) =>
-        frequencia.Percentual is { } percentual && percentual < minimoPercentual;
+    /// <param name="minimoSessoes">Com menos sessões consideradas, ainda não há risco: o aluno novo com uma falta não é alarme (P39).</param>
+    public static bool EmRisco(Frequencia frequencia, decimal minimoPercentual, int minimoSessoes = 1) =>
+        frequencia.Consideradas >= minimoSessoes && frequencia.Percentual is { } percentual && percentual < minimoPercentual;
+
+    /// <summary>
+    /// A frequência mínima que vale para o aluno (P32): a meta da turma substitui a da escolinha, quando a escolinha liga
+    /// o parâmetro e a turma tem meta. Aluno em mais de uma turma: vale a mais exigente. Sem meta, a da escolinha.
+    /// </summary>
+    public static decimal MinimoDoAluno(IEnumerable<int?> metasDasTurmas, decimal minimoEscolinha, bool usarMetaDaTurma)
+    {
+        var minimos = metasDasTurmas.Select(m => usarMetaDaTurma && m is { } meta ? meta : minimoEscolinha).ToList();
+        return minimos.Count == 0 ? minimoEscolinha : minimos.Max();
+    }
 }

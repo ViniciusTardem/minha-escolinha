@@ -129,6 +129,27 @@ public class FrequenciaTestes
 
         Assert.False(CalculadoraFrequencia.EmRisco(CalculadoraFrequencia.Calcular([], false), 60m));
     }
+
+    [Fact]
+    public void O_aluno_novo_com_poucas_sessoes_ainda_nao_esta_em_risco()
+    {
+        // P39: uma sessão com falta dá 0 %, mas é cedo para alarme.
+        var uma = CalculadoraFrequencia.Calcular([SituacaoPresenca.Falta], false);
+        Assert.False(CalculadoraFrequencia.EmRisco(uma, 60m, minimoSessoes: 4));
+        var quatro = CalculadoraFrequencia.Calcular([SituacaoPresenca.Falta, SituacaoPresenca.Falta, SituacaoPresenca.Presente, SituacaoPresenca.Falta], false);
+        Assert.True(CalculadoraFrequencia.EmRisco(quatro, 60m, minimoSessoes: 4));
+    }
+
+    [Fact]
+    public void A_meta_da_turma_substitui_o_minimo_da_escolinha_e_vale_a_mais_exigente()
+    {
+        // P32: sem meta, a da escolinha; com meta, a da turma; em várias turmas, a mais exigente; desligado, só a da escolinha.
+        Assert.Equal(60m, CalculadoraFrequencia.MinimoDoAluno([null, null], 60m, usarMetaDaTurma: true));
+        Assert.Equal(50m, CalculadoraFrequencia.MinimoDoAluno([50], 60m, usarMetaDaTurma: true));
+        Assert.Equal(80m, CalculadoraFrequencia.MinimoDoAluno([80, null, 50], 60m, usarMetaDaTurma: true));
+        Assert.Equal(60m, CalculadoraFrequencia.MinimoDoAluno([80], 60m, usarMetaDaTurma: false));
+        Assert.Equal(60m, CalculadoraFrequencia.MinimoDoAluno([], 60m, usarMetaDaTurma: true));
+    }
 }
 
 public class SessaoEAvisoTestes

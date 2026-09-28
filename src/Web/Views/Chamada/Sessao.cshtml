@@ -1,4 +1,5 @@
 @model ChamadaDaSessao
+@inject MinhaEscolinha.Application.Comum.IUsuarioAtual UsuarioAtual
 @{
     ViewData["Title"] = $"{Model.Turma} · {Model.Inicio:HH:mm}";
     ViewData["Voltar"] = "/Chamada";
@@ -9,7 +10,7 @@
 @* A chamada da sessão (BL-M05-01): P, F ou J em um toque (R10). Cada toque vai para a fila do aparelho (IndexedDB) e
    sincroniza quando há sinal; o registro da quadra prevalece (CA-21). A página não traz motivo de saúde: ela fica
    guardada no aparelho. *@
-<div data-esc-chamada data-sessao="@Model.Id" data-pode-marcar="@(Model.PodeMarcar ? "true" : "false")">
+<div data-esc-chamada data-sessao="@Model.Id" data-pessoa="@UsuarioAtual.Id" data-pode-marcar="@(Model.PodeMarcar ? "true" : "false")">
     <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
         <span class="text-sm text-secondary-foreground">@Formatacao.DiaCurto(Model.Data) · @Formatacao.Horario(Model.Inicio, Model.Fim) · @Model.Local</span>
         <selo-status valor="Model.Situacao"></selo-status>

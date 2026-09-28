@@ -40,10 +40,11 @@ public class ServicoPresenca(
 
         var situacoes = (await repositorio.SituacoesDoAlunoAsync(alunoId, agora.AddDays(-p.JanelaRiscoDias), ct))
             .Where(s => alcance.Inclui(s.TurmaId))
-            .Select(s => s.Situacao);
-        var f = CalculadoraFrequencia.Calcular(situacoes, p.FaltaJustificadaContaParaAlerta);
-        var frequencia = new FrequenciaDoAluno(f.Presentes, f.Consideradas, f.Percentual, p.JanelaRiscoDias, p.FrequenciaMinimaPercentual,
-            CalculadoraFrequencia.EmRisco(f, p.FrequenciaMinimaPercentual));
+            .ToList();
+        var f = CalculadoraFrequencia.Calcular(situacoes.Select(s => s.Situacao), p.FaltaJustificadaContaParaAlerta);
+        var minimo = CalculadoraFrequencia.MinimoDoAluno(situacoes.Select(s => s.Meta), p.FrequenciaMinimaPercentual, p.UsarMetaDaTurma);
+        var frequencia = new FrequenciaDoAluno(f.Presentes, f.Consideradas, f.Percentual, p.JanelaRiscoDias, minimo,
+            CalculadoraFrequencia.EmRisco(f, minimo, p.MinimoSessoesRisco));
 
         var presencas = (await repositorio.PresencasDoAlunoAsync(alunoId, PresencasNaFicha, ct))
             .Where(r => alcance.Inclui(r.TurmaId))
@@ -88,8 +89,9 @@ public class ServicoPresenca(
         var linhas = await repositorio.SituacoesDesdeAsync(relogio.Agora().AddDays(-p.JanelaRiscoDias), alcance, ct);
         return linhas
             .GroupBy(l => (l.AlunoId, l.Nome))
-            .Select(g => (Aluno: g.Key, Frequencia: CalculadoraFrequencia.Calcular(g.Select(x => x.Situacao), p.FaltaJustificadaContaParaAlerta)))
-            .Where(x => CalculadoraFrequencia.EmRisco(x.Frequencia, p.FrequenciaMinimaPercentual))
+            .Select(g => (Aluno: g.Key, Frequencia: CalculadoraFrequencia.Calcular(g.Select(x => x.Situacao), p.FaltaJustificadaContaParaAlerta),
+                Minimo: CalculadoraFrequencia.MinimoDoAluno(g.Select(x => x.Meta), p.FrequenciaMinimaPercentual, p.UsarMetaDaTurma)))
+            .Where(x => CalculadoraFrequencia.EmRisco(x.Frequencia, x.Minimo, p.MinimoSessoesRisco))
             .Select(x => new RiscoEvasao(x.Aluno.AlunoId, x.Aluno.Nome, x.Frequencia.Presentes, x.Frequencia.Consideradas,
                 x.Frequencia.Percentual!.Value))
             .OrderBy(r => r.Percentual).ThenBy(r => r.Nome)

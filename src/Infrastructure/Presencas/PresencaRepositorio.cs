@@ -95,13 +95,14 @@ public class PresencaRepositorio(EscolinhaDbContext contexto) : IPresencaReposit
             .Take(limite)
             .ToListAsync(ct);
 
-    public async Task<IReadOnlyList<(Guid TurmaId, SituacaoPresenca Situacao)>> SituacoesDoAlunoAsync(Guid alunoId, DateTime desde,
+    public async Task<IReadOnlyList<(Guid TurmaId, int? Meta, SituacaoPresenca Situacao)>> SituacoesDoAlunoAsync(Guid alunoId, DateTime desde,
         CancellationToken ct = default) =>
-        (await contexto.Presencas.AsNoTracking()
-            .Where(p => p.Aluno_ID == alunoId && p.SessaoInicio >= desde)
-            .Select(p => new { p.Turma_ID, p.Situacao })
+        (await (from p in contexto.Presencas.AsNoTracking()
+                where p.Aluno_ID == alunoId && p.SessaoInicio >= desde
+                join t in contexto.Turmas.AsNoTracking() on p.Turma_ID equals t.Turma_ID
+                select new { p.Turma_ID, t.MetaFrequenciaPercentual, p.Situacao })
             .ToListAsync(ct))
-        .Select(x => (x.Turma_ID, x.Situacao))
+        .Select(x => (x.Turma_ID, x.MetaFrequenciaPercentual, x.Situacao))
         .ToList();
 
     public async Task<IReadOnlyList<(AlertaFaltas Alerta, string Turma)>> AlertasDoAlunoAsync(Guid alunoId, int limite, CancellationToken ct = default) =>
@@ -115,7 +116,7 @@ public class PresencaRepositorio(EscolinhaDbContext contexto) : IPresencaReposit
         .Select(x => (x.Alerta, x.Nome))
         .ToList();
 
-    public async Task<IReadOnlyList<(Guid AlunoId, string Nome, SituacaoPresenca Situacao)>> SituacoesDesdeAsync(DateTime desde, EscopoTurmas escopo,
+    public async Task<IReadOnlyList<(Guid AlunoId, string Nome, int? Meta, SituacaoPresenca Situacao)>> SituacoesDesdeAsync(DateTime desde, EscopoTurmas escopo,
         CancellationToken ct = default)
     {
         if (!escopo.Todas && escopo.Turmas.Count == 0) return [];
@@ -123,13 +124,14 @@ public class PresencaRepositorio(EscolinhaDbContext contexto) : IPresencaReposit
                        where p.SessaoInicio >= desde
                        join a in contexto.Alunos.AsNoTracking() on p.Aluno_ID equals a.Aluno_ID
                        where a.Situacao == SituacaoAluno.Trial || a.Situacao == SituacaoAluno.Ativo
-                       select new { p.Turma_ID, p.Aluno_ID, a.Nome, p.Situacao };
+                       join t in contexto.Turmas.AsNoTracking() on p.Turma_ID equals t.Turma_ID
+                       select new { p.Turma_ID, p.Aluno_ID, a.Nome, t.MetaFrequenciaPercentual, p.Situacao };
         if (!escopo.Todas)
         {
             var turmas = escopo.Turmas.ToList();
             consulta = consulta.Where(x => turmas.Contains(x.Turma_ID));
         }
-        return (await consulta.ToListAsync(ct)).Select(x => (x.Aluno_ID, x.Nome, x.Situacao)).ToList();
+        return (await consulta.ToListAsync(ct)).Select(x => (x.Aluno_ID, x.Nome, x.MetaFrequenciaPercentual, x.Situacao)).ToList();
     }
 
     public void AdicionarPresenca(Presenca presenca) => contexto.Presencas.Add(presenca);

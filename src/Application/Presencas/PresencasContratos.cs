@@ -190,12 +190,13 @@ public interface IPresencaRepositorio
     Task<IReadOnlyList<PresencaNaFicha>> PresencasDoAlunoAsync(Guid alunoId, int limite, CancellationToken ct = default);
 
     /// <summary>As situações marcadas do aluno desde a data (para a frequência).</summary>
-    Task<IReadOnlyList<(Guid TurmaId, SituacaoPresenca Situacao)>> SituacoesDoAlunoAsync(Guid alunoId, DateTime desde, CancellationToken ct = default);
+    /// <summary>As situações marcadas desde a data, com a turma e a meta de frequência dela (P32).</summary>
+    Task<IReadOnlyList<(Guid TurmaId, int? Meta, SituacaoPresenca Situacao)>> SituacoesDoAlunoAsync(Guid alunoId, DateTime desde, CancellationToken ct = default);
 
     Task<IReadOnlyList<(AlertaFaltas Alerta, string Turma)>> AlertasDoAlunoAsync(Guid alunoId, int limite, CancellationToken ct = default);
 
     /// <summary>As situações marcadas desde a data, dos alunos em trial ou ativos, nas turmas do escopo (para o risco).</summary>
-    Task<IReadOnlyList<(Guid AlunoId, string Nome, SituacaoPresenca Situacao)>> SituacoesDesdeAsync(DateTime desde, EscopoTurmas escopo,
+    Task<IReadOnlyList<(Guid AlunoId, string Nome, int? Meta, SituacaoPresenca Situacao)>> SituacoesDesdeAsync(DateTime desde, EscopoTurmas escopo,
         CancellationToken ct = default);
 
     void AdicionarPresenca(Presenca presenca);

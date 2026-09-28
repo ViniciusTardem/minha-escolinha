@@ -7,7 +7,7 @@
    - As páginas não trazem motivo de saúde; o logout apaga esta cópia (js/app.js). */
 "use strict";
 
-var VERSAO = "esc-chamada-v1";
+var VERSAO = "esc-chamada-v2";
 var SEM_SINAL = "/Chamada/SemSinal";
 var FONTES = [
   "/assets/vendors/keenicons/fonts/keenicons-filled.woff?nz57rx",
