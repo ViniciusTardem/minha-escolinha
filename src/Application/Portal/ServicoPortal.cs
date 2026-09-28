@@ -47,10 +47,8 @@ public class ServicoPortal(
         var agora = relogio.Agora();
         var alunos = familia.Filhos.Select(f => f.AlunoId).ToList();
 
-        var aResponder = alunos.Count == 0
-            ? 0
-            : (await repositorio.ConvocacoesAsync(alunos, agora, ct)).Count(l => Responde(l.Convocacao, l.Evento, agora)
-                                                                               && l.Convocacao.Situacao == SituacaoConvocacao.Enviada);
+        var convocacoes = alunos.Count == 0 ? [] : await repositorio.ConvocacoesAsync(alunos, agora, ct);
+        var aResponder = convocacoes.Count(l => Responde(l.Convocacao, l.Evento, agora) && l.Convocacao.Situacao == SituacaoConvocacao.Enviada);
         var financeiros = familia.Filhos.Where(f => f.CuidaDasMensalidades).Select(f => f.AlunoId).ToList();
         var emAberto = financeiros.Count == 0
             ? []
@@ -61,6 +59,22 @@ public class ServicoPortal(
             ? []
             : await repositorio.PresencasAsync(alunos, hoje.AddDays(-DiasFrequencia).ToDateTime(TimeOnly.MinValue), agora, ct);
 
+        // BL-M10-02: a visão única de cada filho, com o próximo treino, o próximo jogo e o que está em aberto.
+        var treinos = alunos.Count == 0 ? new Dictionary<Guid, DateTime>() : await repositorio.ProximosTreinosAsync(alunos, agora, ct);
+        var resumos = familia.Filhos.ToDictionary(f => f.AlunoId, f =>
+        {
+            var jogo = convocacoes
+                .Where(l => l.Convocacao.Aluno_ID == f.AlunoId && l.Evento.Aberto && l.Evento.Inicio > agora && l.Convocacao.Disparada
+                            && l.Convocacao.Situacao != SituacaoConvocacao.Cancelada)
+                .OrderBy(l => l.Evento.Inicio).Select(l => ((Convocacao, Evento)?)l).FirstOrDefault();
+            var doFilho = f.CuidaDasMensalidades ? emAberto.Where(c => c.Aluno_ID == f.AlunoId).ToList() : [];
+            return new ResumoDoFilho(treinos.TryGetValue(f.AlunoId, out var treino) ? treino : null,
+                jogo is { } j ? (j.Item2.Adversario is { } adversario ? $"Jogo contra {adversario}" : "Jogo") : null,
+                jogo?.Item2.Inicio, jogo?.Item1.Situacao,
+                f.CuidaDasMensalidades ? doFilho.Sum(c => c.Valor) : null,
+                doFilho.Count == 0 ? null : doFilho.Min(c => c.Vencimento));
+        });
+
         return new InicioPortal(
             (await configuracao.ObterEscolinhaAsync(ct))?.Nome ?? "Escolinha",
             usuarioAtual.Nome ?? "Responsável",
@@ -70,7 +84,8 @@ public class ServicoPortal(
             aResponder,
             emAberto.Sum(c => c.Valor),
             emAberto.Count,
-            familia.Filhos.ToDictionary(f => f.AlunoId, f => Frequencia(presencas.Where(p => p.AlunoId == f.AlunoId))));
+            familia.Filhos.ToDictionary(f => f.AlunoId, f => Frequencia(presencas.Where(p => p.AlunoId == f.AlunoId))),
+            resumos);
     }
 
     public async Task<JogosPortal?> JogosAsync(CancellationToken ct = default)

@@ -210,6 +210,12 @@ public class ServicoAutenticacaoTestes
 
         public void AdicionarVinculo(VinculoAtuacao vinculo) { }
 
+        public void AdicionarRecuperacao(RecuperacaoSenha recuperacao) { }
+
+        public Task<RecuperacaoSenha?> ObterRecuperacaoAsync(Guid id, CancellationToken ct = default) => Task.FromResult<RecuperacaoSenha?>(null);
+
+        public Task<RecuperacaoSenha?> RecuperacaoPorHashAsync(string tokenHash, CancellationToken ct = default) => Task.FromResult<RecuperacaoSenha?>(null);
+
         public Task SalvarAsync(CancellationToken ct = default) => Task.CompletedTask;
     }
 }

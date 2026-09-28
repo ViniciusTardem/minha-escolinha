@@ -119,6 +119,58 @@ public class ContaController(IServicoAutenticacao autenticacao, TimeProvider rel
         return escolhida is null ? DestinoSemEscolinha(credencial) : RedirectToAction("Index", "Painel");
     }
 
+    // Recuperação de senha (BL-M01-09): o pedido por e-mail e a tela do link de uso único (e-mail ou gerado pela gestão).
+
+    [AllowAnonymous]
+    [HttpGet]
+    public IActionResult EsqueciSenha() => View(new EsqueciSenhaRequisicao());
+
+    [AllowAnonymous]
+    [HttpPost]
+    [EnableRateLimiting(PoliticasLimite.Login)]
+    public async Task<IActionResult> EsqueciSenha(EsqueciSenhaRequisicao requisicao, [FromServices] ServicoRecuperacaoSenha recuperacao,
+        CancellationToken ct)
+    {
+        var resultado = await recuperacao.PedirPorEmailAsync(requisicao, ct);
+        if (!resultado.Sucesso)
+        {
+            ModelState.AdicionarErro(resultado);
+            return View(requisicao);
+        }
+        TempData[ChavesTempData.Sucesso] = resultado.Mensagem;
+        return RedirectToAction(nameof(EsqueciSenha));
+    }
+
+    [AllowAnonymous]
+    [PermitirSemTrocarSenha]
+    [HttpGet("/Conta/NovaSenha/{token}")]
+    public async Task<IActionResult> NovaSenha(string token, [FromServices] ServicoRecuperacaoSenha recuperacao, CancellationToken ct)
+    {
+        ViewData["Nome"] = await recuperacao.ValidarAsync(token, ct);
+        return View(new NovaSenhaRequisicao());
+    }
+
+    [AllowAnonymous]
+    [PermitirSemTrocarSenha]
+    [HttpPost("/Conta/NovaSenha/{token}")]
+    [EnableRateLimiting(PoliticasLimite.Login)]
+    public async Task<IActionResult> NovaSenha(string token, NovaSenhaRequisicao requisicao, [FromServices] ServicoRecuperacaoSenha recuperacao,
+        CancellationToken ct)
+    {
+        var resultado = await recuperacao.DefinirNovaSenhaAsync(token, requisicao, ct);
+        if (!resultado.Sucesso)
+        {
+            ModelState.AdicionarErro(resultado);
+            ViewData["Nome"] = await recuperacao.ValidarAsync(token, ct);
+            return View(new NovaSenhaRequisicao());
+        }
+
+        // A sessão aberta neste aparelho (se houver) é de antes da senha nova: sai, e a pessoa entra de novo.
+        if (User.Identity?.IsAuthenticated == true) await HttpContext.SignOutAsync(ClaimsEscolinha.Esquema);
+        TempData[ChavesTempData.Sucesso] = resultado.Mensagem;
+        return RedirectToAction(nameof(Login));
+    }
+
     [AllowAnonymous]
     [PermitirSemTrocarSenha]
     public IActionResult AcessoNegado()

@@ -142,6 +142,62 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.ToTable("Pessoa", (string)null);
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Acesso.RecuperacaoSenha", b =>
+                {
+                    b.Property<Guid>("RecuperacaoSenha_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<int>("Canal")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CriadaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("CriadaPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime?>("EmailEnviadoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid?>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiraEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Pessoa_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<string>("TokenProtegido")
+                        .HasMaxLength(1000)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<DateTime?>("UsadaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.HasKey("RecuperacaoSenha_ID")
+                        .HasName("PK_RecuperacaoSenha");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_RecuperacaoSenha_TokenHash");
+
+                    b.HasIndex("Pessoa_ID", "CriadaEm")
+                        .HasDatabaseName("IX_RecuperacaoSenha_Pessoa_CriadaEm");
+
+                    b.ToTable("RecuperacaoSenha", (string)null);
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Acesso.VinculoAtuacao", b =>
                 {
                     b.Property<Guid>("VinculoAtuacao_ID")
@@ -3234,6 +3290,16 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasConstraintName("FK_Credencial_Pessoa");
 
                     b.Navigation("Pessoa");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Acesso.RecuperacaoSenha", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Acesso.Pessoa", null)
+                        .WithMany()
+                        .HasForeignKey("Pessoa_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_RecuperacaoSenha_Pessoa");
                 });
 
             modelBuilder.Entity("MinhaEscolinha.Domain.Acesso.VinculoAtuacao", b =>

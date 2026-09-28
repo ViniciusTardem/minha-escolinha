@@ -1,0 +1,33 @@
+@model EsqueciSenhaRequisicao
+@{
+    ViewData["Title"] = "Esqueci a senha";
+    Layout = "_LayoutAutenticacao";
+}
+
+@* BL-M01-09: quem entra pelo e-mail recebe o link por e-mail; quem entra só pelo CPF pede o link à escolinha. *@
+<div class="kt-card max-w-[380px] w-full">
+    <form asp-action="EsqueciSenha" method="post" class="kt-card-content flex flex-col gap-5 p-8 sm:p-10" novalidate>
+        <div class="text-center mb-2.5">
+            <h1 class="text-lg font-medium text-mono leading-none mb-2.5">Esqueci a senha</h1>
+            <p class="text-sm text-secondary-foreground">Informe o e-mail ou o CPF com que você entra. Se o login for um e-mail, o link para criar uma nova senha vai para ele.</p>
+        </div>
+
+        <partial name="_ErrosFormulario" />
+
+        <div class="flex flex-col gap-1">
+            <label class="kt-form-label font-normal text-mono" asp-for="Login">E-mail ou CPF</label>
+            <input class="kt-input" asp-for="Login" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus />
+        </div>
+
+        <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3" role="note">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <span class="text-sm">Entra só pelo CPF, sem e-mail? Peça à escolinha: ela gera um link de nova senha para você.</span>
+        </div>
+
+        <button class="kt-btn kt-btn-primary flex justify-center grow" type="submit">Enviar o link</button>
+
+        <div class="flex items-center justify-center text-sm">
+            <a class="kt-link" asp-action="Login">Voltar para entrar</a>
+        </div>
+    </form>
+</div>

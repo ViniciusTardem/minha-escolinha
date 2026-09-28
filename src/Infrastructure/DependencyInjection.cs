@@ -117,6 +117,9 @@ public static class DependencyInjection
         services.AddScoped<JobsPlataforma>();
         services.AddStripe(configuracao, ambiente, aviso);
 
+        // A recuperação de senha por e-mail (BL-M01-09): caixa local ou SMTP
+        services.AddEmail(configuracao, ambiente, aviso);
+
         services.AddHangfireEscolinha(configuracao, connectionString);
 
         return services;

@@ -62,3 +62,24 @@ public class VinculoAtuacaoConfiguracao : IEntityTypeConfiguration<VinculoAtuaca
         builder.HasIndex(v => new { v.Pessoa_ID, v.Situacao }).HasDatabaseName("IX_VinculoAtuacao_Pessoa_Situacao");
     }
 }
+
+public class RecuperacaoSenhaConfiguracao : IEntityTypeConfiguration<RecuperacaoSenha>
+{
+    public void Configure(EntityTypeBuilder<RecuperacaoSenha> builder)
+    {
+        builder.ToTable("RecuperacaoSenha");
+
+        builder.HasKey(r => r.RecuperacaoSenha_ID).HasName("PK_RecuperacaoSenha");
+        builder.Property(r => r.RecuperacaoSenha_ID).HasDefaultValueSql("NEWSEQUENTIALID()").ValueGeneratedOnAdd();
+
+        builder.HasOne<Pessoa>().WithMany().HasForeignKey(r => r.Pessoa_ID)
+            .HasConstraintName("FK_RecuperacaoSenha_Pessoa").OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(r => r.TokenHash).HasMaxLength(RecuperacaoSenha.TamanhoHash).IsUnicode(false).IsRequired();
+        builder.Property(r => r.CriadaPorNome).HasMaxLength(RecuperacaoSenha.TamanhoAutor);
+        builder.Property(r => r.TokenProtegido).HasMaxLength(1000).IsUnicode(false);
+
+        builder.HasIndex(r => r.TokenHash).IsUnique().HasDatabaseName("UQ_RecuperacaoSenha_TokenHash");
+        builder.HasIndex(r => new { r.Pessoa_ID, r.CriadaEm }).HasDatabaseName("IX_RecuperacaoSenha_Pessoa_CriadaEm");
+    }
+}

@@ -70,6 +70,7 @@ public static class DependencyInjection
         services.AddScoped<ServicoConvites>();
         services.AddScoped<ServicoVerificacaoVinculos>();
         services.AddScoped<ServicoAtivacaoConvite>();
+        services.AddScoped<ServicoRecuperacaoSenha>();
         services.AddScoped<AtivacaoNaEscolinha>();
         services.AddScoped<ServicoPortal>();
 

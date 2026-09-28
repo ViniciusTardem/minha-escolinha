@@ -17,6 +17,13 @@ public sealed record FrequenciaNoPortal(int Presencas, int Faltas, int Justifica
     public int Marcadas => Presencas + Faltas + Justificadas;
 }
 
+/// <summary>
+/// A visão única de um filho (BL-M10-02): o próximo treino, o próximo jogo com a resposta e o que está em aberto das
+/// mensalidades (só para quem cuida delas), sem trocar de tela.
+/// </summary>
+public sealed record ResumoDoFilho(DateTime? ProximoTreino, string? ProximoJogo, DateTime? ProximoJogoEm, SituacaoConvocacao? Resposta,
+    decimal? EmAberto, DateOnly? ProximoVencimento);
+
 /// <summary>A home do portal (CA-15): os filhos numa conta só, o que espera resposta, o que está em aberto e os avisos.</summary>
 /// <param name="VinculosAConfirmar">Quantos alunos esperam a confirmação da escolinha (sem nome: bloqueio total, BL-M01-06).</param>
 /// <param name="EmAberto">A soma das mensalidades em aberto dos filhos de quem a pessoa cuida das mensalidades.</param>
@@ -30,7 +37,8 @@ public sealed record InicioPortal(
     int ConvocacoesAResponder,
     decimal EmAberto,
     int MensalidadesEmAberto,
-    IReadOnlyDictionary<Guid, FrequenciaNoPortal> Frequencias);
+    IReadOnlyDictionary<Guid, FrequenciaNoPortal> Frequencias,
+    IReadOnlyDictionary<Guid, ResumoDoFilho>? Resumos = null);
 
 /// <summary>Uma convocação de um filho, com o jogo (BL-M10-07): de qual filho se trata, quando, onde e a resposta.</summary>
 /// <param name="PropriaResposta">A resposta que vale é desta pessoa (pelo WhatsApp ou pelo portal): ela pode mudar (D88).</param>
@@ -140,4 +148,7 @@ public interface IPortalRepositorio
 
     /// <summary>As presenças marcadas dos alunos nas sessões do período, da mais recente para a mais antiga.</summary>
     Task<IReadOnlyList<PresencaDoFilho>> PresencasAsync(IReadOnlyCollection<Guid> alunos, DateTime de, DateTime ate, CancellationToken ct = default);
+
+    /// <summary>O próximo treino previsto de cada aluno, pelas turmas das matrículas ativas (BL-M10-02).</summary>
+    Task<IReadOnlyDictionary<Guid, DateTime>> ProximosTreinosAsync(IReadOnlyCollection<Guid> alunos, DateTime desde, CancellationToken ct = default);
 }

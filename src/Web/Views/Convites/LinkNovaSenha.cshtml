@@ -1,0 +1,28 @@
+@model MinhaEscolinha.Application.Acesso.LinkNovaSenha
+@{
+    ViewData["Title"] = "Link de nova senha";
+    var voltar = ViewData["Voltar"] as string ?? "/Convites";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Link de nova senha" meta="@Model.Nome"></cabecalho-pagina>
+
+<div class="kt-card max-w-[640px]">
+    <div class="kt-card-content flex flex-col gap-4">
+        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="status">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <span class="text-sm">
+                Repasse o link a <strong>@Model.Nome</strong> por um canal em que você confie. Ele vale uma vez só, até
+                @Formatacao.Data(Model.ExpiraEm) às @Model.ExpiraEm.ToString("HH:mm"), e aparece só agora.
+            </span>
+        </div>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <span class="text-sm font-medium text-mono wrap-anywhere grow" id="link-nova-senha">@Model.Link</span>
+            <button class="kt-btn kt-btn-sm kt-btn-outline shrink-0 justify-center" type="button" data-esc-copiar="#link-nova-senha">
+                <i class="ki-filled ki-copy"></i> Copiar
+            </button>
+        </div>
+        <a class="kt-btn kt-btn-primary self-start" href="@voltar">Concluir</a>
+    </div>
+</div>
+</div>

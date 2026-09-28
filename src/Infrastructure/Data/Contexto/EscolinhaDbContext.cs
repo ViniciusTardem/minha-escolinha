@@ -47,6 +47,7 @@ public class EscolinhaDbContext : DbContext, IDataProtectionKeyContext
 
     public DbSet<Pessoa> Pessoas => Set<Pessoa>();
     public DbSet<Credencial> Credenciais => Set<Credencial>();
+    public DbSet<RecuperacaoSenha> RecuperacoesSenha => Set<RecuperacaoSenha>();
     public DbSet<VinculoAtuacao> VinculosAtuacao => Set<VinculoAtuacao>();
     public DbSet<Escolinha> Escolinhas => Set<Escolinha>();
     public DbSet<Modalidade> Modalidades => Set<Modalidade>();

@@ -23,6 +23,15 @@
                 <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit"><i class="ki-filled ki-arrows-circle"></i> Reenviar convite</button>
             </form>
         }
+        else if (c.Situacao == SituacaoAcesso.Ativo)
+        {
+            @* BL-M01-09: esqueceu a senha (sobretudo quem entra só pelo CPF, sem e-mail). *@
+            <form method="post" asp-controller="Convites" asp-action="LinkNovaSenha" asp-route-tipo="@c.Tipo" asp-route-id="@c.FichaId"
+                  data-esc-confirmar="Gerar um link de nova senha? Ele vale por 24 horas, uma vez só, e aparece só agora: repasse a quem pediu.">
+                <input type="hidden" name="voltar" value="@voltar" />
+                <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit"><i class="ki-filled ki-key"></i> Link de nova senha</button>
+            </form>
+        }
         else if (c.Telefone is null && c.Situacao != SituacaoAcesso.Ativo)
         {
             <span class="text-xs text-secondary-foreground">Cadastre o celular para convidar.</span>

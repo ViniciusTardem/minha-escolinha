@@ -19,7 +19,10 @@
         </div>
 
         <div class="flex flex-col gap-1">
-            <label class="kt-form-label font-normal text-mono" asp-for="Senha">Senha</label>
+            <div class="flex items-center justify-between gap-2">
+                <label class="kt-form-label font-normal text-mono" asp-for="Senha">Senha</label>
+                <a class="kt-link text-sm" asp-action="EsqueciSenha">Esqueci a senha</a>
+            </div>
             <div class="kt-input" data-kt-toggle-password="true">
                 <input asp-for="Senha" type="password" autocomplete="current-password" placeholder="Sua senha" />
                 <button class="kt-btn kt-btn-sm kt-btn-ghost kt-btn-icon bg-transparent! -me-1.5" data-kt-toggle-password-trigger="true" type="button" aria-label="Mostrar ou ocultar a senha">

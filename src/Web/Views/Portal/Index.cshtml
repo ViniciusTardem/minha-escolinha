@@ -95,12 +95,39 @@
                     <span>Nenhuma chamada nos últimos 30 dias</span>
                 }
             </span>
+            @if (Model.Resumos?.GetValueOrDefault(f.AlunoId) is { } r)
+            {
+                @* BL-M10-02: a visão única do filho, sem trocar de tela. *@
+                <span class="text-sm text-secondary-foreground flex items-center gap-1.5">
+                    <i class="ki-filled ki-calendar"></i>
+                    @(r.ProximoTreino is { } treino ? $"Próximo treino: {Formatacao.DiaCurto(DateOnly.FromDateTime(treino))}, {treino:HH:mm}" : "Nenhum treino previsto")
+                </span>
+                @if (r.ProximoJogo is not null && r.ProximoJogoEm is { } jogoEm)
+                {
+                    <a class="text-sm flex flex-wrap items-center gap-1.5" href="/Portal/Jogos">
+                        <i class="ki-filled ki-cup text-secondary-foreground"></i>
+                        <span>@r.ProximoJogo, @Formatacao.DiaCurto(DateOnly.FromDateTime(jogoEm)) às @jogoEm.ToString("HH:mm")</span>
+                        @if (r.Resposta is { } resposta)
+                        {
+                            <selo-status valor="resposta"></selo-status>
+                        }
+                    </a>
+                }
+                @if (r.EmAberto is > 0 && r.ProximoVencimento is { } vence)
+                {
+                    <a class="text-sm flex items-center gap-1.5" href="/Portal/Pagamentos">
+                        <i class="ki-filled ki-dollar text-secondary-foreground"></i>
+                        <span>Em aberto: @Formatacao.Moeda(r.EmAberto.Value), vence @Formatacao.Data(vence)</span>
+                    </a>
+                }
+            }
             <a class="kt-link text-sm self-start" href="/Portal/Presencas/@f.AlunoId">Ver as presenças</a>
         </div>
     </div>
 }
 
 <div class="flex flex-col gap-2.5 pb-4">
+    <partial name="_TrocaEscolinha" />
     @if (outroPapel)
     {
         <a class="kt-btn kt-btn-outline justify-center" href="/"><i class="ki-filled ki-element-11"></i> Painel da escolinha</a>

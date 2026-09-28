@@ -70,6 +70,25 @@ public class ConvitesController(ServicoConvites convites, ServicoVerificacaoVinc
         return Voltar(voltar);
     }
 
+    /// <summary>
+    /// O link de nova senha de quem já tem acesso (BL-M01-09), para a gestão repassar pelo canal que quiser. Aparece uma vez
+    /// só, nesta resposta: não fica guardado em lugar nenhum.
+    /// </summary>
+    [HttpPost]
+    [Permissao(Recurso.ConfiguracaoEscolinha, Operacao.Alterar)]
+    public async Task<IActionResult> LinkNovaSenha(TipoConvite tipo, Guid id, string? voltar, [FromServices] ServicoRecuperacaoSenha recuperacao,
+        CancellationToken ct)
+    {
+        var resultado = await recuperacao.GerarLinkPelaGestaoAsync(tipo, id, ct);
+        if (!resultado.Sucesso || resultado.Dados is not Application.Acesso.LinkNovaSenha link)
+        {
+            Avisar(resultado);
+            return Voltar(voltar);
+        }
+        ViewData["Voltar"] = Url.IsLocalUrl(voltar) ? voltar : Url.Action(nameof(Index));
+        return View(link);
+    }
+
     private void Avisar(Application.Comum.ResultadoOperacao resultado) =>
         TempData[resultado.Sucesso ? ChavesTempData.Sucesso : ChavesTempData.Erro] = resultado.Mensagem;
 

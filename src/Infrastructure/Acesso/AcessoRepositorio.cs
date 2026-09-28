@@ -78,5 +78,13 @@ public class AcessoRepositorio(EscolinhaDbContext contexto) : IAcessoRepositorio
 
     public void AdicionarVinculo(VinculoAtuacao vinculo) => contexto.VinculosAtuacao.Add(vinculo);
 
+    public void AdicionarRecuperacao(RecuperacaoSenha recuperacao) => contexto.RecuperacoesSenha.Add(recuperacao);
+
+    public Task<RecuperacaoSenha?> ObterRecuperacaoAsync(Guid id, CancellationToken ct = default) =>
+        contexto.RecuperacoesSenha.FirstOrDefaultAsync(r => r.RecuperacaoSenha_ID == id, ct);
+
+    public Task<RecuperacaoSenha?> RecuperacaoPorHashAsync(string tokenHash, CancellationToken ct = default) =>
+        contexto.RecuperacoesSenha.FirstOrDefaultAsync(r => r.TokenHash == tokenHash, ct);
+
     public Task SalvarAsync(CancellationToken ct = default) => contexto.SaveChangesAsync(ct);
 }

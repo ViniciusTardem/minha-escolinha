@@ -308,6 +308,12 @@ public sealed class PortalBancoTestes(BancoDeTestes banco) : IAsyncLifetime, IDi
         Assert.Equal((0, 2, 2, 290m), (inicio.VinculosAConfirmar, inicio.ConvocacoesAResponder, inicio.MensalidadesEmAberto, inicio.EmAberto));
         Assert.Equal((1, 0), (inicio.Frequencias[b.Pedro].Presencas, inicio.Frequencias[b.Ana].Marcadas));
 
+        // BL-M10-02: a visão única de cada filho, sem trocar de tela (o jogo com a resposta e o que está em aberto).
+        var resumoPedro = inicio.Resumos![b.Pedro];
+        Assert.Equal(("Jogo contra Tigre FC", SituacaoConvocacao.Enviada, 150m),
+            (resumoPedro.ProximoJogo, resumoPedro.Resposta!.Value, resumoPedro.EmAberto!.Value));
+        Assert.Equal(("Jogo contra Leões da Vila", 140m), (inicio.Resumos[b.Ana].ProximoJogo, inicio.Resumos[b.Ana].EmAberto!.Value));
+
         // Os jogos: cada convocação diz de qual filho se trata; o Bruno, de outra família, não aparece.
         var jogos = (await ComoMaria(p => p.JogosAsync()))!;
         Assert.Equal([("Pedro Lima", "Jogo da Sub-11 contra Tigre FC"), ("Ana Lima", "Jogo da Sub-13 contra Leões da Vila")],
@@ -521,5 +527,97 @@ public sealed class PortalBancoTestes(BancoDeTestes banco) : IAsyncLifetime, IDi
         var r = await _app.ComoPlataformaAsync(sp => sp.GetRequiredService<ServicoPlataforma>().ConcederCreditosAsync(
             new ConcederCreditosRequisicao { EscolinhaId = b.Escolinha, Quantidade = quantidade, Motivo = "Teste" }));
         Assert.True(r.Sucesso, r.Mensagem);
+    }
+
+    // ── Recuperação de senha (BL-M01-09) ──
+
+    /// <summary>
+    /// Quem entra só pelo CPF não tem e-mail para onde mandar o link: o pedido na tela de login não revela nada e não envia
+    /// nada; a gestão gera o link na ficha (24 horas, uso único), a pessoa cria a senha nova e entra com ela.
+    /// </summary>
+    [FatoComBanco]
+    public async Task A_gestao_gera_o_link_de_nova_senha_de_quem_entra_pelo_cpf_e_ele_vale_uma_vez()
+    {
+        var b = await MontarAsync();
+        await AcessoAsync(b, b.Maria, CpfMaria);
+
+        var pedido = await _app.SemContextoAsync(sp => sp.GetRequiredService<ServicoRecuperacaoSenha>()
+            .PedirPorEmailAsync(new EsqueciSenhaRequisicao { Login = CpfMaria }));
+        Assert.Equal(ServicoRecuperacaoSenha.RespostaPedido, pedido.Mensagem);
+        Assert.Empty(_app.AgendadorEmail.Recuperacoes);
+
+        var gerado = await Gestor(b, sp => sp.GetRequiredService<ServicoRecuperacaoSenha>().GerarLinkPelaGestaoAsync(TipoConvite.Responsavel, b.Maria));
+        Assert.True(gerado.Sucesso, gerado.Mensagem);
+        var link = Assert.IsType<LinkNovaSenha>(gerado.Dados);
+        Assert.Equal(("Maria Lima", new DateTime(2026, 9, 27, 12, 0, 0)), (link.Nome, link.ExpiraEm));
+        var token = link.Link[(link.Link.LastIndexOf('/') + 1)..];
+
+        // Só o hash do segredo fica no banco; a geração fica no registro de alterações, com o autor.
+        await using (var db = BancoDeTestes.NovoContextoSemEscolinha())
+        {
+            var guardada = await db.RecuperacoesSenha.SingleAsync();
+            Assert.Equal((CanalRecuperacao.LinkDaGestao, "Gestão", b.Escolinha, (string?)null),
+                (guardada.Canal, guardada.CriadaPorNome!, guardada.Escolinha_ID!.Value, guardada.TokenProtegido));
+            Assert.NotEqual(token, guardada.TokenHash);
+            Assert.True(await db.RegistrosAlteracao.IgnoreQueryFilters().AnyAsync(r => r.Registro_ID == b.Maria && r.Campo == "Link de nova senha"));
+        }
+
+        Task<T> Recuperacao<T>(Func<ServicoRecuperacaoSenha, Task<T>> acao) => _app.SemContextoAsync(sp => acao(sp.GetRequiredService<ServicoRecuperacaoSenha>()));
+        Assert.Equal("Maria Lima", await Recuperacao(r => r.ValidarAsync(token)));
+        var fraca = await Recuperacao(r => r.DefinirNovaSenhaAsync(token, new NovaSenhaRequisicao { NovaSenha = "123", ConfirmacaoSenha = "123" }));
+        Assert.Equal((false, nameof(NovaSenhaRequisicao.NovaSenha)), (fraca.Sucesso, fraca.Campo));
+        var definiu = await Recuperacao(r => r.DefinirNovaSenhaAsync(token, new NovaSenhaRequisicao { NovaSenha = "novaSenha2026", ConfirmacaoSenha = "novaSenha2026" }));
+        Assert.True(definiu.Sucesso, definiu.Mensagem);
+
+        var entrou = await _app.SemContextoAsync(sp => sp.GetRequiredService<IServicoAutenticacao>()
+            .AutenticarAsync(new LoginRequisicao { Login = CpfMaria, Senha = "novaSenha2026" }));
+        Assert.True(entrou.Sucesso, entrou.Mensagem);
+        Assert.False(Assert.IsType<CredencialAutenticada>(entrou.Dados).TrocarSenha);
+
+        // O link vale uma vez só.
+        Assert.Null(await Recuperacao(r => r.ValidarAsync(token)));
+        Assert.False((await Recuperacao(r => r.DefinirNovaSenhaAsync(token,
+            new NovaSenhaRequisicao { NovaSenha = "outraSenha2026", ConfirmacaoSenha = "outraSenha2026" }))).Sucesso);
+
+        // Quem ainda não ativou o acesso recebe o convite, não o link.
+        var semAcesso = await Gestor(b, sp => sp.GetRequiredService<ServicoRecuperacaoSenha>().GerarLinkPelaGestaoAsync(TipoConvite.Responsavel, b.Joao));
+        Assert.False(semAcesso.Sucesso);
+    }
+
+    /// <summary>
+    /// Quem entra pelo e-mail pede o link na tela de login: o e-mail sai por job (com retentativa), com o link de 2 horas.
+    /// Login que não existe recebe a mesma resposta, sem envio.
+    /// </summary>
+    [FatoComBanco]
+    public async Task Quem_entra_pelo_email_recebe_o_link_por_email_e_ele_vence_em_duas_horas()
+    {
+        var b = await MontarAsync();
+        Task<T> Recuperacao<T>(Func<ServicoRecuperacaoSenha, Task<T>> acao) => _app.SemContextoAsync(sp => acao(sp.GetRequiredService<ServicoRecuperacaoSenha>()));
+
+        var ninguem = await Recuperacao(r => r.PedirPorEmailAsync(new EsqueciSenhaRequisicao { Login = "ninguem@bolanarede.com" }));
+        Assert.Equal((true, ServicoRecuperacaoSenha.RespostaPedido), (ninguem.Sucesso, ninguem.Mensagem));
+        Assert.Empty(_app.AgendadorEmail.Recuperacoes);
+
+        var pedido = await Recuperacao(r => r.PedirPorEmailAsync(new EsqueciSenhaRequisicao { Login = " Gestao@BolaNaRede.com " }));
+        Assert.Equal(ServicoRecuperacaoSenha.RespostaPedido, pedido.Mensagem);
+        var id = Assert.Single(_app.AgendadorEmail.Recuperacoes);
+
+        // O SMTP fora do ar: o job falha (o Hangfire tenta de novo) e nada muda; na segunda vez, o e-mail sai uma vez só.
+        _app.EnvioEmail.FalharProximo = true;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => Recuperacao(r => r.EnviarEmailAsync(id)));
+        Assert.Equal("E-mail enviado.", await Recuperacao(r => r.EnviarEmailAsync(id)));
+        Assert.Equal("O e-mail já saiu.", await Recuperacao(r => r.EnviarEmailAsync(id)));
+        var email = Assert.Single(_app.EnvioEmail.Enviados);
+        Assert.Equal("gestao@bolanarede.com", email.Para);
+        var token = Regex.Match(email.Corpo, "/Conta/NovaSenha/(?<t>[A-Za-z0-9_-]+)").Groups["t"].Value;
+        Assert.Equal("Gestão", await Recuperacao(r => r.ValidarAsync(token)));
+
+        // O segredo cifrado sai do banco depois do envio; o link vence em 2 horas.
+        await using (var db = BancoDeTestes.NovoContextoSemEscolinha())
+            Assert.Null((await db.RecuperacoesSenha.SingleAsync()).TokenProtegido);
+        _app.Tempo.Advance(TimeSpan.FromHours(2));
+        Assert.Null(await Recuperacao(r => r.ValidarAsync(token)));
+        Assert.False((await Recuperacao(r => r.DefinirNovaSenhaAsync(token,
+            new NovaSenhaRequisicao { NovaSenha = "novaSenha2026", ConfirmacaoSenha = "novaSenha2026" }))).Sucesso);
     }
 }

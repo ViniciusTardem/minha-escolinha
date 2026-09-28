@@ -1,0 +1,31 @@
+@inject IServicoAutenticacao Autenticacao
+@inject IAutorizacao Autorizacao
+@*
+    Seletor rápido de escolinha (BL-M01-02): quem atua em mais de uma escolinha troca num toque, sem voltar à tela de
+    escolha. A troca refaz a sessão com os papéis da escolinha escolhida (os vínculos são relidos a cada requisição, D07).
+*@
+@{
+    var outras = (await Autenticacao.EscolinhasDisponiveisAsync())
+        .Where(e => e.EscolinhaId != Autorizacao.EscolinhaId)
+        .OrderBy(e => e.Nome)
+        .ToList();
+}
+@if (outras.Count > 0)
+{
+    <div class="flex flex-col gap-1">
+        <span class="text-xs text-secondary-foreground px-1">Trocar de escolinha</span>
+        @foreach (var e in outras)
+        {
+            <form asp-controller="Conta" asp-action="EscolherEscolinha" method="post">
+                <input type="hidden" name="escolinhaId" value="@e.EscolinhaId" />
+                <button class="kt-btn kt-btn-ghost kt-btn-sm justify-start w-full min-w-0" type="submit">
+                    <i class="ki-filled ki-home-3"></i>
+                    <span class="flex flex-col items-start leading-tight min-w-0">
+                        <span class="truncate max-w-full">@e.Nome</span>
+                        <span class="text-xs text-secondary-foreground truncate max-w-full">@RotulosAcesso.Papeis(e.Papeis)</span>
+                    </span>
+                </button>
+            </form>
+        }
+    </div>
+}

@@ -28,6 +28,21 @@ public class PortalRepositorio(EscolinhaDbContext contexto) : IPortalRepositorio
             .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.Select(l => l.Nome).Order().ToList());
     }
 
+    public async Task<IReadOnlyDictionary<Guid, DateTime>> ProximosTreinosAsync(IReadOnlyCollection<Guid> alunos, DateTime desde,
+        CancellationToken ct = default)
+    {
+        var ids = alunos.Distinct().ToList();
+        if (ids.Count == 0) return new Dictionary<Guid, DateTime>();
+        var linhas = await (from m in contexto.Matriculas.AsNoTracking()
+                            where ids.Contains(m.Aluno_ID) && m.Situacao == SituacaoMatricula.Ativa
+                            join s in contexto.Sessoes.AsNoTracking() on m.Turma_ID equals s.Turma_ID
+                            where s.Inicio >= desde && s.Situacao == Domain.Turmas.SituacaoSessao.Prevista
+                            group s by m.Aluno_ID into g
+                            select new { Aluno = g.Key, Inicio = g.Min(x => x.Inicio) })
+            .ToListAsync(ct);
+        return linhas.ToDictionary(l => l.Aluno, l => l.Inicio);
+    }
+
     public async Task<IReadOnlyList<(Convocacao Convocacao, Evento Evento)>> ConvocacoesAsync(IReadOnlyCollection<Guid> alunos, DateTime desde,
         CancellationToken ct = default)
     {

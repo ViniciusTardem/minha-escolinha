@@ -109,6 +109,7 @@ public sealed class BancoDeTestes : IAsyncLifetime
             DELETE FROM Modalidade;
             DELETE FROM VinculoAtuacao;
             DELETE FROM Escolinha;
+            DELETE FROM RecuperacaoSenha;
             DELETE FROM Credencial;
             DELETE FROM Pessoa;
             """);
@@ -199,6 +200,12 @@ public sealed class AmbienteAplicacao : IDisposable
     /// <summary>O tempo real das convocações: o teste vê quais eventos foram avisados depois de cada gravação.</summary>
     public NotificadorConvocacoesDeTeste TempoReal { get; } = new();
 
+    /// <summary>O e-mail da recuperação de senha (BL-M01-09).</summary>
+    public OpcoesEmail Email { get; } = new() { UrlPublica = "https://localhost:7186" };
+
+    public EnvioEmailFalso EnvioEmail { get; } = new();
+    public AgendadorEmailDeTeste AgendadorEmail { get; } = new();
+
     private readonly ServiceProvider _servicos;
 
     public AmbienteAplicacao()
@@ -256,6 +263,9 @@ public sealed class AmbienteAplicacao : IDisposable
         services.AddScoped<MinhaEscolinha.Application.Carga.ICargaRepositorio, MinhaEscolinha.Infrastructure.Carga.CargaRepositorio>();
         services.AddSingleton<MinhaEscolinha.Application.Carga.IPlanilhas, MinhaEscolinha.Infrastructure.Carga.PlanilhasClosedXml>();
         services.AddSingleton<MinhaEscolinha.Application.Eventos.INotificadorConvocacoes>(TempoReal);
+        services.AddSingleton(Email);
+        services.AddSingleton<IEnvioEmail>(EnvioEmail);
+        services.AddSingleton<IAgendadorEmail>(AgendadorEmail);
         _servicos = services.BuildServiceProvider();
     }
 

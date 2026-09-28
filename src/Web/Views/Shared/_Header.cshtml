@@ -92,9 +92,7 @@
                                type="checkbox" aria-label="Modo escuro" />
                     </div>
                     <div class="px-3 py-3 flex flex-col gap-2">
-                        <a class="kt-btn kt-btn-outline kt-btn-sm justify-center w-full" asp-controller="Conta" asp-action="EscolherEscolinha">
-                            <i class="ki-filled ki-home-3"></i> Trocar de escolinha
-                        </a>
+                        <partial name="_TrocaEscolinha" />
                         @if (plataforma)
                         {
                             <form asp-controller="Conta" asp-action="UsarPlataforma" method="post">

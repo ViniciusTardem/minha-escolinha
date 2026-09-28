@@ -1,0 +1,51 @@
+@model NovaSenhaRequisicao
+@{
+    ViewData["Title"] = "Nova senha";
+    Layout = "_LayoutAutenticacao";
+    var nome = ViewData["Nome"] as string;
+
+    void CampoSenha(string campo, string rotulo)
+    {
+        var invalido = ViewData.ModelState[campo]?.Errors.Count > 0 ? "true" : null;
+        <div class="flex flex-col gap-1">
+            <label class="kt-form-label font-normal text-mono" for="@campo">@rotulo</label>
+            <div class="kt-input" data-kt-toggle-password="true">
+                <input id="@campo" name="@campo" type="password" autocomplete="new-password" aria-invalid="@invalido" />
+                <button class="kt-btn kt-btn-sm kt-btn-ghost kt-btn-icon bg-transparent! -me-1.5" data-kt-toggle-password-trigger="true" type="button" aria-label="Mostrar ou ocultar a senha">
+                    <span class="kt-toggle-password-active:hidden"><i class="ki-filled ki-eye text-muted-foreground"></i></span>
+                    <span class="hidden kt-toggle-password-active:block"><i class="ki-filled ki-eye-slash text-muted-foreground"></i></span>
+                </button>
+            </div>
+        </div>
+    }
+}
+
+<div class="kt-card max-w-[400px] w-full">
+    @if (nome is null)
+    {
+        <div class="kt-card-content flex flex-col gap-5 p-8 sm:p-10 text-center">
+            <h1 class="text-lg font-medium text-mono leading-none">Link inválido</h1>
+            <p class="text-sm text-secondary-foreground">Este link de nova senha já foi usado ou venceu. Peça outro: pelo e-mail, na tela de entrar, ou à escolinha.</p>
+            <a class="kt-btn kt-btn-primary justify-center" asp-action="EsqueciSenha">Pedir outro link</a>
+            <a class="kt-link text-sm" asp-action="Login">Voltar para entrar</a>
+        </div>
+    }
+    else
+    {
+        <form method="post" class="kt-card-content flex flex-col gap-5 p-8 sm:p-10" novalidate>
+            <div class="text-center mb-2.5">
+                <h1 class="text-lg font-medium text-mono leading-none mb-2.5">Nova senha</h1>
+                <p class="text-sm text-secondary-foreground">Olá, @EmissorGatilhos.PrimeiroNome(nome)! Escolha a nova senha. O link vale uma vez só.</p>
+            </div>
+
+            <partial name="_ErrosFormulario" />
+
+            @{ CampoSenha(nameof(NovaSenhaRequisicao.NovaSenha), "Nova senha"); }
+            @{ CampoSenha(nameof(NovaSenhaRequisicao.ConfirmacaoSenha), "Confirme a nova senha"); }
+
+            <p class="text-xs text-muted-foreground">Mínimo de 8 caracteres, com letras e números.</p>
+
+            <button class="kt-btn kt-btn-primary flex justify-center grow" type="submit">Salvar nova senha</button>
+        </form>
+    }
+</div>

@@ -48,5 +48,12 @@ public interface IAcessoRepositorio
 
     void AdicionarVinculo(VinculoAtuacao vinculo);
 
+    /// <summary>Pedido de nova senha (BL-M01-09): global, como a credencial.</summary>
+    void AdicionarRecuperacao(RecuperacaoSenha recuperacao);
+
+    Task<RecuperacaoSenha?> ObterRecuperacaoAsync(Guid id, CancellationToken ct = default);
+
+    Task<RecuperacaoSenha?> RecuperacaoPorHashAsync(string tokenHash, CancellationToken ct = default);
+
     Task SalvarAsync(CancellationToken ct = default);
 }
