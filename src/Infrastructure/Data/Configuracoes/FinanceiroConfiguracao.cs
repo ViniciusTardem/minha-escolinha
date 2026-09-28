@@ -40,6 +40,7 @@ public class CobrancaConfiguracao : IEntityTypeConfiguration<Cobranca>
         builder.Property(c => c.IdAsaas).HasMaxLength(Cobranca.TamanhoIdAsaas).IsUnicode(false);
         builder.Property(c => c.UrlFatura).HasMaxLength(Cobranca.TamanhoUrl).IsUnicode(false);
         builder.Property(c => c.PixCopiaECola).HasMaxLength(Cobranca.TamanhoPix); // o nome do recebedor pode ter acento
+        builder.Property(c => c.PixImagem).HasMaxLength(Cobranca.TamanhoPixImagem).IsUnicode(false);
         builder.Property(c => c.ErroEmissao).HasMaxLength(Cobranca.TamanhoErro);
         builder.Property(c => c.Motivo).HasMaxLength(Cobranca.TamanhoMotivo);
         builder.Property(c => c.EncerradaPorNome).HasMaxLength(Cobranca.TamanhoNome);
@@ -49,9 +50,12 @@ public class CobrancaConfiguracao : IEntityTypeConfiguration<Cobranca>
         builder.Property(c => c.SinalResolvidoPorNome).HasMaxLength(Cobranca.TamanhoNome);
         builder.Property(c => c.Versao).IsRowVersion();
 
-        // Uma mensalidade por matrícula e mês: a projeção e a emissão repetidas não duplicam.
-        builder.HasIndex(c => new { c.Escolinha_ID, c.Matricula_ID, c.Competencia }).IsUnique()
-            .HasDatabaseName("UQ_Cobranca_Escolinha_Matricula_Competencia");
+        // Uma mensalidade por matrícula, mês e via: a projeção e a emissão repetidas não duplicam, e a cobrança de novo
+        // depois de um estorno é a via seguinte (P43).
+        builder.HasIndex(c => new { c.Escolinha_ID, c.Matricula_ID, c.Competencia, c.Via }).IsUnique()
+            .HasDatabaseName("UQ_Cobranca_Escolinha_Matricula_Competencia_Via");
+        builder.HasOne<Cobranca>().WithMany().HasForeignKey(c => c.CobradaDeNovoDe_ID).OnDelete(DeleteBehavior.NoAction)
+            .HasConstraintName("FK_Cobranca_CobradaDeNovoDe");
         builder.HasIndex(c => new { c.Escolinha_ID, c.Situacao, c.Vencimento }).HasDatabaseName("IX_Cobranca_Escolinha_Situacao_Vencimento");
         builder.HasIndex(c => new { c.Escolinha_ID, c.Competencia }).HasDatabaseName("IX_Cobranca_Escolinha_Competencia");
         builder.HasIndex(c => new { c.Escolinha_ID, c.Aluno_ID }).HasDatabaseName("IX_Cobranca_Escolinha_Aluno");

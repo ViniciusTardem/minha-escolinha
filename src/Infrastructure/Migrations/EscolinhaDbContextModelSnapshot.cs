@@ -1668,6 +1668,9 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Property<Guid>("Aluno_ID")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CobradaDeNovoDe_ID")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateOnly>("Competencia")
                         .HasColumnType("date");
 
@@ -1759,6 +1762,11 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Property<DateTime?>("PixExpiraEm")
                         .HasColumnType("datetime2(3)");
 
+                    b.Property<string>("PixImagem")
+                        .HasMaxLength(20000)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(max)");
+
                     b.Property<bool>("PrimeiraDaMatricula")
                         .HasColumnType("bit");
 
@@ -1828,10 +1836,15 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<int>("Via")
+                        .HasColumnType("int");
+
                     b.HasKey("Cobranca_ID")
                         .HasName("PK_Cobranca");
 
                     b.HasIndex("Aluno_ID");
+
+                    b.HasIndex("CobradaDeNovoDe_ID");
 
                     b.HasIndex("Matricula_ID");
 
@@ -1853,12 +1866,12 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasDatabaseName("IX_Cobranca_Escolinha_Sinal")
                         .HasFilter("[Sinal] <> 0");
 
-                    b.HasIndex("Escolinha_ID", "Matricula_ID", "Competencia")
-                        .IsUnique()
-                        .HasDatabaseName("UQ_Cobranca_Escolinha_Matricula_Competencia");
-
                     b.HasIndex("Escolinha_ID", "Situacao", "Vencimento")
                         .HasDatabaseName("IX_Cobranca_Escolinha_Situacao_Vencimento");
+
+                    b.HasIndex("Escolinha_ID", "Matricula_ID", "Competencia", "Via")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Cobranca_Escolinha_Matricula_Competencia_Via");
 
                     b.ToTable("Cobranca", null, t =>
                         {
@@ -3123,6 +3136,9 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("PeriodicidadeMeses")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("Professor_ID")
                         .HasColumnType("uniqueidentifier");
 
@@ -3167,6 +3183,8 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                             t.HasCheckConstraint("CK_Turma_MetaFrequencia", "[MetaFrequenciaPercentual] IS NULL OR [MetaFrequenciaPercentual] BETWEEN 1 AND 100");
 
                             t.HasCheckConstraint("CK_Turma_MinimoConfirmados", "[MinimoConfirmados] > 0");
+
+                            t.HasCheckConstraint("CK_Turma_Periodicidade", "[PeriodicidadeMeses] IN (1, 3, 6, 12)");
                         });
                 });
 
@@ -3557,6 +3575,12 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_Cobranca_Aluno");
+
+                    b.HasOne("MinhaEscolinha.Domain.Financeiro.Cobranca", null)
+                        .WithMany()
+                        .HasForeignKey("CobradaDeNovoDe_ID")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_Cobranca_CobradaDeNovoDe");
 
                     b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
                         .WithMany()

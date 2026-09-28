@@ -55,6 +55,15 @@ public sealed class GatewayAsaasFalso : IGatewayAsaas
         return Task.FromResult(id);
     }
 
+    public List<(string IdAsaas, ClienteAsaasPedido Pedido)> ClientesAtualizados { get; } = [];
+
+    public Task AtualizarClienteAsync(ContaAsaasAcesso conta, string idAsaas, ClienteAsaasPedido pedido, CancellationToken ct = default)
+    {
+        Falhar();
+        ClientesAtualizados.Add((idAsaas, pedido));
+        return Task.CompletedTask;
+    }
+
     public Task<PagamentoAsaas?> BuscarCobrancaAsync(ContaAsaasAcesso conta, Guid cobrancaId, CancellationToken ct = default)
     {
         Falhar();
@@ -90,6 +99,9 @@ public sealed class GatewayAsaasFalso : IGatewayAsaas
 
     public List<string> PixConsultados { get; } = [];
 
+    /// <summary>Um PNG mínimo em base64: o suficiente para conferir que a imagem do QR code é guardada e mostrada (P49).</summary>
+    public const string ImagemDoPix = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
     public static string PixDe(string id) => $"00020126580014br.gov.bcb.pix0136teste-{id}5204000053039865802BR6304ABCD";
 
     public Task<PixAsaas?> ObterPixAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default)
@@ -98,7 +110,7 @@ public sealed class GatewayAsaasFalso : IGatewayAsaas
         PixConsultados.Add(id);
         var cobranca = Cobrancas.FirstOrDefault(c => c.EscolinhaId == conta.EscolinhaId && c.Id == id);
         var emAberto = cobranca is { Excluida: false, Status: StatusAsaas.Pendente or StatusAsaas.Vencida };
-        return Task.FromResult(SemPix || !emAberto ? null : new PixAsaas(PixDe(id), ValidadeDoPix));
+        return Task.FromResult(SemPix || !emAberto ? null : new PixAsaas(PixDe(id), ValidadeDoPix, ImagemDoPix));
     }
 
     public Task ExcluirCobrancaAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default)
@@ -159,6 +171,8 @@ public sealed class AgendadorFinanceiroDeTeste : IAgendadorFinanceiro
     public List<Guid> Webhooks { get; } = [];
     public List<Guid> RegistrosDeWebhook { get; } = [];
     public List<(Guid EscolinhaId, Guid CobrancaId)> BuscasDePix { get; } = [];
+    public List<(Guid EscolinhaId, Guid ResponsavelId)> AtualizacoesDeCliente { get; } = [];
+    public void AtualizarClienteAsaas(Guid escolinhaId, Guid responsavelId) => AtualizacoesDeCliente.Add((escolinhaId, responsavelId));
 
     public void Projetar(Guid escolinhaId) => Projecoes.Add(escolinhaId);
     public void ObterPix(Guid escolinhaId, Guid cobrancaId) => BuscasDePix.Add((escolinhaId, cobrancaId));

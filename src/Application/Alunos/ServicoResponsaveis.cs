@@ -22,7 +22,9 @@ public class ServicoResponsaveis(
     IUsuarioAtual usuarioAtual,
     IValidator<ResponsavelRequisicao> validador,
     IValidator<ResponsavelDoAlunoRequisicao> validadorDoAluno,
-    IValidator<VinculoRequisicao> validadorVinculo)
+    IValidator<VinculoRequisicao> validadorVinculo,
+    IContextoEscolinha contexto,
+    Financeiro.IAgendadorFinanceiro agendadorFinanceiro)
 {
     public const string Entidade = nameof(Responsavel);
 
@@ -97,6 +99,7 @@ public class ServicoResponsaveis(
             return ResultadoOperacao.Erro("O CPF de quem já ativou o acesso não muda por aqui.", nameof(ResponsavelRequisicao.Cpf));
 
         var antes = Descrever(responsavel);
+        var paraAsaas = (responsavel.Nome, responsavel.Cpf, responsavel.Telefone, responsavel.Email);
         responsavel.DefinirNome(r.Nome);
         responsavel.Cpf = cpf;
         responsavel.Telefone = Telefone.ParaE164(r.Telefone);
@@ -105,6 +108,9 @@ public class ServicoResponsaveis(
         if (!registro.SeMudou(Entidade, responsavel.Responsavel_ID, "Cadastro", antes, Descrever(responsavel)))
             return ResultadoOperacao.Ok("Nada mudou.");
         await repositorio.SalvarAsync(ct);
+        // P42: o que a Asaas usa na fatura mudou: o cliente dela recebe os dados novos, por job (regra de ouro 2).
+        if (paraAsaas != (responsavel.Nome, responsavel.Cpf, responsavel.Telefone, responsavel.Email) && contexto.EscolinhaId is { } escolinha)
+            agendadorFinanceiro.AtualizarClienteAsaas(escolinha, responsavel.Responsavel_ID);
         return ResultadoOperacao.Ok($"Cadastro de {responsavel.Nome} atualizado.");
     }
 

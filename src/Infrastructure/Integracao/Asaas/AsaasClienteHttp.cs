@@ -44,6 +44,19 @@ public sealed class AsaasClienteHttp(HttpClient http, ILogger<AsaasClienteHttp> 
                ?? throw new FalhaIntegracaoException(NaturezaFalha.Definitiva, "Resposta da Asaas sem o id do cliente.");
     }
 
+    public async Task AtualizarClienteAsync(ContaAsaasAcesso conta, string idAsaas, ClienteAsaasPedido pedido, CancellationToken ct = default)
+    {
+        // A Asaas atualiza o cliente com POST (não PUT). O campo nulo não vai: não apaga o que a Asaas já tem.
+        using var _ = await EnviarAsync(conta, HttpMethod.Post, $"customers/{Uri.EscapeDataString(idAsaas)}", new
+        {
+            name = pedido.Nome,
+            cpfCnpj = string.IsNullOrWhiteSpace(pedido.Cpf) ? null : pedido.Cpf,
+            email = string.IsNullOrWhiteSpace(pedido.Email) ? null : pedido.Email,
+            mobilePhone = CelularNacional(pedido.Celular),
+            notificationDisabled = true
+        }, ct);
+    }
+
     public async Task<PagamentoAsaas?> BuscarCobrancaAsync(ContaAsaasAcesso conta, Guid cobrancaId, CancellationToken ct = default)
     {
         using var resposta = await EnviarAsync(conta, HttpMethod.Get, $"payments?externalReference={cobrancaId}&limit=1", null, ct);
@@ -81,7 +94,7 @@ public sealed class AsaasClienteHttp(HttpClient http, ILogger<AsaasClienteHttp> 
         // A validade vem no horário de Brasília, como as demais datas da Asaas.
         DateTime? expiraEm = DateTime.TryParseExact(Texto(resposta.RootElement, "expirationDate"), "yyyy-MM-dd HH:mm:ss",
             CultureInfo.InvariantCulture, DateTimeStyles.None, out var data) ? data : null;
-        return new PixAsaas(copiaECola, expiraEm);
+        return new PixAsaas(copiaECola, expiraEm, Texto(resposta.RootElement, "encodedImage"));
     }
 
     public async Task ExcluirCobrancaAsync(ContaAsaasAcesso conta, string id, CancellationToken ct = default)

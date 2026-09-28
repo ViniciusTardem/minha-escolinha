@@ -117,6 +117,14 @@ else
                                 <button class="kt-btn kt-btn-primary justify-center" type="button" data-esc-copiar="#pix-@m.Id.ToString("N")">
                                     <i class="ki-filled ki-copy"></i> Copiar o Pix
                                 </button>
+                                @if (m.PixImagem is not null)
+                                {
+                                    @* P49: no computador, a família lê o QR code com o celular. *@
+                                    <details>
+                                        <summary class="kt-link text-sm">Mostrar o QR code, para pagar lendo com o celular</summary>
+                                        <img class="mt-2 size-48" src="data:image/png;base64,@m.PixImagem" alt="@($"QR code do Pix da mensalidade de {m.Aluno}")" />
+                                    </details>
+                                }
                             </div>
                         }
                         @if (m.UrlFatura is not null)

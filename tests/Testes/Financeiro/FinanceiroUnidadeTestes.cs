@@ -310,4 +310,19 @@ public class FinanceiroUnidadeTestes
         c.RegistrarPagamento(150m, 150m, Hoje, MeioPagamento.Pix, Agora);
         Assert.False(c.PixValidoEm(Agora)); // paga: o Pix sai da tela
     }
+
+    [Fact]
+    public void A_turma_trimestral_cobra_no_mes_de_inicio_e_a_cada_tres_meses()
+    {
+        // P44: matrícula de agosto, hoje 01/10: o horizonte vai até novembro. Trimestral: agosto, novembro, fevereiro...
+        var matricula = new MatriculaParaCobranca(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), new DateOnly(2026, 8, 15), null, 420m,
+            AlunoAtivo: true, PeriodicidadeMeses: 3);
+        var plano = PlanejadorCobrancas.Planejar([matricula], [], [matricula.MatriculaId], new DateOnly(2026, 10, 1), 10);
+        var criada = Assert.Single(plano.Criar);
+        Assert.Equal((new DateOnly(2026, 11, 1), 420m), (criada.Competencia, criada.Valor));
+
+        // A mensal, no mesmo horizonte, cobra outubro e novembro.
+        var mensal = matricula with { PeriodicidadeMeses = 1 };
+        Assert.Equal(2, PlanejadorCobrancas.Planejar([mensal], [], [mensal.MatriculaId], new DateOnly(2026, 10, 1), 10).Criar.Count);
+    }
 }

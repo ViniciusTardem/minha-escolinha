@@ -29,6 +29,7 @@ public class ServicoPortal(
     IAutorizacao autorizacao,
     IUsuarioAtual usuarioAtual,
     IContextoEscolinha contexto,
+    IParametros parametros,
     IRelogioBrasil relogio)
 {
     public const int DiasFrequencia = 30;
@@ -204,9 +205,11 @@ public class ServicoPortal(
         var turmasPorAluno = confirmados.Count == 0
             ? new Dictionary<Guid, IReadOnlyList<string>>()
             : await repositorio.TurmasAtivasAsync(confirmados.Select(g => g.Key).ToList(), ct);
+        // P50: a escolinha pode abrir as mensalidades a todo responsável com vínculo confirmado.
+        var todosVeem = (await parametros.ObterAsync(ct)).Financeiro.TodosResponsaveisVeemNoPortal;
         var filhos = confirmados
             .Select(g => new FilhoNoPortal(g.Key, g.First().Aluno, g.First().Situacao, turmasPorAluno.GetValueOrDefault(g.Key, []),
-                g.Any(v => v.CuidaDasMensalidades)))
+                todosVeem || g.Any(v => v.CuidaDasMensalidades)))
             .OrderBy(f => f.Nome, OrdemDosNomes)
             .ToList();
         var aConfirmar = vinculos.GroupBy(v => v.AlunoId)
@@ -227,5 +230,6 @@ public class ServicoPortal(
 
     private static MensalidadeNoPortal Linha(Cobranca c, string aluno, DateTime agora) =>
         new(c.Cobranca_ID, c.Aluno_ID, aluno, c.Competencia, c.Vencimento, c.Valor, c.Situacao, c.ComSinal, c.PagaEm, c.ValorPago,
-            c.EmAberto && !c.ComSinal ? c.UrlFatura : null, c.PixValidoEm(agora) ? c.PixCopiaECola : null);
+            c.EmAberto && !c.ComSinal ? c.UrlFatura : null, c.PixValidoEm(agora) ? c.PixCopiaECola : null,
+            c.PixValidoEm(agora) ? c.PixImagem : null);
 }

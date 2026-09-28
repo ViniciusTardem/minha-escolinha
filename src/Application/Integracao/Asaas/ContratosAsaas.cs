@@ -102,7 +102,8 @@ public sealed record PagamentoAsaas(
 }
 
 /// <summary>O Pix copia e cola da cobrança (o conteúdo do QR code dinâmico da Asaas), com a validade quando a Asaas informa.</summary>
-public sealed record PixAsaas(string CopiaECola, DateTime? ExpiraEm);
+/// <param name="Imagem">A imagem do QR code em PNG, em base64 (P49): para pagar pelo computador lendo com o celular.</param>
+public sealed record PixAsaas(string CopiaECola, DateTime? ExpiraEm, string? Imagem = null);
 
 public static class StatusAsaas
 {
@@ -136,6 +137,9 @@ public interface IGatewayAsaas
 
     /// <exception cref="Comum.FalhaIntegracaoException">Classificada (retentável ou definitiva).</exception>
     Task<string> CriarClienteAsync(ContaAsaasAcesso conta, ClienteAsaasPedido pedido, CancellationToken ct = default);
+
+    /// <summary>Atualiza o cliente com o cadastro de agora (P42): nome, CPF, e-mail e celular. As notificações da Asaas seguem desligadas.</summary>
+    Task AtualizarClienteAsync(ContaAsaasAcesso conta, string idAsaas, ClienteAsaasPedido pedido, CancellationToken ct = default);
 
     /// <returns>A cobrança com esta referência externa (a nossa), ou <c>null</c>.</returns>
     /// <exception cref="Comum.FalhaIntegracaoException">Classificada (retentável ou definitiva).</exception>

@@ -137,8 +137,12 @@ public class EmissaoCobrancas(
     private async Task<string> DescricaoAsync(Cobranca cobranca, CancellationToken ct)
     {
         var aluno = EmissorGatilhos.PrimeiroNome(await repositorio.NomeDoAlunoAsync(cobranca.Aluno_ID, ct));
-        var turma = (await repositorio.TurmasAsync(ct)).FirstOrDefault(t => t.Id == cobranca.Turma_ID)?.Nome;
-        var texto = $"Mensalidade {Cobranca.RotuloCompetencia(cobranca.Competencia)} · {aluno}" + (turma is null ? string.Empty : $" · {turma}");
+        var turma = (await repositorio.TurmasAsync(ct)).FirstOrDefault(t => t.Id == cobranca.Turma_ID);
+        // P44: a turma cobrada por período diz o período na fatura, a partir do mês da cobrança.
+        var titulo = turma is { PeriodicidadeMeses: > 1 } periodo
+            ? $"Cobrança {Domain.Turmas.Turma.RotuloPeriodicidade(periodo.PeriodicidadeMeses).ToLowerInvariant()} a partir de"
+            : "Mensalidade";
+        var texto = $"{titulo} {Cobranca.RotuloCompetencia(cobranca.Competencia)} · {aluno}" + (turma is null ? string.Empty : $" · {turma.Nome}");
         return TextoHelper.Truncar(texto, 450) ?? texto;
     }
 }
@@ -170,7 +174,10 @@ public class PixCobrancas(
         try
         {
             if (await gateway.ObterPixAsync(conta, idAsaas, ct) is not { } pix) return "A Asaas não tem Pix para esta cobrança.";
-            if (!cobranca.RegistrarPix(pix.CopiaECola, pix.ExpiraEm))
+            if (pix.Imagem is not null && !Cobranca.ImagemValida(pix.Imagem))
+                logger.LogWarning("QR code do Pix da cobrança {Cobranca} não guardado: {Tamanho} caracteres ou fora do base64 (o máximo é {Maximo}).",
+                    cobrancaId, pix.Imagem.Length, Cobranca.TamanhoPixImagem);
+            if (!cobranca.RegistrarPix(pix.CopiaECola, pix.ExpiraEm, pix.Imagem))
             {
                 logger.LogWarning("Pix da cobrança {Cobranca} não guardado: {Tamanho} caracteres (o máximo é {Maximo}).", cobrancaId,
                     pix.CopiaECola.Length, Cobranca.TamanhoPix);
@@ -450,6 +457,7 @@ public class ValidadorOrigemCobranca(
 /// <summary>Os trabalhos avulsos na Asaas: excluir a cobrança cancelada ou isenta, registrar o recebimento por fora e o webhook.</summary>
 public class OperacoesAsaas(
     IFinanceiroRepositorio repositorio,
+    Alunos.IAlunosRepositorio alunos,
     IConfiguracaoRepositorio configuracao,
     ServicoAcessoAsaas contas,
     IGatewayAsaas gateway,
@@ -465,6 +473,31 @@ public class OperacoesAsaas(
         await gateway.ExcluirCobrancaAsync(conta, idAsaas, ct);
         logger.LogInformation("Cobrança {Cobranca} ({IdAsaas}) excluída na Asaas ({Situacao}).", cobrancaId, idAsaas, cobranca.Situacao);
         return "Excluída na Asaas.";
+    }
+
+    /// <summary>
+    /// P42: o cliente do responsável na conta da escolinha recebe o cadastro de agora (nome, CPF, e-mail e celular). Sem
+    /// cliente ainda, nada a fazer: ele nasce na próxima emissão, já com os dados novos. A recusa definitiva fica no log.
+    /// </summary>
+    public async Task<string> AtualizarClienteAsync(Guid responsavelId, CancellationToken ct = default)
+    {
+        if (!opcoes.Habilitado || await contas.AcessoAsync(ct) is not { } conta) return "Sem conta Asaas ligada: nada a atualizar.";
+        if (await repositorio.ClienteAsaasAsync(responsavelId, conta.Identificador, ct) is not { } cliente)
+            return "O responsável ainda não é cliente na Asaas: nasce na próxima emissão, com os dados novos.";
+        if (await alunos.ObterResponsavelAsync(responsavelId, ct) is not { } responsavel) return "Responsável não encontrado.";
+        try
+        {
+            await gateway.AtualizarClienteAsync(conta, cliente.IdAsaas,
+                new ClienteAsaasPedido(responsavelId, responsavel.Nome, Cpf.Normalizar(responsavel.Cpf) ?? string.Empty, responsavel.Email,
+                    responsavel.Telefone), ct);
+            return "Cliente atualizado na Asaas.";
+        }
+        catch (FalhaIntegracaoException ex) when (!ex.Retentavel)
+        {
+            logger.LogWarning("A Asaas recusou a atualização do cliente {Cliente} (responsável {Responsavel}): {Erro}", cliente.IdAsaas,
+                responsavelId, ex.Message);
+            return $"Recusada pela Asaas: {ex.Message}";
+        }
     }
 
     public async Task<string> ReceberEmDinheiroAsync(Guid cobrancaId, CancellationToken ct = default)

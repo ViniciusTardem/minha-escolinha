@@ -77,7 +77,8 @@ public sealed record MensalidadeNoPortal(
     DateOnly? PagaEm,
     decimal? ValorPago,
     string? UrlFatura,
-    string? PixCopiaECola);
+    string? PixCopiaECola,
+    string? PixImagem = null);
 
 /// <summary>O mês de um filho (CA-16): o total das mensalidades do mês, o que já foi pago e o que falta.</summary>
 public sealed record MesDoFilho(Guid AlunoId, string Aluno, decimal Total, decimal Pago, decimal APagar);

@@ -106,6 +106,14 @@ public class Cobranca : IEntidadeAuditavel, IEntidadeDaEscolinha
     /// <summary>O mês da mensalidade (sempre o dia 1).</summary>
     public DateOnly Competencia { get; set; }
 
+    /// <summary>
+    /// A via da mensalidade no mês: 1 é a original; a cobrança de novo depois de um estorno ou contestação é a seguinte (P43).
+    /// </summary>
+    public int Via { get; private set; } = 1;
+
+    /// <summary>A mensalidade estornada que esta cobra de novo (P43).</summary>
+    public Guid? CobradaDeNovoDe_ID { get; private set; }
+
     public DateOnly Vencimento { get; private set; }
     public decimal Valor { get; private set; }
 
@@ -153,6 +161,11 @@ public class Cobranca : IEntidadeAuditavel, IEntidadeDaEscolinha
 
     public DateTime? PixExpiraEm { get; private set; }
 
+    /// <summary>A imagem do QR code (PNG em base64), buscada com o copia e cola (P49). Não é link: é a própria imagem.</summary>
+    public string? PixImagem { get; private set; }
+
+    public const int TamanhoPixImagem = 20000;
+
     // ── Pagamento ──
     public MeioPagamento? Meio { get; private set; }
     public decimal? ValorPago { get; private set; }
@@ -191,14 +204,21 @@ public class Cobranca : IEntidadeAuditavel, IEntidadeDaEscolinha
     /// <summary>O Pix que o portal pode mostrar agora: a cobrança em aberto, sem divergência, e o copia e cola dentro da validade.</summary>
     public bool PixValidoEm(DateTime agora) => EmAberto && !ComSinal && PixCopiaECola is not null && (PixExpiraEm is null || PixExpiraEm > agora);
 
-    /// <returns>Se guardou (o copia e cola grande demais não é cortado nem guardado: quem chama registra no log).</returns>
-    public bool RegistrarPix(string copiaECola, DateTime? expiraEm)
+    /// <returns>
+    /// Se guardou (o copia e cola grande demais não é cortado nem guardado: quem chama registra no log). A imagem que não
+    /// é base64 ou passa do tamanho fica de fora, sem cortar: o copia e cola e a fatura continuam valendo.
+    /// </returns>
+    public bool RegistrarPix(string copiaECola, DateTime? expiraEm, string? imagem = null)
     {
         if (string.IsNullOrWhiteSpace(copiaECola) || copiaECola.Length > TamanhoPix) return false;
         PixCopiaECola = copiaECola;
         PixExpiraEm = expiraEm;
+        PixImagem = ImagemValida(imagem) ? imagem : null;
         return true;
     }
+
+    public static bool ImagemValida(string? imagem) =>
+        imagem is { Length: > 0 and <= TamanhoPixImagem } && Convert.TryFromBase64String(imagem, new byte[imagem.Length], out _);
     public bool Quitada => Situacao is SituacaoCobranca.Paga or SituacaoCobranca.PagaEmAtraso;
     public bool Encerrada => Situacao is SituacaoCobranca.Cancelada or SituacaoCobranca.Isenta;
     public bool AguardandoConfirmacao => Situacao == SituacaoCobranca.Prevista && PrimeiraDaMatricula && ConfirmadaEm is null;
@@ -388,6 +408,26 @@ public class Cobranca : IEntidadeAuditavel, IEntidadeDaEscolinha
         || (situacao is SituacaoCobranca.Paga or SituacaoCobranca.PagaEmAtraso && sinal is SinalCobranca.Estorno or SinalCobranca.Chargeback);
 
     public bool PodeSerEncerrada => PodeEncerrar(Situacao, Sinal);
+
+    /// <summary>A paga cujo dinheiro voltou para a família (estorno ou contestação): a gestão pode cobrar de novo (P43).</summary>
+    public bool PodeCobrarDeNovo => Quitada && Sinal is SinalCobranca.Estorno or SinalCobranca.Chargeback;
+
+    /// <summary>
+    /// A cobrança nova para o mesmo mês da mensalidade estornada (P43): a via seguinte, com o valor dela e o vencimento que
+    /// a gestão escolheu, já confirmada (vai para a Asaas na data de emissão). Quem chama cancela a estornada.
+    /// </summary>
+    public static Cobranca CobrarDeNovo(Cobranca estornada, DateOnly vencimento, DateTime agora, Guid? autorId, string autorNome)
+    {
+        if (!estornada.PodeCobrarDeNovo) throw new InvalidOperationException("Só a mensalidade paga e estornada é cobrada de novo.");
+        var nova = Prevista(estornada.Matricula_ID, estornada.Aluno_ID, estornada.Turma_ID, estornada.Competencia, vencimento,
+            estornada.Valor, primeira: false);
+        nova.Via = estornada.Via + 1;
+        nova.CobradaDeNovoDe_ID = estornada.Cobranca_ID;
+        nova.ConfirmadaEm = agora;
+        nova.ConfirmadaPor_ID = autorId;
+        nova.ConfirmadaPorNome = TextoHelper.Truncar(autorNome, TamanhoNome);
+        return nova;
+    }
 
     /// <summary>Cancelar ou isentar, com motivo e autor (ação sensível, spec §7).</summary>
     /// <returns>

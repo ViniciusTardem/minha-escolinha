@@ -14,7 +14,8 @@ public class FinanceiroRepositorio(EscolinhaDbContext contexto) : IFinanceiroRep
         await contexto.Matriculas.AsNoTracking()
             .Where(m => m.Situacao == SituacaoMatricula.Ativa || (m.DataFim != null && m.DataFim >= encerradasDesde))
             .Select(m => new MatriculaParaCobranca(m.Matricula_ID, m.Aluno_ID, m.Turma_ID, m.DataInicio, m.DataFim, m.Mensalidade,
-                m.Aluno!.Situacao == SituacaoAluno.Ativo))
+                m.Aluno!.Situacao == SituacaoAluno.Ativo,
+                contexto.Turmas.Where(t => t.Turma_ID == m.Turma_ID).Select(t => t.PeriodicidadeMeses).FirstOrDefault()))
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<Cobranca>> CobrancasDesdeAsync(DateOnly competencia, CancellationToken ct = default) =>
@@ -106,7 +107,7 @@ public class FinanceiroRepositorio(EscolinhaDbContext contexto) : IFinanceiroRep
         contexto.Cobrancas.CountAsync(c => c.Sinal != SinalCobranca.Nenhum, ct);
 
     public async Task<IReadOnlyList<OpcaoTurmaFinanceiro>> TurmasAsync(CancellationToken ct = default) =>
-        await contexto.Turmas.AsNoTracking().OrderBy(t => t.Nome).Select(t => new OpcaoTurmaFinanceiro(t.Turma_ID, t.Nome)).ToListAsync(ct);
+        await contexto.Turmas.AsNoTracking().OrderBy(t => t.Nome).Select(t => new OpcaoTurmaFinanceiro(t.Turma_ID, t.Nome, t.PeriodicidadeMeses)).ToListAsync(ct);
 
     public async Task<ResumoFinanceiro> ResumoAsync(DateOnly emitirAte, CancellationToken ct = default)
     {

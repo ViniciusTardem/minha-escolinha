@@ -120,6 +120,7 @@ public class TurmaConfiguracao : IEntityTypeConfiguration<Turma>
             t.HasCheckConstraint("CK_Turma_Capacidade", "[Capacidade] > 0");
             t.HasCheckConstraint("CK_Turma_Mensalidade", "[Mensalidade] >= 0");
             t.HasCheckConstraint("CK_Turma_MinimoConfirmados", "[MinimoConfirmados] > 0");
+            t.HasCheckConstraint("CK_Turma_Periodicidade", "[PeriodicidadeMeses] IN (1, 3, 6, 12)");
             t.HasCheckConstraint("CK_Turma_MetaFrequencia", "[MetaFrequenciaPercentual] IS NULL OR [MetaFrequenciaPercentual] BETWEEN 1 AND 100");
         });
 

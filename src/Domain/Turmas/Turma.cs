@@ -44,8 +44,24 @@ public class Turma : IEntidadeAuditavel, IEntidadeDaEscolinha
 
     public int Capacidade { get; set; }
 
-    /// <summary>Valor mensal da turma — o valor inicial de cada matrícula nela (a matrícula pode ter o seu).</summary>
+    /// <summary>
+    /// O valor de cada cobrança da turma — o valor inicial de cada matrícula nela (a matrícula pode ter o seu). Na turma
+    /// mensal é a mensalidade; na trimestral, semestral ou anual, o valor do período (P44).
+    /// </summary>
     public decimal Mensalidade { get; set; }
+
+    /// <summary>De quantos em quantos meses a turma é cobrada: 1 (mensal), 3, 6 ou 12 (P44).</summary>
+    public int PeriodicidadeMeses { get; set; } = 1;
+
+    public static readonly IReadOnlyList<int> Periodicidades = [1, 3, 6, 12];
+
+    public static string RotuloPeriodicidade(int meses) => meses switch
+    {
+        3 => "Trimestral",
+        6 => "Semestral",
+        12 => "Anual",
+        _ => "Mensal"
+    };
 
     public int MinimoConfirmados { get; set; }
 

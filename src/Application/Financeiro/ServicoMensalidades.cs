@@ -253,6 +253,21 @@ public class ServicoMensalidades(
                 break;
             case ResolucaoDivergencia.Cancelar or ResolucaoDivergencia.Isentar:
                 return ResultadoOperacao.Erro($"Mensalidade {Cobranca.Rotulo(cobranca.Situacao).ToLowerInvariant()} não pode mudar.", nameof(r.Resolucao));
+            case ResolucaoDivergencia.CobrarDeNovo when cobranca.PodeCobrarDeNovo:
+                // P43: o dinheiro voltou para a família; a mensalidade estornada é cancelada e uma via nova do mesmo mês vai
+                // para a Asaas, com o vencimento que a gestão escolheu.
+                var hoje = DateOnly.FromDateTime(agora);
+                if (r.NovoVencimento!.Value < hoje)
+                    return ResultadoOperacao.Erro("O vencimento da cobrança nova não pode ser no passado.", nameof(r.NovoVencimento));
+                var nova = Cobranca.CobrarDeNovo(cobranca, r.NovoVencimento.Value, agora, usuario.Id, autor);
+                cobranca.Encerrar(SituacaoCobranca.Cancelada, $"Estornada e cobrada de novo: {explicacao}", agora, usuario.Id, autor);
+                repositorio.Adicionar(nova);
+                registro.Registrar(Entidade, nova.Cobranca_ID, "Cobrança de novo", Cobranca.Dinheiro(cobranca.Valor),
+                    $"{Cobranca.Dinheiro(nova.Valor)}, vence {nova.Vencimento:dd/MM/yyyy}", explicacao);
+                resultado = $"cancelada e cobrada de novo, com vencimento em {nova.Vencimento:dd/MM/yyyy}";
+                break;
+            case ResolucaoDivergencia.CobrarDeNovo:
+                return ResultadoOperacao.Erro("Só a mensalidade paga e estornada é cobrada de novo.", nameof(r.Resolucao));
             default:
                 resultado = "ciência registrada";
                 break;
@@ -261,6 +276,7 @@ public class ServicoMensalidades(
         cobranca.ResolverSinal(explicacao, agora, autor);
         registro.Registrar(Entidade, cobranca.Cobranca_ID, "Divergência", sinal, resultado, explicacao);
         await repositorio.SalvarAsync(ct);
+        if (r.Resolucao == ResolucaoDivergencia.CobrarDeNovo) await rotina.AgendarEmissoesAsync(ct);
         return ResultadoOperacao.Ok($"Divergência resolvida: {resultado}.");
     }
 

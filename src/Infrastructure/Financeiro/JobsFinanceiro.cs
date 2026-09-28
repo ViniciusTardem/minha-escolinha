@@ -120,6 +120,12 @@ public class JobsFinanceiro(
     public Task RegistrarWebhookAsync(Guid escolinhaId, CancellationToken ct) =>
         executor.ExecutarAsync(escolinhaId, sp => sp.GetRequiredService<OperacoesAsaas>().RegistrarWebhookAsync(ct), ct);
 
+    [Queue(HangfireEscolinhaExtensions.FilaIntegracoes)]
+    [AutomaticRetry(Attempts = 8)]
+    [JobDisplayName("Asaas — atualizar o cliente do responsável {1}")]
+    public Task AtualizarClienteAsaasAsync(Guid escolinhaId, Guid responsavelId, CancellationToken ct) =>
+        executor.ExecutarAsync(escolinhaId, sp => sp.GetRequiredService<OperacoesAsaas>().AtualizarClienteAsync(responsavelId, ct), ct);
+
     [Queue(HangfireEscolinhaExtensions.FilaWebhooks)]
     [AutomaticRetry(Attempts = 8)]
     [JobDisplayName("Asaas — processar o webhook {0}")]
@@ -151,4 +157,7 @@ public class AgendadorFinanceiroHangfire(IBackgroundJobClient jobs) : IAgendador
 
     public void ProcessarWebhookAsaas(Guid webhookId) => jobs.Enqueue<JobsFinanceiro>(j => j.ProcessarWebhookAsaasAsync(webhookId, CancellationToken.None));
     public void RegistrarWebhook(Guid escolinhaId) => jobs.Enqueue<JobsFinanceiro>(j => j.RegistrarWebhookAsync(escolinhaId, CancellationToken.None));
+
+    public void AtualizarClienteAsaas(Guid escolinhaId, Guid responsavelId) =>
+        jobs.Enqueue<JobsFinanceiro>(j => j.AtualizarClienteAsaasAsync(escolinhaId, responsavelId, CancellationToken.None));
 }

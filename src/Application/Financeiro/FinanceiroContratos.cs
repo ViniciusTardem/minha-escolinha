@@ -83,7 +83,7 @@ public sealed record LinhaMensalidade(
 
 public sealed record TotalGrupo(GrupoMensalidade Grupo, int Quantidade, decimal Valor);
 
-public sealed record OpcaoTurmaFinanceiro(Guid Id, string Nome);
+public sealed record OpcaoTurmaFinanceiro(Guid Id, string Nome, int PeriodicidadeMeses = 1);
 
 public sealed record PainelMensalidades(
     DateOnly Competencia,
@@ -169,7 +169,10 @@ public enum ResolucaoDivergencia
     AceitarComoPaga = 20,
 
     Cancelar = 30,
-    Isentar = 40
+    Isentar = 40,
+
+    /// <summary>A paga e estornada: cancela e cobra de novo, numa via nova do mesmo mês (P43).</summary>
+    CobrarDeNovo = 50
 }
 
 public sealed class ResolverDivergenciaRequisicao
@@ -177,6 +180,9 @@ public sealed class ResolverDivergenciaRequisicao
     public Guid Id { get; set; }
     public ResolucaoDivergencia Resolucao { get; set; }
     public string? Explicacao { get; set; }
+
+    /// <summary>O vencimento da cobrança nova, quando a gestão cobra de novo (P43).</summary>
+    public DateOnly? NovoVencimento { get; set; }
 }
 
 public sealed class ResolverDivergenciaValidador : AbstractValidator<ResolverDivergenciaRequisicao>
@@ -184,6 +190,8 @@ public sealed class ResolverDivergenciaValidador : AbstractValidator<ResolverDiv
     public ResolverDivergenciaValidador()
     {
         RuleFor(r => r.Resolucao).IsInEnum().WithMessage("Escolha como resolver.");
+        RuleFor(r => r.NovoVencimento).NotNull().When(r => r.Resolucao == ResolucaoDivergencia.CobrarDeNovo)
+            .WithMessage("Informe o vencimento da cobrança nova.");
         RuleFor(r => r.Explicacao).NotEmpty().WithMessage("Explique a resolução (fica no histórico).")
             .MaximumLength(Cobranca.TamanhoMotivo).WithMessage($"A explicação tem no máximo {Cobranca.TamanhoMotivo} caracteres.");
     }
@@ -259,4 +267,7 @@ public interface IAgendadorFinanceiro
     void ReceberEmDinheiroNaAsaas(Guid escolinhaId, Guid cobrancaId);
     void ProcessarWebhookAsaas(Guid webhookId);
     void RegistrarWebhook(Guid escolinhaId);
+
+    /// <summary>O cadastro do responsável mudou: o cliente dele na Asaas recebe os dados novos (P42).</summary>
+    void AtualizarClienteAsaas(Guid escolinhaId, Guid responsavelId);
 }

@@ -115,6 +115,10 @@ public class TurmaRequisicao
     public Guid? ProfessorId { get; set; }
     public int Capacidade { get; set; }
     public decimal? Mensalidade { get; set; }
+
+    /// <summary>De quantos em quantos meses a turma é cobrada (P44).</summary>
+    public int PeriodicidadeMeses { get; set; } = 1;
+
     public int MinimoConfirmados { get; set; }
     public int? MetaFrequenciaPercentual { get; set; }
     public DateOnly? DataInicio { get; set; }
@@ -155,6 +159,8 @@ public class TurmaRequisicaoValidador : AbstractValidator<TurmaRequisicao>
             .NotNull().WithMessage("Informe a mensalidade da turma.")
             .InclusiveBetween(mensalidade.Minimo!.Value, mensalidade.Maximo!.Value)
             .WithMessage($"A mensalidade fica entre R$ {mensalidade.Minimo:0} e R$ {mensalidade.Maximo:N0}.");
+        RuleFor(x => x.PeriodicidadeMeses).Must(p => Turma.Periodicidades.Contains(p))
+            .WithMessage("Escolha a cobrança mensal, trimestral, semestral ou anual.");
         RuleFor(x => x.MinimoConfirmados).InclusiveBetween((int)minimo.Minimo!, (int)minimo.Maximo!)
             .WithMessage($"O mínimo de confirmados fica entre {minimo.Minimo:0} e {minimo.Maximo:0}.");
         RuleFor(x => x.MetaFrequenciaPercentual)

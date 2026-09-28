@@ -413,6 +413,16 @@ public sealed class PortalBancoTestes(BancoDeTestes banco) : IAsyncLifetime, IDi
         Assert.Empty(pagamentos.PorFilho);
         Assert.Empty(pagamentos.EmAberto);
         Assert.Equal(["Pedro Lima"], pagamentos.ComOutroResponsavel);
+
+        // P50: a escolinha abre as mensalidades a todo responsável com vínculo confirmado.
+        var abriu = await Gestor(b, sp => sp.GetRequiredService<ServicoParametros>().AlterarAsync(new AlterarParametrosRequisicao
+        {
+            Valores = { [MinhaEscolinha.Domain.Configuracao.Parametros.ChavesParametro.FinanceiroPortalTodosResponsaveis] = "true" }
+        }));
+        Assert.True(abriu.Sucesso, abriu.Mensagem);
+        pagamentos = (await ComoJoao(p => p.PagamentosAsync()))!;
+        Assert.Empty(pagamentos.ComOutroResponsavel);
+        Assert.NotEmpty(pagamentos.PorFilho);
     }
 
     // ── A resposta pelo portal (BL-M10-07) ──

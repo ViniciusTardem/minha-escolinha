@@ -117,6 +117,25 @@ public class AsaasClienteHttpTestes
         Assert.Null(await gateway.ObterCobrancaAsync(Sandbox, "pay_inexistente"));
     }
 
+    /// <summary>P42: a atualização do cliente é um POST no próprio cliente, sem os campos vazios e com as notificações desligadas.</summary>
+    [Fact]
+    public async Task O_cliente_e_atualizado_com_post_sem_apagar_o_que_nao_veio()
+    {
+        var (gateway, handler, provedor) = Montar(_ => Resposta(HttpStatusCode.OK, """{"object":"customer","id":"cus_1"}"""));
+        await using var _ = provedor;
+
+        await gateway.AtualizarClienteAsync(Sandbox, "cus_1", new ClienteAsaasPedido(Guid.NewGuid(), "Maria Lima Souza", "52998224725", null, "+5543988887777"));
+
+        var enviada = Assert.Single(handler.Recebidas);
+        Assert.Equal((HttpMethod.Post, "https://api-sandbox.asaas.com/v3/customers/cus_1"), (enviada.Metodo, enviada.Url));
+        using var json = JsonDocument.Parse(enviada.Corpo);
+        var raiz = json.RootElement;
+        Assert.Equal(("Maria Lima Souza", "52998224725", "43988887777", true),
+            (raiz.GetProperty("name").GetString(), raiz.GetProperty("cpfCnpj").GetString(), raiz.GetProperty("mobilePhone").GetString(),
+                raiz.GetProperty("notificationDisabled").GetBoolean()));
+        Assert.False(raiz.TryGetProperty("email", out var email), email.ToString()); // sem e-mail no cadastro: o da Asaas fica como está
+    }
+
     /// <summary>BL-M10-06: o Pix copia e cola vem do QR code da cobrança, com a validade em Brasília; cobrança sumida volta nula.</summary>
     [Fact]
     public async Task O_pix_copia_e_cola_vem_do_qr_code_da_cobranca_com_a_validade()
@@ -127,7 +146,8 @@ public class AsaasClienteHttpTestes
         await using var _ = provedor;
 
         var pix = await gateway.ObterPixAsync(Sandbox, "pay_123");
-        Assert.Equal(new PixAsaas("00020126580014br.gov.bcb.pix0136abc", new DateTime(2026, 10, 10, 23, 59, 59)), pix);
+        // P49: a imagem do QR code vem junto, para o portal mostrar no computador.
+        Assert.Equal(new PixAsaas("00020126580014br.gov.bcb.pix0136abc", new DateTime(2026, 10, 10, 23, 59, 59), "iVBORw0KGgo="), pix);
         Assert.Equal((HttpMethod.Get, "https://api-sandbox.asaas.com/v3/payments/pay_123/pixQrCode"), (handler.Recebidas[0].Metodo, handler.Recebidas[0].Url));
         Assert.Null(await gateway.ObterPixAsync(Sandbox, "pay_sumida"));
     }

@@ -12,7 +12,8 @@ public sealed record MatriculaParaCobranca(
     DateOnly Inicio,
     DateOnly? Fim,
     decimal Mensalidade,
-    bool AlunoAtivo);
+    bool AlunoAtivo,
+    int PeriodicidadeMeses = 1);
 
 /// <summary>O que a projeção vai fazer: criar as previstas que faltam, ajustar as que mudaram e retirar as que sobraram.</summary>
 public sealed record PlanoCobrancas(IReadOnlyList<Cobranca> Criar, IReadOnlyList<Cobranca> Ajustadas, IReadOnlyList<Cobranca> Remover)
@@ -25,6 +26,8 @@ public sealed record PlanoCobrancas(IReadOnlyList<Cobranca> Criar, IReadOnlyList
 /// como cobrança prevista, num horizonte rolante até o fim do mês seguinte, como as sessões de treino (D31).
 /// <list type="bullet">
 /// <item>idempotente pela chave (matrícula, competência): rodar de novo não duplica;</item>
+/// <item>turma trimestral, semestral ou anual (P44): a cobrança sai no mês de início da matrícula e a cada período, com o
+/// valor do período; nos meses do meio, nada;</item>
 /// <item>só competências que ainda não venceram: o sistema nunca cobra para trás sozinho;</item>
 /// <item>só aluno ativo, com mensalidade maior que zero e matrícula vigente no vencimento;</item>
 /// <item>a primeira da matrícula espera a confirmação da gestão (P17: entrada no meio do mês, pró-rata);</item>
@@ -42,6 +45,8 @@ public static class PlanejadorCobrancas
     /// <summary>Último dia do mês seguinte ao de hoje.</summary>
     public static DateOnly FimDoHorizonte(DateOnly hoje) => new DateOnly(hoje.Year, hoje.Month, 1).AddMonths(2).AddDays(-1);
 
+    public static int MesesEntre(DateOnly de, DateOnly ate) => (ate.Year - de.Year) * 12 + ate.Month - de.Month;
+
     /// <param name="matriculas">As matrículas ativas e as encerradas há pouco (as previstas delas podem ter de sair).</param>
     /// <param name="existentes">As cobranças dessas matrículas nas competências do horizonte, em qualquer situação.</param>
     /// <param name="comHistorico">As matrículas que já tiveram alguma cobrança, em qualquer época: a primeira espera confirmação.</param>
@@ -49,7 +54,8 @@ public static class PlanejadorCobrancas
         IEnumerable<Guid> comHistorico, DateOnly hoje, int diaVencimento)
     {
         var fim = FimDoHorizonte(hoje);
-        var porChave = existentes.GroupBy(c => (c.Matricula_ID, c.Competencia)).ToDictionary(g => g.Key, g => g.First());
+        // A via mais recente do mês é a que vale (P43: a cobrança de novo depois de um estorno).
+        var porChave = existentes.GroupBy(c => (c.Matricula_ID, c.Competencia)).ToDictionary(g => g.Key, g => g.OrderByDescending(c => c.Via).First());
         var comCobranca = existentes.Select(c => c.Matricula_ID).Concat(comHistorico).ToHashSet();
         var criar = new List<Cobranca>();
         var ajustadas = new List<Cobranca>();
@@ -64,7 +70,8 @@ public static class PlanejadorCobrancas
                 if (vencimento > fim) break;
                 if (vencimento < hoje) continue;
 
-                var vale = m.AlunoAtivo && m.Mensalidade > 0 && m.Inicio <= vencimento && (m.Fim is null || vencimento <= m.Fim);
+                var noPeriodo = MesesEntre(CompetenciaDe(m.Inicio), competencia) % Math.Max(1, m.PeriodicidadeMeses) == 0;
+                var vale = noPeriodo && m.AlunoAtivo && m.Mensalidade > 0 && m.Inicio <= vencimento && (m.Fim is null || vencimento <= m.Fim);
                 if (porChave.TryGetValue((m.MatriculaId, competencia), out var existente))
                 {
                     olhadas.Add(existente);

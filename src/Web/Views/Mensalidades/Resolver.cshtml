@@ -20,7 +20,11 @@
         opcoes.Add((ResolucaoDivergencia.Isentar, "Isentar a mensalidade", devolvida
             ? "O dinheiro voltou para a família: a mensalidade sai das pagas e fica isenta."
             : "Não é cobrada nem entra na inadimplência."));
+        if (devolvida)
+            opcoes.Add((ResolucaoDivergencia.CobrarDeNovo, "Cobrar de novo",
+                "Cancela esta e emite uma cobrança nova do mesmo mês na Asaas, com o vencimento abaixo. A família recebe a régua normal."));
     }
+    var podeCobrarDeNovo = opcoes.Any(o => o.Valor == ResolucaoDivergencia.CobrarDeNovo);
 }
 
 <div class="kt-container-fixed">
@@ -47,6 +51,14 @@
                         </label>
                     }
                 </fieldset>
+                @if (podeCobrarDeNovo)
+                {
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="NovoVencimento">Vencimento da cobrança nova</label>
+                        <input class="kt-input max-w-[220px]" asp-for="NovoVencimento" type="date" />
+                        <span class="text-xs text-muted-foreground">Só vale para "Cobrar de novo".</span>
+                    </div>
+                }
                 <div class="flex flex-col gap-1">
                     <label class="kt-form-label" asp-for="Explicacao">Explicação</label>
                     <textarea class="kt-textarea" asp-for="Explicacao" rows="2" maxlength="300" required placeholder="Ex.: a família pagou a diferença em dinheiro"></textarea>

@@ -133,6 +133,17 @@ public sealed class SimuladorAsaas(ArmazemSimuladorAsaas armazem, OpcoesAsaas op
         armazem.AlterarAsync(d => d.Clientes.FirstOrDefault(c => c.EscolinhaId == conta.EscolinhaId
                                                                  && c.ReferenciaExterna == responsavelId.ToString())?.Id);
 
+    public Task AtualizarClienteAsync(ContaAsaasAcesso conta, string idAsaas, ClienteAsaasPedido pedido, CancellationToken ct = default) =>
+        armazem.AlterarAsync(d =>
+        {
+            if (d.Clientes.FirstOrDefault(c => c.Id == idAsaas && c.EscolinhaId == conta.EscolinhaId) is { } cliente)
+            {
+                cliente.Nome = pedido.Nome;
+                if (!string.IsNullOrWhiteSpace(pedido.Cpf)) cliente.Cpf = pedido.Cpf;
+            }
+            return 0;
+        });
+
     public Task<string> CriarClienteAsync(ContaAsaasAcesso conta, ClienteAsaasPedido pedido, CancellationToken ct = default) =>
         armazem.AlterarAsync(d =>
         {

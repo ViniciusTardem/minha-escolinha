@@ -613,4 +613,75 @@ public sealed class FinanceiroBancoTestes(BancoDeTestes banco) : IAsyncLifetime,
         Assert.Equal((SituacaoCobranca.Emitida, 2m), (outubro.Situacao, outubro.MultaPercentual!.Value));
         Assert.Equal(2m, _app.GatewayAsaas.Da(outubro.Cobranca_ID).Pedido.MultaPercentual);
     }
+
+    // ── Depois do S7: cobrar de novo (P43), cliente da Asaas (P42) e a imagem do Pix (P49) ──
+
+    [FatoComBanco]
+    public async Task A_mensalidade_estornada_pode_ser_cobrada_de_novo_numa_via_nova_do_mesmo_mes()
+    {
+        var (b, outubro) = await EmitidaAsync();
+        Em(10, 8, 9);
+        var pago = _app.GatewayAsaas.Pagar(outubro, new DateOnly(2026, 10, 8), meio: "CREDIT_CARD");
+        await AvisoAsync(b.Escolinha, Evento(EventoAsaas.PagamentoRecebido, pago));
+        Em(10, 9, 9);
+        pago.Status = StatusAsaas.Estornada;
+        await AvisoAsync(b.Escolinha, Evento(EventoAsaas.PagamentoEstornado, pago));
+
+        Task<ResultadoOperacao> Resolver(DateOnly? vencimento) =>
+            Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoMensalidades>().ResolverAsync(new ResolverDivergenciaRequisicao
+            {
+                Id = outubro, Resolucao = ResolucaoDivergencia.CobrarDeNovo, Explicacao = "O cartão foi estornado; a família paga por Pix.",
+                NovoVencimento = vencimento
+            }));
+        Assert.False((await Resolver(null)).Sucesso);
+        Assert.False((await Resolver(new DateOnly(2026, 10, 1))).Sucesso); // no passado
+        var cobrou = await Resolver(new DateOnly(2026, 10, 15));
+        Assert.True(cobrou.Sucesso, cobrou.Mensagem);
+        Assert.Contains("cobrada de novo, com vencimento em 15/10/2026", cobrou.Mensagem);
+
+        var doMes = (await CobrancasAsync(b.Escolinha)).Where(c => c.Aluno_ID == b.Pedro && c.Competencia == new DateOnly(2026, 10, 1))
+            .OrderBy(c => c.Via).ToList();
+        Assert.Equal(2, doMes.Count);
+        Assert.Equal((SituacaoCobranca.Cancelada, SinalCobranca.Nenhum, 1), (doMes[0].Situacao, doMes[0].Sinal, doMes[0].Via));
+        var nova = doMes[1];
+        Assert.Equal((SituacaoCobranca.Prevista, 2, (Guid?)outubro, true, 150m, new DateOnly(2026, 10, 15)),
+            (nova.Situacao, nova.Via, nova.CobradaDeNovoDe_ID, nova.Confirmada, nova.Valor, nova.Vencimento));
+        Assert.Contains((b.Escolinha, nova.Cobranca_ID), _app.Financeiro.Emissoes); // vai para a Asaas: já passou da data de emissão
+
+        // A projeção não recria nem mexe na via nova.
+        await ProjetarAsync(b.Escolinha);
+        Assert.Equal(2, (await CobrancasAsync(b.Escolinha)).Count(c => c.Aluno_ID == b.Pedro && c.Competencia == new DateOnly(2026, 10, 1)));
+    }
+
+    [FatoComBanco]
+    public async Task Mudar_o_cadastro_do_pagador_atualiza_o_cliente_na_asaas_por_job()
+    {
+        var (b, _) = await EmitidaAsync();
+        var maria = (await CobrancasAsync(b.Escolinha)).First(c => c.Pagador_ID is not null).Pagador_ID!.Value;
+        var edicao = (await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoResponsaveis>().ParaEdicaoAsync(maria)))!;
+        edicao.Nome = "Maria Lima Souza";
+        edicao.Email = "maria.souza@exemplo.com";
+        var editou = await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoResponsaveis>().EditarAsync(edicao));
+        Assert.True(editou.Sucesso, editou.Mensagem);
+        Assert.Contains((b.Escolinha, maria), _app.Financeiro.AtualizacoesDeCliente);
+
+        var resultado = await Gestor(b.Escolinha, sp => sp.GetRequiredService<OperacoesAsaas>().AtualizarClienteAsync(maria));
+        Assert.Equal("Cliente atualizado na Asaas.", resultado);
+        var atualizado = Assert.Single(_app.GatewayAsaas.ClientesAtualizados);
+        Assert.Equal(("Maria Lima Souza", "maria.souza@exemplo.com", "52998224725"), (atualizado.Pedido.Nome, atualizado.Pedido.Email, atualizado.Pedido.Cpf));
+
+        // Quem ainda não é cliente na Asaas não gera chamada: nasce na próxima emissão.
+        Assert.StartsWith("O responsável ainda não é cliente", await Gestor(b.Escolinha,
+            sp => sp.GetRequiredService<OperacoesAsaas>().AtualizarClienteAsync(Guid.NewGuid())));
+    }
+
+    [FatoComBanco]
+    public async Task O_pix_guarda_a_imagem_do_qr_code_junto_com_o_copia_e_cola()
+    {
+        var (b, outubro) = await EmitidaAsync();
+        Assert.Equal("Pix guardado.", await Gestor(b.Escolinha, sp => sp.GetRequiredService<PixCobrancas>().AtualizarAsync(outubro)));
+        var cobranca = (await CobrancasAsync(b.Escolinha)).Single(c => c.Cobranca_ID == outubro);
+        Assert.Equal(GatewayAsaasFalso.ImagemDoPix, cobranca.PixImagem);
+        Assert.False(Cobranca.ImagemValida("isto não é base64"));
+    }
 }

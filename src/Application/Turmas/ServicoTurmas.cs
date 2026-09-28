@@ -186,6 +186,7 @@ public class ServicoTurmas(
             ProfessorId = t.Professor_ID,
             Capacidade = t.Capacidade,
             Mensalidade = t.Mensalidade,
+            PeriodicidadeMeses = t.PeriodicidadeMeses,
             MinimoConfirmados = t.MinimoConfirmados,
             MetaFrequenciaPercentual = t.MetaFrequenciaPercentual,
             DataInicio = t.DataInicio,
@@ -393,6 +394,7 @@ public class ServicoTurmas(
         turma.Professor_ID = r.ProfessorId!.Value;
         turma.Capacidade = r.Capacidade;
         turma.Mensalidade = r.Mensalidade!.Value;
+        turma.PeriodicidadeMeses = r.PeriodicidadeMeses;
         turma.MinimoConfirmados = r.MinimoConfirmados;
         turma.MetaFrequenciaPercentual = r.MetaFrequenciaPercentual;
         turma.DataInicio = r.DataInicio!.Value;
@@ -433,6 +435,7 @@ public class ServicoTurmas(
 
     private static string Descrever(Turma t, string? professor) =>
         $"{t.Nome} · {t.Categoria ?? "sem categoria"} · {t.ResumoHorarios()} · professor {professor ?? "—"} · " +
+        (t.PeriodicidadeMeses == 1 ? string.Empty : $"cobrança {Turma.RotuloPeriodicidade(t.PeriodicidadeMeses).ToLowerInvariant()} · ") +
         $"{t.Capacidade} vagas · mínimo {t.MinimoConfirmados} confirmados" +
         (t.MetaFrequenciaPercentual is { } meta ? $" · meta {meta}%" : string.Empty) +
         $" · início {t.DataInicio.ToString("dd/MM/yyyy", PtBr)}";
