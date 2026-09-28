@@ -26,6 +26,7 @@ using MinhaEscolinha.Infrastructure.Data.Interceptadores;
 using MinhaEscolinha.Infrastructure.Eventos;
 using MinhaEscolinha.Infrastructure.Financeiro;
 using MinhaEscolinha.Infrastructure.Hangfire;
+using MinhaEscolinha.Infrastructure.Integracao;
 using MinhaEscolinha.Infrastructure.Integracao.Asaas;
 using MinhaEscolinha.Infrastructure.Integracao.Stripe;
 using MinhaEscolinha.Infrastructure.Integracao.WhatsApp;
@@ -105,6 +106,9 @@ public static class DependencyInjection
         // S7 — carga inicial por planilha
         services.AddScoped<ICargaRepositorio, CargaRepositorio>();
         services.AddSingleton<IPlanilhas, PlanilhasClosedXml>();
+
+        // A guarda do corpo bruto dos webhooks (P22)
+        services.AddScoped<JobsIntegracao>();
 
         // Plataforma: pacotes de créditos vendidos pelo Stripe da LDNA
         services.AddScoped<IPlataformaRepositorio, PlataformaRepositorio>();

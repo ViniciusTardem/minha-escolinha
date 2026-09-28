@@ -1865,6 +1865,9 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("CorpoApagadoEm")
+                        .HasColumnType("datetime2(3)");
+
                     b.Property<Guid?>("Escolinha_ID")
                         .HasColumnType("uniqueidentifier");
 

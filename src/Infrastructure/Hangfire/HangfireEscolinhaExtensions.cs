@@ -17,7 +17,7 @@ public static class HangfireEscolinhaExtensions
     /// <summary>Processamento dos webhooks gravados (Asaas e WhatsApp): o request só grava o bruto e responde 200.</summary>
     public const string FilaWebhooks = "esc_webhooks";
 
-    /// <summary>Chamadas para fora (Asaas, WhatsApp) — servidor próprio: um parceiro fora do ar não atrasa o resto.</summary>
+    /// <summary>Chamadas para fora (Asaas e Stripe) — servidor próprio: um parceiro fora do ar não atrasa o resto.</summary>
     public const string FilaIntegracoes = "esc_integracoes";
 
     public static readonly string[] Filas = [FilaMensagens, FilaWebhooks, FilaPadrao];

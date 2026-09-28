@@ -12,7 +12,7 @@ Registro de progresso exigido pela seção 12.4 da spec. Os 81 entregáveis e os
 
 Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-ABERTO.md).
 
-## Resumo (28/09/2026, fim do S7)
+## Resumo (28/09/2026, depois do S7)
 
 | Fatia | Itens | Concluídos | Parciais | Situação |
 |---|---:|---:|---:|---|
@@ -20,7 +20,7 @@ Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-
 | S0 — Fundação | 12 | 12 | 0 | **Pronto** e commitado (a444b48). O `BL-M02-12` fechou no S1, com o valor por turma. |
 | S1 — Cadastro | 20 | 20 | 0 | **Pronto** e commitado (b6a4c3f). O `BL-M04-06` fechou no S2, com o aviso às famílias, e o `BL-M03-08` no S4, com o fim da recorrência. |
 | S2 — Mensageria e acesso | 14 | 14 | 0 | **Pronto no simulador** e commitado (c642f2f). A prova com um número real espera a conta na Meta (P34). |
-| S3 — Presença e evasão | 6 | 6 | 0 | **Pronto** e commitado (c6bdbc4). A reabertura da chamada sem sinal, pelo service worker, espera um navegador que confie no certificado (P37). |
+| S3 — Presença e evasão | 6 | 6 | 0 | **Pronto** e commitado (c6bdbc4). A reabertura da chamada sem sinal, pelo service worker, foi validada nesta máquina em 28/09/2026; falta repetir num Android e num iPhone, no servidor com HTTPS (P37). |
 | S4 — Financeiro | 8 | 8 | 0 | **Pronto no simulador** e commitado (44df87a). A prova com a sandbox da Asaas espera a conta da escolinha piloto (P41). |
 | S5 — Eventos e convocações | 10 | 10 | 0 | **Pronto no simulador** e commitado (ec42cc3). A resposta de uma família real pelo WhatsApp espera a conta na Meta (P34). |
 | S6 — Portal do responsável | 6 | 6 | 0 | **Pronto no simulador** e commitado (f9699c8). A prova com a sandbox da Asaas espera a conta (P41). |
@@ -161,7 +161,15 @@ Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-
 
 **Critério de pronto da spec:** o professor faz a chamada pelo celular na quadra, sem internet, e ao reconectar o alerta de faltas sai sozinho para o responsável certo.
 
-**Situação:** demonstrado no navegador, com o celular emulado sem rede. Uma parte ficou sem validar nesta máquina: abrir ou recarregar a página da chamada já sem sinal. Isso depende do service worker, que o navegador não registra com o certificado de desenvolvimento não confiável (P37). A fila das marcações não depende dele.
+**Situação:** demonstrado no navegador, com o celular emulado sem rede. Uma parte ficou sem validar no S3: abrir ou recarregar a página da chamada já sem sinal. Isso depende do service worker, que o navegador não registra com o certificado de desenvolvimento não confiável (P37). A fila das marcações não depende dele.
+
+**Validado em 28/09/2026** (P37), com um Chrome separado, sem janela, que aceita o certificado de desenvolvimento (`--ignore-certificate-errors`), num celular emulado:
+- o service worker registrou no escopo `/Chamada` e guardou a lista do dia, as sessões, a página "Sem sinal" e os arquivos da quadra;
+- sem rede, a sessão reabriu, a marcação entrou na fila ("Sem sinal · 1 pendente") e continuou lá depois de recarregar a página;
+- com a rede de volta, a fila foi enviada sozinha, e a presença chegou ao banco uma vez só;
+- o "Sair" apagou a cópia guardada.
+
+Falta repetir num Android e num iPhone, no servidor com HTTPS, antes do piloto ([`operacao/ROTEIRO-HOMOLOGACAO.md`](operacao/ROTEIRO-HOMOLOGACAO.md) §5).
 
 **Demonstrado no navegador em 27/09/2026, na escolinha A:**
 - **Quadra, em 375 px:** o login de gestão de B, que é professor em A, abriu a Chamada e viu o treino do dia.
@@ -197,7 +205,7 @@ Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-
 - **CA-5:** coberto. A falta seguinte, dentro da janela, gera o alerta suprimido e nenhuma mensagem.
 - **CA-6:** coberto. A ficha mostra qual alerta saiu, quando, para quem e o estado de cada mensagem (P09).
 - **CA-18:** consumidor `presenca.*`. O limite alterado vale na falta seguinte, sem reiniciar.
-- **CA-21:** coberto no servidor e na fila do aparelho. A reabertura da página sem sinal espera a validação do service worker (P37).
+- **CA-21:** coberto no servidor e na fila do aparelho. A reabertura da página sem sinal, pelo service worker, foi validada nesta máquina em 28/09/2026; falta o aparelho real (P37).
 - **R4:** o aviso de faltas vai aos responsáveis, nunca ao aluno.
 
 ## S4 — Financeiro: mensalidade, régua e conciliação · 8 itens · **Pronto no simulador em 28/09/2026**
@@ -427,4 +435,4 @@ Pendências do EX-01: P25 (plano recorrente), P26 (pacotes e preços comerciais)
 | CA-18 | Nenhum parâmetro exige nova entrega | S0 (+ um teste por consumidor em cada fatia) | **Parcial**: catálogo e "vale sem reiniciar" testados; no S1, o consumidor `turma.*` (a turma nova usa o valor alterado); no S2, o `mensagem.*` (janela de silêncio lida na hora do envio); no S3, o `presenca.*` (o limite alterado vale na falta seguinte); no S4, o `financeiro.*` (o dia de vencimento alterado vale na projeção seguinte, e a multa emitida fica a da emissão); no S5, o `convocacao.*` (a janela de disparo e o bloqueio de inadimplente valem no disparo e na escolha seguintes) |
 | CA-19 | Nenhuma comunicação dirigida ao menor | S2 (e S5, S6) | **Coberto no S2** (destinatário nunca é o aluno: enum e restrição no banco). **Repetido no S5** (as 50 convocações do CA-10 vão aos responsáveis) e **no S6** (as mensagens do fluxo do portal vão aos responsáveis, e o portal é só do responsável). |
 | CA-20 | Nenhum envio fora do catálogo de gatilhos | S2 (e S5, S6) | **Coberto no S2** (regra 1:1 por gatilho e teste de arquitetura: só o emissor cria mensagem, só o motor envia). **Repetido no S5** (convocação, lembrete, jogo alterado e jogo cancelado pelo emissor; o teste de arquitetura continua valendo) e **no S6** (o portal não cria mensagem: a resposta só recolhe a fila, pelo emissor) |
-| CA-21 | Chamada sem sinal, registro da quadra prevalece | S3 | **Coberto no S3** no servidor (teste) e na fila do aparelho (navegador). A reabertura da página sem sinal, pelo service worker, espera a validação (P37). |
+| CA-21 | Chamada sem sinal, registro da quadra prevalece | S3 | **Coberto no S3** no servidor (teste) e na fila do aparelho (navegador). A reabertura da página sem sinal, pelo service worker, foi validada nesta máquina em 28/09/2026 (Chrome com o certificado de desenvolvimento aceito); falta o Android e o iPhone no servidor com HTTPS (P37). |

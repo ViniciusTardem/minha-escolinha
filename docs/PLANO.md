@@ -8,7 +8,7 @@ Plano vivo, atualizado ao fim de cada fatia. Cada documento responde por uma coi
 | **Como** construir | A herança do AlternativaDepartamentoPessoal ([`HERANCA.md`](HERANCA.md)) |
 | **Em que ordem** e onde estamos | Este plano |
 
-Última atualização: **28/09/2026**. **As 8 fatias do piloto estão prontas: os 81 entregáveis.** F0, S0 a S7 e os extras EX-01 e EX-02 estão commitados na `main` (o S7 em `a262578`, pronto sem a planilha real). Nada foi enviado a remoto. O que falta depende de fora: as provas fora dos simuladores esperam as contas (da Meta para o S2 e o S5, P34; da Asaas para o S4 e o S6, P41), a carga da base real espera a planilha da escolinha (P21), e as pendências da §8 esperam decisão.
+Última atualização: **28/09/2026**. **As 8 fatias do piloto estão prontas: os 81 entregáveis.** F0, S0 a S7 e os extras EX-01 e EX-02 estão commitados na `main` (o S7 em `a262578`, pronto sem a planilha real). Nada foi enviado a remoto. Depois do S7: a guarda de 90 dias dos webhooks (P22, D96), a chamada sem sinal validada nesta máquina (P37) e a operação documentada em [`operacao/`](operacao/) (runbook, script do banco e roteiro de homologação). O que falta depende de fora: um servidor com HTTPS público, as contas (da Meta para o S2 e o S5, P34; da Asaas para o S4 e o S6, P41), a planilha da escolinha (P21) e as decisões da §8.
 
 ---
 
@@ -98,11 +98,12 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
 
 ### 4.0 Agora
 1. **Carregar a base real da escolinha piloto** (P21), assim que a planilha chegar: baixar o modelo em Importação (ou usar a planilha como está), enviar, mapear as colunas, conferir e confirmar. Depois, confirmar as primeiras mensalidades e mandar os convites em lote (§4.1). Se a planilha trouxer um campo que o modelo não tem, é a P54.
-2. **Provar o S4 com a sandbox da Asaas** (P41), assim que houver a conta sandbox e um endereço https público:
-   - gravar em user-secrets `Asaas:Modo = Api` e `Asaas:UrlPublica` (CLAUDE.md §7);
-   - vincular a chave sandbox na tela Conta de recebimento; o webhook é cadastrado sozinho;
-   - confirmar uma mensalidade, esperar a emissão, pagar na fatura da sandbox e conferir a conciliação e a régua parada.
-3. **Provar o S2 e o S5 com um número real** (P34), assim que a LDNA tiver:
+2. **Subir um servidor de homologação** com HTTPS público, pelo [`operacao/RUNBOOK.md`](operacao/RUNBOOK.md): o banco pelo script de `operacao/sql`, a publicação self-contained, as variáveis de ambiente, o certificado do Data Protection e o keep-alive. É o que destrava os itens 3 a 5: os webhooks da Asaas e da Meta só chamam endereço https público, e o service worker da chamada só registra com certificado válido. Depois, percorrer o [`operacao/ROTEIRO-HOMOLOGACAO.md`](operacao/ROTEIRO-HOMOLOGACAO.md).
+3. **Provar o S4 com a sandbox da Asaas** (P41), assim que houver a conta sandbox e um endereço https público. O passo a passo, conferido na documentação da Asaas, está no runbook (§6.1):
+   - gravar `Asaas:Modo = Api` e `Asaas:UrlPublica` (user-secrets ou variáveis de ambiente);
+   - cadastrar a chave Pix na conta sandbox e vincular a chave de API na tela Conta de recebimento; o webhook é cadastrado sozinho;
+   - confirmar uma mensalidade, esperar a emissão, pagar sem dinheiro (`confirmPaymentReceipt`) e conferir a conciliação e a régua parada.
+4. **Provar o S2 e o S5 com um número real** (P34), assim que a LDNA tiver:
    - a conta WhatsApp Business na Cloud API;
    - a URL pública em HTTPS para o webhook;
    - os templates aprovados;
@@ -113,10 +114,8 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
    - responda pelo celular;
    - confira a resposta e o log em Mensagens;
    - convoque um aluno cujo responsável tenha o número de teste, toque em "Vai" no celular e confira o painel do jogo mudando sozinho.
-4. **Validar a chamada sem sinal com o service worker** (P37):
-   - confiar o certificado de desenvolvimento (§7) e repetir o roteiro: abrir a lista com sinal, tirar a rede, recarregar a sessão e marcar;
-   - antes do piloto, repetir num Android e num iPhone, no servidor com HTTPS.
-5. **Stripe em modo de teste**, quando o responsável quiser sair do simulador:
+5. **A chamada sem sinal num Android e num iPhone** (P37), no servidor com HTTPS (roteiro de homologação §5). Nesta máquina ela já foi validada, com um Chrome que aceita o certificado de desenvolvimento (§9).
+6. **Stripe em modo de teste**, quando o responsável quiser sair do simulador:
    - criar um sandbox próprio no painel do Stripe (P27);
    - gravar em user-secrets `Stripe:Modo = Teste` e `Stripe:ChaveSecreta` (chave de teste, `sk_test_` ou `rk_test_` restrita);
    - para os webhooks em localhost, rodar o Stripe CLI (`stripe listen --forward-to https://localhost:7186/api/v1/webhooks/stripe`) e gravar o `whsec_` que ele mostrar em `Stripe:SegredoWebhook`. Sem isso, a volta do pagamento e a varredura confirmam as compras.
@@ -321,7 +320,8 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
   - em A, desde o S4: a conta de recebimento está vinculada (Sandbox), com o simulador. As 53 mensalidades de outubro foram projetadas: 50 a confirmar, a da Alice Pereira impedida (pagador sem CPF), a do Antônio Moura paga com divergência aceita (R$ 100,00) e a do Anthony Pacheco cancelada depois do estorno. Os parâmetros ajustados para a validação (emissão, lembrete e janela de silêncio) voltaram pela tela, com histórico. O simulador guarda as faturas em `%LOCALAPPDATA%\MinhaEscolinha\simulador-asaas.json`;
   - para validar o escopo do professor com um login real, o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A: a ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL, e o vínculo Professor em A foi criado;
   - em A, desde o S7: a importação de uma planilha de validação criou 4 alunos (Helena e Theo Martins, Sophia Pacheco e Laura Dias), com a Cláudia Martins, o Roberto Martins e a Fernanda Dias; a Sophia entrou no cadastro da Sabrina Pacheco. As mensalidades de outubro deles estão a confirmar. Há dois envios na Importação, um importado e um descartado;
-  - em A, desde o S6: a responsável Sabrina Pacheco ativou o acesso sem e-mail (login pelo CPF), com os vínculos do Anthony, do Benjamin e do Raul confirmados. As mensalidades de outubro do Benjamin (em aberto, com o Pix) e do Raul (paga pela fatura do simulador) foram emitidas. O Benjamin tem a resposta "Vai" pelo portal no jogo contra o Leões da Vila e a presença no treino de 28/09, às 19:00. A janela de silêncio e a emissão, mudadas para a validação, voltaram pela tela, com histórico.
+  - em A, desde o S6: a responsável Sabrina Pacheco ativou o acesso sem e-mail (login pelo CPF), com os vínculos do Anthony, do Benjamin e do Raul confirmados. As mensalidades de outubro do Benjamin (em aberto, com o Pix) e do Raul (paga pela fatura do simulador) foram emitidas. O Benjamin tem a resposta "Vai" pelo portal no jogo contra o Leões da Vila e a presença no treino de 28/09, às 19:00. A janela de silêncio e a emissão, mudadas para a validação, voltaram pela tela, com histórico;
+  - em A, desde a validação da P37 (28/09): a presença do Caio Wagner na sessão de 28/09, às 19:00, da turma "Sub-13 · noite", marcada sem sinal pela gestão de A.
 
 ---
 
@@ -335,7 +335,7 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | Conta Asaas sandbox (da escolinha piloto ou da LDNA, para o teste) e endereço https público; para produção, a conta da escolinha | A prova do S4 fora do simulador; a cobrança real | P21, P41 |
 | Confirmar com a escolinha: os grupos do painel de pagamentos; se alguma turma é cobrada fora do mês; se a mudança no cadastro atualiza o cliente na Asaas; se o piloto precisa reabrir a mensalidade estornada | Nada bloqueia; seguem os encaminhamentos provisórios | P40, P42, P43, P44 |
 | Pacote de créditos (comercial) | Envio real (S2) | P06, P21 |
-| Hospedagem com HTTPS público | Webhooks do WhatsApp e da Asaas | P21 |
+| Hospedagem com HTTPS público (o passo a passo está no [`operacao/RUNBOOK.md`](operacao/RUNBOOK.md)) | Webhooks do WhatsApp e da Asaas; a chamada sem sinal em aparelho real | P21, P37 |
 | Identidade visual (logo, cor) | Trocar a marca provisória | D17 |
 | Confirmar os valores provisórios dos parâmetros com a escolinha | Nada bloqueia; a tela marca os provisórios | P05 |
 | Chaves de teste do Stripe (sandbox próprio) e, para produção, chave de produção + segredo do webhook | Sair do simulador (EX-01) | P27 |
@@ -345,7 +345,7 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | Decidir: a mudança de horário da turma avisa as famílias ("Treino remarcado")? A gestão é avisada das respostas livres? "SAIR" desliga o recebimento? | Nada bloqueia; seguem os encaminhamentos provisórios | P33, P35, P36 |
 | Confirmar com a escolinha: a meta de frequência da turma entra no risco? O risco exige um mínimo de sessões? A quadra usa aparelho compartilhado? | Nada bloqueia; seguem os encaminhamentos provisórios | P32, P38, P39 |
 | Decidir com a escolinha: mudar o horário do jogo pede nova confirmação? O piloto registra o placar? No jogo que junta turmas, cada professor registra só a turma dele? A resposta por texto à convocação aparece no painel? | Nada bloqueia; seguem os encaminhamentos provisórios | P45, P46, P47, P48 |
-| Validar a chamada sem sinal com o service worker: certificado de desenvolvimento confiável e, antes do piloto, Android e iPhone no servidor com HTTPS | A reabertura da chamada sem sinal (CA-21) | P37 |
+| A chamada sem sinal num Android e num iPhone, no servidor com HTTPS (nesta máquina já foi validada) | A reabertura da chamada sem sinal no aparelho real (CA-21) | P37 |
 | Decidir com a escolinha: o portal mostra a imagem do QR code do Pix? Quem não é pagador nem recebe a cobrança vê as mensalidades? A mudança de resposta perto do jogo avisa o professor? | Nada bloqueia; seguem os encaminhamentos provisórios | P49, P50, P51 |
 | Confirmar com a planilha real: ela diz quem paga? Traz endereço ou outro campo fora do modelo? E decidir se o lote de importação esquecido é descartado por um job diário | Nada bloqueia; seguem os encaminhamentos provisórios | P52, P53, P54 |
 
@@ -402,3 +402,4 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | 28/09/2026 | **Defeitos achados e corrigidos:** <ul><li>O repositório filtrava e ordenava os lotes depois da projeção, o que o EF não traduz (achado nos testes).</li><li>"2º responsável" e "Celular 2" não eram reconhecidos no mapeamento.</li><li>Em 320 px, as tabelas rolavam de 1 a 4 px, e um rótulo passava do cartão.</li></ul> |
 | 28/09/2026 | **Resultado:** build sem aviso; 420 testes passando (14 do S7); 0 classes faltando; nenhuma rolagem horizontal, nem das tabelas, em 320 e 375 px nas telas do S7, no claro e no escuro. **Os 81 entregáveis do piloto estão prontos.** |
 | 28/09/2026 | **Commit do S7** na `main` (`a262578`), com a autorização por fatia do responsável ("continuar"). Fim das fatias do piloto; a lista de pendências foi entregue ao responsável, como pedido. |
+| 28/09/2026 | **Pendências sem dependência externa** (pedido do responsável: "deixa o WhatsApp por último, pode seguir"): <ul><li>**P37 validada nesta máquina:** um Chrome separado, sem janela, que aceita o certificado de desenvolvimento, registrou o service worker; a sessão reabriu sem rede, a marcação ficou na fila depois de recarregar, a fila saiu ao voltar a rede e o "Sair" apagou a cópia guardada. Falta o aparelho real.</li><li>**P22 aplicada** (D96): o job diário `webhooks-limpar-corpo` apaga o corpo bruto dos webhooks encerrados há mais de 90 dias, e a linha fica. Migration só aditiva (`WebhookCorpoApagado`), com teste.</li><li>**Operação documentada** em `docs/operacao/`, portada do DP: o runbook (publicação, variáveis, integrações, jobs, problemas e volta de versão), o script do banco e do login, e o roteiro de homologação por fatia, com os critérios de aceite.</li><li>**Conferência na documentação da Asaas:** os endpoints da sandbox do runbook; e a conta sem chave Pix, que recebe um Pix que só vale até as 23:59 do dia. O sistema já tratava a validade; D90 corrigida e o ponto entrou na prova da P41.</li></ul> |

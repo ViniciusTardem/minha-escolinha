@@ -32,6 +32,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 ├── global.json · Directory.Build.props (prefixo MinhaEscolinha) · Directory.Packages.props (versões fixas)
 ├── .config/dotnet-tools.json      (dotnet-ef 9.0.20)
 ├── docs/  PLANO · HERANCA · BACKLOG · DECISOES-EM-ABERTO · especificacao/ · design/
+│          operacao/ (RUNBOOK do servidor, script do banco, roteiro de homologação)
 │          metronic/ (referência local do Metronic, FORA do git: 61 MB, licença comercial)
 ├── src/
 │   ├── Domain/          entidades e regras puras (sem pacotes)
@@ -85,7 +86,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - o `EscolinhaInterceptor` carimba a escolinha no insert e lança exceção em gravação sem contexto, em outra escolinha ou trocando `Escolinha_ID`;
   - na requisição, o contexto vem do `ContextoEscolinhaMiddleware`; em plataforma, jobs e startup, do `IExecutorEscolinha`, que abre um escopo com o contexto definido;
   - `IgnoreQueryFilters()` só em `AcessoRepositorio.cs` e `ConsultasPlataforma.cs`. Um teste falha em qualquer outro arquivo. Aumentar a lista é decisão registrada, nunca atalho;
-  - globais de propósito, fora do filtro: a identidade (`Pessoa`, `Credencial`), o webhook bruto (`WebhookRecebido`, que guarda a escolinha do aviso da Asaas numa coluna comum), os templates da plataforma (`TemplateMensagem`, D48) e o índice `RastreioWhatsApp`, que guarda só o id da Meta, a escolinha e a mensagem (D50).
+  - globais de propósito, fora do filtro: a identidade (`Pessoa`, `Credencial`), o webhook bruto (`WebhookRecebido`, que guarda a escolinha do aviso da Asaas numa coluna comum; o corpo do encerrado sai depois de 90 dias, D96), os templates da plataforma (`TemplateMensagem`, D48) e o índice `RastreioWhatsApp`, que guarda só o id da Meta, a escolinha e a mensagem (D50).
 - **Credenciais só em user-secrets** (dev) ou variável de ambiente (produção). O login `sa` do SQL local só vale para desenvolvimento.
 
 ---
@@ -281,6 +282,7 @@ dotnet dev-certs https --trust
 
 ## 8. Avisos operacionais
 
+- **Servidor:** publicação, variáveis de ambiente, integrações, jobs e problemas comuns em [`docs/operacao/RUNBOOK.md`](docs/operacao/RUNBOOK.md); o banco pelo script de `docs/operacao/sql`; a validação antes da produção em [`docs/operacao/ROTEIRO-HOMOLOGACAO.md`](docs/operacao/ROTEIRO-HOMOLOGACAO.md). Mudou uma variável, um job ou uma trava? Atualize o runbook na mesma entrega.
 - **.NET 9 perde o suporte em 10/11/2026.** O projeto está em .NET 9 porque o servidor só tem esse runtime (D02). Antes dessa data, instale o Hosting Bundle do .NET 10 no servidor e suba o projeto, ou publique self-contained (P24).
 - **Production exige certificado do Data Protection:** `DataProtection:CertificadoArquivo` e `DataProtection:CertificadoSenha`. Sem ele, o app **não sobe**. Perder o certificado significa perder as chaves Asaas de todas as escolinhas, e cada uma terá de vincular a conta de novo.
 - **WhatsApp** (S2): roda em modo **Simulado** (`/dev/whatsapp`) até haver conta na Meta (P34). Trava de ambiente (`GuardaWhatsApp`):
@@ -299,7 +301,7 @@ dotnet dev-certs https --trust
   - **Producao**: só em Production, com `Stripe:ConfirmarProducao = true`, chave `sk_live_`/`rk_live_` e `Stripe:SegredoWebhook`;
   - em produção, cadastre no painel do Stripe o endpoint `https://<site>/api/v1/webhooks/stripe` com os 4 eventos de Checkout (a tela Plataforma › Pacotes de créditos mostra a URL e a lista).
 - **`docs/metronic/` não está no git.** Para rodar `npm run metronic` em outra máquina, copie de `Projetos\SaaS\Adama\docs\metronic`. O recorte servido (`wwwroot/assets`) já está versionado.
-- **SQL Express:** teto de 10 GB por banco (P22). O banco de desenvolvimento está com `AUTO_CLOSE` desligado, porque o Hangfire consulta o banco sem parar.
+- **SQL Express:** teto de 10 GB por banco (P22). O corpo bruto dos webhooks encerrados sai depois de 90 dias (D96). O banco de desenvolvimento está com `AUTO_CLOSE` desligado, porque o Hangfire consulta o banco sem parar.
 - **O banco de desenvolvimento tem dados de validação.** Não use esses dados em demonstração ao cliente sem limpar:
   - as escolinhas A e B, com os seus gestores;
   - em A, os cadastros do S1 e a massa de demonstração;
@@ -309,11 +311,13 @@ dotnet dev-certs https --trust
   - em A, desde o S4: a conta de recebimento (Sandbox, com o simulador) e as mensalidades de outubro da validação: 50 a confirmar, 1 impedida, 1 paga com divergência aceita e 1 cancelada depois do estorno. As faturas do simulador ficam em `%LOCALAPPDATA%\MinhaEscolinha\simulador-asaas.json`;
   - em A, desde o S5: os jogos do fim de semana de 03 e 04/10 (quatro da gestão, um cancelado e um alterado, e um do professor), com 49 convocações, as respostas da validação e os avisos às famílias;
   - em A, desde o S6: a responsável Sabrina Pacheco tem acesso (login pelo CPF), com os vínculos do Anthony, do Benjamin e do Raul confirmados, e as mensalidades de outubro do Benjamin (em aberto, com o Pix) e do Raul (paga) emitidas;
-  - em A, desde o S7: 4 alunos de uma planilha de validação (a Sophia entrou no cadastro da Sabrina), com as mensalidades de outubro a confirmar, e dois envios na Importação (um importado, um descartado).
+  - em A, desde o S7: 4 alunos de uma planilha de validação (a Sophia entrou no cadastro da Sabrina), com as mensalidades de outubro a confirmar, e dois envios na Importação (um importado, um descartado);
+  - em A, desde a validação da P37: a presença do Caio Wagner na sessão de 28/09, às 19:00, da turma "Sub-13 · noite", marcada sem sinal.
 - **Importação (S7):** o lote aberto guarda a planilha cifrada com o Data Protection, como a chave Asaas. Perder o certificado em produção torna o lote aberto ilegível: é só enviar a planilha de novo.
-- **Chamada sem sinal:** o navegador só registra o service worker com certificado confiável. Em desenvolvimento, rode `dotnet dev-certs https --trust`; sem isso, a fila funciona com a página aberta, mas a página não reabre sem sinal (P37).
+- **Chamada sem sinal:** o navegador só registra o service worker com certificado confiável. Em desenvolvimento, rode `dotnet dev-certs https --trust`; sem isso, a fila funciona com a página aberta, mas a página não reabre sem sinal (P37). Para validar sem confiar o certificado, abra pelo Playwright um Chrome separado com `--ignore-certificate-errors` (`browserType().launch({ channel: 'chrome', args: [...] })`), feche-o no fim e confira que não sobrou processo. Falta o teste num Android e num iPhone, no servidor com HTTPS.
 - **Jobs recorrentes** (horário de Brasília, registrados no startup):
   - `sessoes-gerar-horizonte`, às 03:15: gera as sessões de treino até o fim do mês seguinte, uma escolinha por vez (D31);
+  - `webhooks-limpar-corpo`, às 04:30: apaga o corpo bruto dos webhooks encerrados (processados, ignorados ou com falha definitiva) recebidos há mais de 90 dias; a linha fica (P22, D96);
   - `stripe-varredura-compras`, a cada 20 minutos: confere as compras de créditos pendentes. Sai quando o Stripe está desligado (`Stripe:Habilitado = false`);
   - `mensagens-varredura`, a cada 5 minutos, uma escolinha por vez: solta as mensagens retidas quando o saldo volta e reenfileira as que venceram (D45);
   - `mensalidades-rotina`, às 06:30, uma escolinha por vez: projeção, vencidas, régua e emissões (D66), e a busca do Pix das mensalidades em aberto sem Pix ou com o Pix vencido (D90). As mensagens da régua esperam o fim da janela de silêncio;

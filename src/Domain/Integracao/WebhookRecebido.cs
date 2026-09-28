@@ -7,7 +7,10 @@ public enum SituacaoWebhook
     Recebido = 10,
     Processado = 20,
 
-    /// <summary>Evento que não é nosso ou que não pede ação (o motivo fica na observação). Nunca é apagado.</summary>
+    /// <summary>
+    /// Evento que não é nosso ou que não pede ação (o motivo fica na observação). A linha nunca é apagada; o corpo sai
+    /// depois de <see cref="WebhookRecebido.DiasDoCorpo"/> dias, como o dos outros encerrados (P22).
+    /// </summary>
     Ignorado = 30,
 
     /// <summary>Falha definitiva no processamento (a retentável volta para a fila).</summary>
@@ -18,12 +21,18 @@ public enum SituacaoWebhook
 /// Chamada de webhook gravada BRUTA antes de qualquer interpretação e respondida com 200 na hora (regra de ouro 6):
 /// um erro nosso de leitura não perde o evento, dá para reprocessar a partir do bruto. Global: a escolinha sai do
 /// conteúdo, no processamento. Único por (origem, evento): o reenvio do mesmo evento não tem efeito.
-/// Serve ao Stripe hoje e à Asaas e ao WhatsApp nas fatias S2 e S4.
+/// Serve ao Stripe, à Asaas e ao WhatsApp. O corpo do encerrado sai depois de <see cref="DiasDoCorpo"/> dias (P22).
 /// </summary>
 public class WebhookRecebido
 {
     public const string OrigemStripe = "stripe";
     public const string OrigemAsaas = "asaas";
+
+    /// <summary>
+    /// Por quantos dias o corpo bruto do webhook encerrado fica guardado (P22): o bastante para reprocessar e investigar.
+    /// Depois, só a linha fica: o SQL Express tem teto de 10 GB, e o corpo traz celular e nome das famílias.
+    /// </summary>
+    public const int DiasDoCorpo = 90;
 
     public const int TamanhoOrigem = 20;
     public const int TamanhoEvento = 255;
@@ -52,6 +61,9 @@ public class WebhookRecebido
     public DateTime? ProcessadoEm { get; private set; }
     public int Tentativas { get; private set; }
     public string? Observacao { get; private set; }
+
+    /// <summary>Quando o corpo bruto foi apagado pela guarda de <see cref="DiasDoCorpo"/> dias; a linha fica, sem o conteúdo.</summary>
+    public DateTime? CorpoApagadoEm { get; private set; }
 
     public bool Encerrado => Situacao is SituacaoWebhook.Processado or SituacaoWebhook.Ignorado or SituacaoWebhook.Falhou;
 

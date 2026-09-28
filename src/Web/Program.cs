@@ -21,6 +21,7 @@ using MinhaEscolinha.Infrastructure.Data.Contexto;
 using MinhaEscolinha.Infrastructure.Data.Seed;
 using MinhaEscolinha.Infrastructure.Eventos;
 using MinhaEscolinha.Infrastructure.Financeiro;
+using MinhaEscolinha.Infrastructure.Integracao;
 using MinhaEscolinha.Infrastructure.Mensageria;
 using MinhaEscolinha.Infrastructure.Plataforma;
 using MinhaEscolinha.Infrastructure.Seguranca;
@@ -193,6 +194,8 @@ try
         JobsFinanceiro.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
         // Convocações: o lembrete a quem não respondeu e o "sem resposta" no início do jogo, de 15 em 15 minutos (S5)
         JobsConvocacoes.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
+        // Webhooks: o corpo bruto dos encerrados sai depois de 90 dias (P22)
+        JobsIntegracao.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
     }
 
     // ── Pipeline ──

@@ -125,6 +125,17 @@ O S7 trouxe um pacote NuGet, o **ClosedXML 0.105.1**, na mesma versão que o DP 
 | Conferência e gravação única | `Application/Carga` (`ConferenciaImportacao`, função pura; `ServicoImportacao`) | Os casos de uso do DP com `ResultadoOperacao`. A conferência é refeita na confirmação (regra de ouro 4), e a versão de linha do lote impede a confirmação dupla, como as compras de créditos (D27). |
 | Planilha cifrada | `ImportacaoLote.Conteudo`, com o `IProtetorSegredos` (Data Protection) | O protetor da chave Asaas (X04), usado aqui para o dado de saúde e o CPF enquanto o lote está aberto (D95). |
 
+### 2.8 Depois do S7: a operação (28/09/2026)
+
+Sem dependência nova.
+
+| Peça | Onde | Relação com o DP |
+|---|---|---|
+| Runbook | [`operacao/RUNBOOK.md`](operacao/RUNBOOK.md) | Portado do `docs/operacao/RUNBOOK.md` do DP, com as mesmas seções: o que vai para o servidor, o DBA antes da primeira subida, a publicação self-contained, as variáveis de ambiente, a primeira subida, o keep-alive, os problemas comuns e a volta de versão. **Novo:** as três integrações (Asaas, WhatsApp e Stripe) com as travas de ambiente, e a prova na sandbox da Asaas e com o número de teste da Meta. |
+| Script do banco | [`operacao/sql/01-banco-e-login.sql`](operacao/sql/01-banco-e-login.sql) | O `02-banco-do-dp.sql` do DP: banco, login com política de senha, dono do banco e leitura sem bloqueio. **Ajustes:** a ordenação é a do banco de desenvolvimento e do de testes (`SQL_Latin1_General_CP1_CI_AS`), e o `AUTO_CLOSE` sai desligado (o SQL Express o liga). O login só de leitura do R&S não existe aqui. |
+| Roteiro de homologação | [`operacao/ROTEIRO-HOMOLOGACAO.md`](operacao/ROTEIRO-HOMOLOGACAO.md) | O roteiro do DP (lista para marcar, por área). Aqui ele segue as fatias e aponta o critério de aceite provado em cada item. |
+| Guarda do corpo bruto dos webhooks | `Infrastructure/Integracao/JobsIntegracao` (job `webhooks-limpar-corpo`) | A regra de ouro 6 do DP grava o corpo bruto, e o DP não o apaga. Aqui, com o teto de 10 GB do SQL Express, o corpo dos encerrados sai depois de 90 dias, e a linha fica (P22, D96). |
+
 ## 3. Integrações existentes nos projetos locais
 
 Varredura por **conteúdo** em todo `C:\Users\vinic\Documents\Projetos`, em 26/09/2026:
