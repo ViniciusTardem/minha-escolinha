@@ -62,15 +62,17 @@ public class EquipeRepositorio(EscolinhaDbContext contexto) : IEquipeRepositorio
 public class TurmasRepositorio(EscolinhaDbContext contexto) : ITurmasRepositorio
 {
     public async Task<IReadOnlyList<Local>> ListarLocaisAsync(CancellationToken ct = default) =>
-        await contexto.Locais.AsNoTracking().OrderBy(l => l.Nome).ToListAsync(ct);
+        await contexto.Locais.AsNoTracking().Include(l => l.Horarios).OrderBy(l => l.Nome).ToListAsync(ct);
 
     public Task<Local?> ObterLocalAsync(Guid id, CancellationToken ct = default) =>
-        contexto.Locais.FirstOrDefaultAsync(l => l.Local_ID == id, ct);
+        contexto.Locais.Include(l => l.Horarios).FirstOrDefaultAsync(l => l.Local_ID == id, ct);
 
     public Task<bool> NomeLocalEmUsoAsync(string nome, Guid? excetoId, CancellationToken ct = default) =>
         contexto.Locais.AnyAsync(l => l.Nome == nome && (excetoId == null || l.Local_ID != excetoId), ct);
 
     public void AdicionarLocal(Local local) => contexto.Locais.Add(local);
+    public void AdicionarFaixaLocal(FaixaHorarioLocal faixa) => contexto.Set<FaixaHorarioLocal>().Add(faixa);
+    public void RemoverFaixaLocal(FaixaHorarioLocal faixa) => contexto.Set<FaixaHorarioLocal>().Remove(faixa);
 
     public async Task<IReadOnlyList<Turma>> ListarTurmasAsync(EscopoTurmas escopo, bool incluirEncerradas, CancellationToken ct = default)
     {

@@ -106,6 +106,7 @@ public static class DependencyInjection
         // S7 — carga inicial por planilha
         services.AddScoped<ICargaRepositorio, CargaRepositorio>();
         services.AddSingleton<IPlanilhas, PlanilhasClosedXml>();
+        services.AddScoped<JobsCarga>();
 
         // A guarda do corpo bruto dos webhooks (P22)
         services.AddScoped<JobsIntegracao>();

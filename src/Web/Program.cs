@@ -196,6 +196,8 @@ try
         JobsConvocacoes.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
         // Webhooks: o corpo bruto dos encerrados sai depois de 90 dias (P22)
         JobsIntegracao.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
+        // Importação: o lote aberto e esquecido é descartado todo dia (P53)
+        MinhaEscolinha.Infrastructure.Carga.JobsCarga.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
     }
 
     // ── Pipeline ──

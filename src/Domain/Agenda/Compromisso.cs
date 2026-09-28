@@ -1,6 +1,7 @@
 using System.Globalization;
 using MinhaEscolinha.Domain.Comum;
 using MinhaEscolinha.Domain.Equipe;
+using MinhaEscolinha.Domain.Turmas;
 
 namespace MinhaEscolinha.Domain.Agenda;
 
@@ -43,7 +44,10 @@ public enum TipoConflito
     ProfessorIndisponivel = 30,
 
     /// <summary>O local já recebe outro treino (ou jogo) no mesmo horário (P31, aprovado pelo responsável).</summary>
-    LocalOcupado = 40
+    LocalOcupado = 40,
+
+    /// <summary>O horário não cabe nos horários disponíveis do local (P31: a quadra alugada só em certos horários).</summary>
+    ForaDoHorarioDoLocal = 50
 }
 
 /// <summary>Um alerta de agenda. Sinaliza, não bloqueia (R9): quem marca decide seguir.</summary>
@@ -119,6 +123,21 @@ public static class DetectorConflitos
         foreach (var outra in outrasNoLocal.Where(o => o.Horario.Sobrepoe(horario)))
             yield return new ConflitoAgenda(TipoConflito.LocalOcupado,
                 $"{horario.Descricao()}: {local} já recebe a turma {outra.Turma} ({outra.Horario.Descricao()}).");
+    }
+
+    /// <summary>Os horários propostos da turma que caem fora dos horários disponíveis do local (P31).</summary>
+    public static IEnumerable<ConflitoAgenda> ForaDoHorarioDoLocal(Local local, IReadOnlyCollection<HorarioSemanal> horarios) =>
+        horarios.OrderBy(h => DiasSemana.Posicao(h.Dia)).ThenBy(h => h.Inicio)
+            .Where(h => !local.Cobre(h.Dia, h.Inicio, h.Fim))
+            .Select(h => new ConflitoAgenda(TipoConflito.ForaDoHorarioDoLocal,
+                $"{h.Descricao()}: fora dos horários de {local.Nome} ({local.ResumoHorarios()})."));
+
+    /// <summary>O compromisso datado (o jogo) fora dos horários disponíveis do local (P31).</summary>
+    public static IEnumerable<ConflitoAgenda> ForaDoHorarioDoLocal(Local local, DateTime inicio, DateTime fim)
+    {
+        if (local.Cobre(inicio.DayOfWeek, TimeOnly.FromDateTime(inicio), TimeOnly.FromDateTime(fim))) yield break;
+        yield return new ConflitoAgenda(TipoConflito.ForaDoHorarioDoLocal,
+            $"{inicio.ToString("dd/MM HH:mm", PtBr)}: fora dos horários de {local.Nome} ({local.ResumoHorarios()}).");
     }
 
     /// <summary>

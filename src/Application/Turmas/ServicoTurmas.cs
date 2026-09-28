@@ -22,13 +22,18 @@ public class ServicoLocais(ITurmasRepositorio repositorio, RegistroDeAlteracoes 
         var turmas = await repositorio.ListarTurmasAsync(EscopoTurmas.Tudo, incluirEncerradas: false, ct);
         var porLocal = turmas.GroupBy(t => t.Local_ID).ToDictionary(g => g.Key, g => g.Count());
         return locais.Select(l => new LocalResposta(l.Local_ID, l.Nome, l.Endereco, l.Capacidade, l.Observacao,
-            porLocal.GetValueOrDefault(l.Local_ID))).ToList();
+            porLocal.GetValueOrDefault(l.Local_ID), l.ResumoHorarios())).ToList();
     }
 
     public async Task<LocalRequisicao?> ParaEdicaoAsync(Guid id, CancellationToken ct = default)
     {
         if (await repositorio.ObterLocalAsync(id, ct) is not { } local) return null;
-        var r = new LocalRequisicao { Id = local.Local_ID, Nome = local.Nome, Capacidade = local.Capacidade, Observacao = local.Observacao };
+        var r = new LocalRequisicao
+        {
+            Id = local.Local_ID, Nome = local.Nome, Capacidade = local.Capacidade, Observacao = local.Observacao,
+            Horarios = local.Horarios.OrderBy(h => DiasSemana.Posicao(h.DiaSemana)).ThenBy(h => h.Inicio)
+                .Select(h => new Equipe.FaixaRequisicao { DiaSemana = h.DiaSemana, Inicio = h.Inicio, Fim = h.Fim }).ToList()
+        };
         Cadastros.PreencherEndereco(r, local.Endereco);
         return r;
     }
@@ -59,6 +64,21 @@ public class ServicoLocais(ITurmasRepositorio repositorio, RegistroDeAlteracoes 
         local.Capacidade = r.Capacidade;
         local.Observacao = Cadastros.Vazio(r.Observacao);
         local.Endereco = Cadastros.Endereco(r);
+        // P31: os horários do local trocam inteiros (a lista substitui a anterior), como a disponibilidade do professor.
+        foreach (var faixa in local.Horarios.ToList())
+        {
+            local.Horarios.Remove(faixa);
+            repositorio.RemoverFaixaLocal(faixa);
+        }
+        foreach (var f in r.Horarios.Where(f => !f.Vazia))
+        {
+            var faixa = new FaixaHorarioLocal
+            {
+                FaixaHorarioLocal_ID = Guid.NewGuid(), Local_ID = local.Local_ID, DiaSemana = f.DiaSemana, Inicio = f.Inicio!.Value, Fim = f.Fim!.Value
+            };
+            repositorio.AdicionarFaixaLocal(faixa);
+            local.Horarios.Add(faixa);
+        }
 
         if (antes is null) registro.Registrar(nameof(Local), local.Local_ID, "Criação", null, Descrever(local));
         else if (!registro.SeMudou(nameof(Local), local.Local_ID, "Cadastro", antes, Descrever(local))) return ResultadoOperacao.Ok("Nada mudou.");
@@ -69,7 +89,7 @@ public class ServicoLocais(ITurmasRepositorio repositorio, RegistroDeAlteracoes 
 
     private static string Descrever(Local l) =>
         $"{l.Nome} · {(string.IsNullOrEmpty(l.Endereco.Resumo()) ? "sem endereço" : l.Endereco.Resumo())}" +
-        (l.Capacidade is { } c ? $" · {c} pessoas" : string.Empty);
+        (l.Capacidade is { } c ? $" · {c} pessoas" : string.Empty) + $" · horários: {l.ResumoHorarios()}";
 }
 
 public record OpcaoCadastro(Guid Id, string Nome, string? Detalhe = null);
@@ -367,7 +387,8 @@ public class ServicoTurmas(
         return
         [
             .. DetectorConflitos.ParaHorarios(professor, horarios, ocupados, ocorrencias),
-            .. DetectorConflitos.LocalOcupado(local?.Nome ?? "O local", horarios, ocupadosNoLocal)
+            .. DetectorConflitos.LocalOcupado(local?.Nome ?? "O local", horarios, ocupadosNoLocal),
+            .. (local is null ? [] : DetectorConflitos.ForaDoHorarioDoLocal(local, horarios))
         ];
     }
 

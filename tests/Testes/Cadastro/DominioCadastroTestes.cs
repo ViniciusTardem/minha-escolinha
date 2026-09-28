@@ -400,3 +400,39 @@ public class DetectorConflitosTestes
         Assert.Equal(new HashSet<Guid> { a.Id, b.Id }, DetectorConflitos.SobrepostosPorLocal([a, b, c, d, e, f]));
     }
 }
+
+/// <summary>P31: os horários disponíveis do local sinalizam o treino ou o jogo fora deles (R9: não bloqueiam).</summary>
+public class HorariosDoLocalTestes
+{
+    private static Local Quadra(params (DayOfWeek Dia, int De, int Ate)[] faixas) => new()
+    {
+        Nome = "Quadra alugada",
+        Horarios = faixas.Select(f => new FaixaHorarioLocal { DiaSemana = f.Dia, Inicio = new TimeOnly(f.De, 0), Fim = new TimeOnly(f.Ate, 0) }).ToList()
+    };
+
+    [Fact]
+    public void Sem_horario_declarado_o_local_esta_sempre_disponivel()
+    {
+        var livre = Quadra();
+        Assert.Equal("Sempre disponível", livre.ResumoHorarios());
+        Assert.Empty(DetectorConflitos.ForaDoHorarioDoLocal(livre, [new HorarioSemanal(DayOfWeek.Tuesday, new TimeOnly(18, 0), new TimeOnly(19, 0))]));
+    }
+
+    [Fact]
+    public void O_treino_e_o_jogo_fora_dos_horarios_do_local_geram_alerta()
+    {
+        var quadra = Quadra((DayOfWeek.Saturday, 8, 12), (DayOfWeek.Tuesday, 17, 20));
+        var alertas = DetectorConflitos.ForaDoHorarioDoLocal(quadra,
+        [
+            new HorarioSemanal(DayOfWeek.Tuesday, new TimeOnly(18, 0), new TimeOnly(19, 0)),   // cabe
+            new HorarioSemanal(DayOfWeek.Thursday, new TimeOnly(18, 0), new TimeOnly(19, 0)),  // quinta não tem
+            new HorarioSemanal(DayOfWeek.Tuesday, new TimeOnly(19, 30), new TimeOnly(20, 30))  // passa das 20:00
+        ]).ToList();
+        Assert.Equal(2, alertas.Count);
+        Assert.All(alertas, a => Assert.Equal(TipoConflito.ForaDoHorarioDoLocal, a.Tipo));
+        Assert.Contains("Ter 17:00–20:00", alertas[0].Descricao);
+
+        Assert.Empty(DetectorConflitos.ForaDoHorarioDoLocal(quadra, new DateTime(2026, 10, 3, 9, 0, 0), new DateTime(2026, 10, 3, 10, 0, 0)));
+        Assert.Single(DetectorConflitos.ForaDoHorarioDoLocal(quadra, new DateTime(2026, 10, 3, 11, 30, 0), new DateTime(2026, 10, 3, 12, 30, 0)));
+    }
+}

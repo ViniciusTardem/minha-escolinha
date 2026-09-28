@@ -24,7 +24,7 @@ public class LocaisController(ServicoLocais servico) : Controller
     public IActionResult Novo()
     {
         ViewData["ModuloAtivo"] = Modulo;
-        return View("Formulario", new LocalRequisicao());
+        return View("Formulario", ComLinhaEmBranco(new LocalRequisicao()));
     }
 
     [HttpGet]
@@ -33,7 +33,7 @@ public class LocaisController(ServicoLocais servico) : Controller
     {
         ViewData["ModuloAtivo"] = Modulo;
         var local = await servico.ParaEdicaoAsync(id, ct);
-        return local is null ? NotFound() : View("Formulario", local);
+        return local is null ? NotFound() : View("Formulario", ComLinhaEmBranco(local));
     }
 
     [HttpPost]
@@ -45,10 +45,17 @@ public class LocaisController(ServicoLocais servico) : Controller
         {
             ViewData["ModuloAtivo"] = Modulo;
             ModelState.AdicionarErro(resultado);
-            return View("Formulario", requisicao);
+            return View("Formulario", ComLinhaEmBranco(requisicao));
         }
 
         TempData[ChavesTempData.Sucesso] = resultado.Mensagem;
         return Url.IsLocalUrl(voltar) ? LocalRedirect(voltar) : RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>Sempre uma linha de horário em branco no fim: sem JS, é por ela que se acrescenta um horário (P31).</summary>
+    private static LocalRequisicao ComLinhaEmBranco(LocalRequisicao requisicao)
+    {
+        if (requisicao.Horarios.Count == 0 || !requisicao.Horarios[^1].Vazia) requisicao.Horarios.Add(new Application.Equipe.FaixaRequisicao());
+        return requisicao;
     }
 }

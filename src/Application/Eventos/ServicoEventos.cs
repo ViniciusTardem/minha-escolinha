@@ -299,6 +299,7 @@ public class ServicoEventos(
             alertas.AddRange(DetectorConflitos.ParaCompromisso(professor, inicio, fim, compromissos.Where(c => c.ProfessorId == professorId)));
         var local = await turmas.ObterLocalAsync(localId, ct);
         alertas.AddRange(DetectorConflitos.LocalOcupado(local?.Nome ?? "O local", inicio, fim, compromissos.Where(c => c.LocalId == localId)));
+        if (local is not null) alertas.AddRange(DetectorConflitos.ForaDoHorarioDoLocal(local, inicio, fim));
         return alertas;
     }
 

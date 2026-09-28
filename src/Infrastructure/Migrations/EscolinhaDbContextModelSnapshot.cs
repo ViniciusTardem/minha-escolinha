@@ -2854,6 +2854,42 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.FaixaHorarioLocal", b =>
+                {
+                    b.Property<Guid>("FaixaHorarioLocal_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<int>("DiaSemana")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly>("Fim")
+                        .HasColumnType("time(0)");
+
+                    b.Property<TimeOnly>("Inicio")
+                        .HasColumnType("time(0)");
+
+                    b.Property<Guid>("Local_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("FaixaHorarioLocal_ID")
+                        .HasName("PK_FaixaHorarioLocal");
+
+                    b.HasIndex("Local_ID");
+
+                    b.HasIndex("Escolinha_ID", "Local_ID")
+                        .HasDatabaseName("IX_FaixaHorarioLocal_Escolinha_Local");
+
+                    b.ToTable("FaixaHorarioLocal", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_FaixaHorarioLocal_Horario", "[Fim] > [Inicio]");
+                        });
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.HorarioTurma", b =>
                 {
                     b.Property<Guid>("HorarioTurma_ID")
@@ -3797,6 +3833,23 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasConstraintName("FK_Presenca_Turma");
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.FaixaHorarioLocal", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_FaixaHorarioLocal_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Local", null)
+                        .WithMany("Horarios")
+                        .HasForeignKey("Local_ID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_FaixaHorarioLocal_Local");
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.HorarioTurma", b =>
                 {
                     b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
@@ -3940,6 +3993,11 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Navigation("Eventos");
 
                     b.Navigation("Respostas");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.Local", b =>
+                {
+                    b.Navigation("Horarios");
                 });
 
             modelBuilder.Entity("MinhaEscolinha.Domain.Turmas.Turma", b =>

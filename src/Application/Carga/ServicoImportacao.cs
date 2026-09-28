@@ -64,12 +64,7 @@ public class ServicoImportacao(
             return ResultadoOperacao.Erro($"A planilha tem {planilha.Cabecalhos.Count} colunas; o limite é {ImportacaoLote.MaximoColunas}.", "arquivo");
 
         var agora = relogio.Agora();
-        foreach (var vencido in await repositorio.AbertosAntesDeAsync(agora.AddDays(-ImportacaoLote.DiasAberto), ct))
-        {
-            vencido.Descartar(agora, null, "Sistema");
-            registro.Registrar(Entidade, vencido.ImportacaoLote_ID, "Descarte", "Aberto",
-                $"Descartado sem confirmação depois de {ImportacaoLote.DiasAberto} dias (a planilha foi apagada).");
-        }
+        await MarcarEsquecidosAsync(agora, ct);
 
         var mapa = CatalogoCamposImportacao.Sugerir(planilha.Cabecalhos);
         var nome = Path.GetFileName(nomeArquivo);
@@ -254,6 +249,29 @@ public class ServicoImportacao(
         }
         financeiro.CadastroMudou();
         return ResultadoOperacao.Ok($"Importação concluída: {resumo}", lote.ImportacaoLote_ID);
+    }
+
+    /// <summary>
+    /// O job diário (P53, na escolinha do contexto): o lote aberto há mais de <see cref="ImportacaoLote.DiasAberto"/> dias é
+    /// descartado, e a planilha cifrada sai do banco, mesmo que ninguém envie outra planilha.
+    /// </summary>
+    public async Task<int> DescartarEsquecidosAsync(CancellationToken ct = default)
+    {
+        var descartados = await MarcarEsquecidosAsync(relogio.Agora(), ct);
+        if (descartados > 0) await repositorio.SalvarAsync(ct);
+        return descartados;
+    }
+
+    private async Task<int> MarcarEsquecidosAsync(DateTime agora, CancellationToken ct)
+    {
+        var vencidos = await repositorio.AbertosAntesDeAsync(agora.AddDays(-ImportacaoLote.DiasAberto), ct);
+        foreach (var vencido in vencidos)
+        {
+            vencido.Descartar(agora, null, "Sistema");
+            registro.Registrar(Entidade, vencido.ImportacaoLote_ID, "Descarte", "Aberto",
+                $"Descartado sem confirmação depois de {ImportacaoLote.DiasAberto} dias (a planilha foi apagada).");
+        }
+        return vencidos.Count;
     }
 
     public async Task<ResultadoOperacao> DescartarAsync(Guid id, CancellationToken ct = default)

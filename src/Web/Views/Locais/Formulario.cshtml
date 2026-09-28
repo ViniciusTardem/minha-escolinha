@@ -37,6 +37,44 @@
                     <label class="kt-form-label" asp-for="Observacao">Como chegar <span class="text-muted-foreground">(opcional)</span></label>
                     <textarea class="kt-textarea" asp-for="Observacao" rows="2" maxlength="300" placeholder="Portão lateral, estacionamento na rua de trás..."></textarea>
                 </div>
+                <div class="border-t border-border"></div>
+                @* P31: a quadra alugada só em certos dias e horários. Treino ou jogo fora deles gera alerta, sem bloquear (R9). *@
+                <div class="flex flex-col gap-3" data-esc-linhas data-esc-linhas-prefixo="Horarios">
+                    <span class="kt-form-label">Horários disponíveis <span class="text-muted-foreground">(opcional)</span></span>
+                    <ul class="flex flex-col gap-3" data-esc-linhas-lista>
+                        @for (var i = 0; i < Model.Horarios.Count; i++)
+                        {
+                            <li class="esc-linha-horario" data-esc-linha>
+                                <select class="kt-select" asp-for="Horarios[i].DiaSemana" aria-label="Dia da semana">
+                                    @foreach (var dia in DiasSemana.Ordem)
+                                    {
+                                        <option value="@dia">@DiasSemana.Nome(dia)</option>
+                                    }
+                                </select>
+                                <input class="kt-input" asp-for="Horarios[i].Inicio" type="time" aria-label="Das" />
+                                <input class="kt-input" asp-for="Horarios[i].Fim" type="time" aria-label="Até" />
+                                <button class="kt-btn kt-btn-icon kt-btn-ghost" type="button" data-esc-linhas-remover hidden aria-label="Retirar horário"><i class="ki-filled ki-trash"></i></button>
+                            </li>
+                        }
+                    </ul>
+                    <template data-esc-linhas-modelo>
+                        <li class="esc-linha-horario" data-esc-linha>
+                            <select class="kt-select" name="Horarios[__i__].DiaSemana" aria-label="Dia da semana">
+                                @foreach (var dia in DiasSemana.Ordem)
+                                {
+                                    <option value="@dia">@DiasSemana.Nome(dia)</option>
+                                }
+                            </select>
+                            <input class="kt-input" name="Horarios[__i__].Inicio" type="time" aria-label="Das" />
+                            <input class="kt-input" name="Horarios[__i__].Fim" type="time" aria-label="Até" />
+                            <button class="kt-btn kt-btn-icon kt-btn-ghost" type="button" data-esc-linhas-remover aria-label="Retirar horário"><i class="ki-filled ki-trash"></i></button>
+                        </li>
+                    </template>
+                    <div>
+                        <button class="kt-btn kt-btn-sm kt-btn-outline" type="button" data-esc-linhas-adicionar hidden><i class="ki-filled ki-plus"></i> Outro horário</button>
+                    </div>
+                    <p class="text-xs text-muted-foreground">Quando a escolinha pode usar o local (a quadra alugada, por exemplo). Treino ou jogo fora destes horários gera alerta ao salvar. Sem nenhum horário, o local está sempre disponível.</p>
+                </div>
             </div>
             <div class="kt-card-footer justify-end gap-2.5">
                 <a class="kt-btn kt-btn-ghost me-auto" href="@(Url.IsLocalUrl(voltar) ? voltar : "/Locais")">Cancelar</a>
@@ -45,3 +83,7 @@
         </form>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/linhas.js" asp-append-version="true"></script>
+}

@@ -325,4 +325,23 @@ public sealed class CargaBancoTestes(BancoDeTestes banco) : IAsyncLifetime, IDis
         Assert.DoesNotContain("camarão", lotes[novo].Conteudo); // a planilha aberta fica cifrada
         Assert.Equal(1, await db.Alunos.IgnoreQueryFilters().CountAsync(a => a.Escolinha_ID == b.Escolinha));
     }
+
+    /// <summary>P53: o job diário descarta o lote esquecido mesmo que ninguém envie outra planilha.</summary>
+    [FatoComBanco]
+    public async Task O_job_diario_descarta_o_lote_esquecido_sem_esperar_outro_envio()
+    {
+        var b = await MontarAsync();
+        object?[] linha = ["Ana Lima", "03/02/2013", null, "Sub-13", null, "Alergia a camarão", null, null, null, "Maria Lima", CpfMaria, "43988887777"];
+        var esquecido = Id(await EnviarAsync(b, Planilha(Cabecalho, linha)));
+        Task<int> JobAsync() => _app.NaEscolinhaAsync(b.Escolinha, [], sp => sp.GetRequiredService<ServicoImportacao>().DescartarEsquecidosAsync());
+
+        Assert.Equal(0, await JobAsync()); // ainda dentro dos 7 dias
+        _app.Tempo.Advance(TimeSpan.FromDays(ImportacaoLote.DiasAberto + 1));
+        Assert.Equal(1, await JobAsync());
+        Assert.Equal(0, await JobAsync()); // idempotente
+
+        await using var db = BancoDeTestes.NovoContextoSemEscolinha();
+        var lote = await db.ImportacaoLotes.IgnoreQueryFilters().SingleAsync(l => l.ImportacaoLote_ID == esquecido);
+        Assert.Equal((SituacaoImportacao.Descartada, (string?)null, "Sistema"), (lote.Situacao, lote.Conteudo, lote.EncerradoPorNome));
+    }
 }

@@ -15,6 +15,8 @@ public interface ITurmasRepositorio
     Task<Local?> ObterLocalAsync(Guid id, CancellationToken ct = default);
     Task<bool> NomeLocalEmUsoAsync(string nome, Guid? excetoId, CancellationToken ct = default);
     void AdicionarLocal(Local local);
+    void AdicionarFaixaLocal(FaixaHorarioLocal faixa);
+    void RemoverFaixaLocal(FaixaHorarioLocal faixa);
 
     /// <summary>Turmas (com horários, local e professor), limitadas ao escopo.</summary>
     Task<IReadOnlyList<Turma>> ListarTurmasAsync(EscopoTurmas escopo, bool incluirEncerradas, CancellationToken ct = default);
@@ -73,9 +75,13 @@ public class LocalRequisicao : IComEndereco
     public string? Cidade { get; set; }
     public string? Uf { get; set; }
     public string? Cep { get; set; }
+
+    /// <summary>Os horários em que a escolinha pode usar o local (P31). Vazio = sempre disponível.</summary>
+    public List<Equipe.FaixaRequisicao> Horarios { get; set; } = [];
 }
 
-public record LocalResposta(Guid Id, string Nome, Endereco Endereco, int? Capacidade, string? Observacao, int TurmasAtivas);
+public record LocalResposta(Guid Id, string Nome, Endereco Endereco, int? Capacidade, string? Observacao, int TurmasAtivas,
+    string Horarios = "Sempre disponível");
 
 public class LocalRequisicaoValidador : AbstractValidator<LocalRequisicao>
 {
@@ -84,6 +90,12 @@ public class LocalRequisicaoValidador : AbstractValidator<LocalRequisicao>
         RuleFor(x => x.Nome)
             .NotEmpty().WithMessage("Informe o nome do local (ex.: Quadra do Colégio Marista).")
             .MaximumLength(Local.TamanhoNome).WithMessage($"O nome pode ter no máximo {Local.TamanhoNome} caracteres.");
+        RuleFor(x => x.Horarios)
+            .Must(f => f.Where(l => !l.Vazia).All(l => l.Inicio is not null && l.Fim is not null))
+            .WithMessage("Cada horário do local precisa de início e fim.")
+            .Must(f => f.Where(l => !l.Vazia && l.Inicio is not null && l.Fim is not null).All(l => l.Fim > l.Inicio))
+            .WithMessage("O fim do horário do local precisa ser depois do início.")
+            .Must(f => f.All(l => Enum.IsDefined(l.DiaSemana))).WithMessage("Dia da semana inválido.");
         RuleFor(x => x.Capacidade).InclusiveBetween(1, 100000).When(x => x.Capacidade is not null)
             .WithMessage("A capacidade do local fica entre 1 e 100.000 pessoas.");
         RuleFor(x => x.Observacao).MaximumLength(Local.TamanhoObservacao)

@@ -108,6 +108,24 @@ public class LocalConfiguracao : IEntityTypeConfiguration<Local>
         builder.ComplexProperty(l => l.Endereco, MapeamentoComum.MapearEndereco);
 
         builder.HasIndex(l => new { l.Escolinha_ID, l.Nome }).IsUnique().HasDatabaseName("UQ_Local_Escolinha_Nome");
+        builder.HasMany(l => l.Horarios).WithOne().HasForeignKey(f => f.Local_ID)
+            .HasConstraintName("FK_FaixaHorarioLocal_Local").OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+/// <summary>Os horários disponíveis do local (P31).</summary>
+public class FaixaHorarioLocalConfiguracao : IEntityTypeConfiguration<FaixaHorarioLocal>
+{
+    public void Configure(EntityTypeBuilder<FaixaHorarioLocal> builder)
+    {
+        builder.ToTable("FaixaHorarioLocal", t => t.HasCheckConstraint("CK_FaixaHorarioLocal_Horario", "[Fim] > [Inicio]"));
+
+        builder.HasKey(f => f.FaixaHorarioLocal_ID).HasName("PK_FaixaHorarioLocal");
+        builder.Property(f => f.FaixaHorarioLocal_ID).HasDefaultValueSql("NEWSEQUENTIALID()").ValueGeneratedOnAdd();
+        builder.HasOne<Escolinha>().WithMany().HasForeignKey(f => f.Escolinha_ID)
+            .HasConstraintName("FK_FaixaHorarioLocal_Escolinha").OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(f => new { f.Escolinha_ID, f.Local_ID }).HasDatabaseName("IX_FaixaHorarioLocal_Escolinha_Local");
     }
 }
 

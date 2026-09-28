@@ -45,6 +45,7 @@
                                     <div class="flex flex-col gap-0.5">
                                         <span class="font-medium text-mono">@l.Nome</span>
                                         <span class="text-xs text-secondary-foreground">@(string.IsNullOrEmpty(endereco) ? "Endereço não informado" : endereco)</span>
+                                        <span class="text-xs text-secondary-foreground">Horários: @l.Horarios</span>
                                     </div>
                                 </td>
                                 <td class="hidden md:table-cell text-secondary-foreground">@(l.Capacidade is { } c ? $"{c} pessoas" : "—")</td>
