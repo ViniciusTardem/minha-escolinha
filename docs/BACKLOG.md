@@ -24,7 +24,7 @@ Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-
 | S4 — Financeiro | 8 | 8 | 0 | **Pronto no simulador** e commitado (44df87a). A prova com a sandbox da Asaas espera a conta da escolinha piloto (P41). |
 | S5 — Eventos e convocações | 10 | 10 | 0 | **Pronto no simulador** e commitado (ec42cc3). A resposta de uma família real pelo WhatsApp espera a conta na Meta (P34). |
 | S6 — Portal do responsável | 6 | 6 | 0 | **Pronto no simulador** e commitado (f9699c8). A prova com a sandbox da Asaas espera a conta (P41). |
-| S7 — Carga inicial | 5 | 5 | 0 | **Pronto** (28/09/2026), sem a planilha real: o modelo e o mapeamento das colunas a recebem sem código novo (P21). |
+| S7 — Carga inicial | 5 | 5 | 0 | **Pronto** e commitado (a262578), sem a planilha real: o modelo e o mapeamento das colunas a recebem sem código novo (P21). |
 | **Total** | **81** | **81** | **0** | |
 
 ---

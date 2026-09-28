@@ -8,7 +8,7 @@ Plano vivo, atualizado ao fim de cada fatia. Cada documento responde por uma coi
 | **Como** construir | A herança do AlternativaDepartamentoPessoal ([`HERANCA.md`](HERANCA.md)) |
 | **Em que ordem** e onde estamos | Este plano |
 
-Última atualização: **28/09/2026**. **As 8 fatias do piloto estão prontas: os 81 entregáveis.** F0, S0 a S6 e os extras EX-01 e EX-02 estão commitados na `main`. O S7 está pronto, sem a planilha real, e vai para a `main` com a autorização por fatia ("continue"). O que falta depende de fora: as provas fora dos simuladores esperam as contas (da Meta para o S2 e o S5, P34; da Asaas para o S4 e o S6, P41), a carga da base real espera a planilha da escolinha (P21), e as pendências da §8 esperam decisão.
+Última atualização: **28/09/2026**. **As 8 fatias do piloto estão prontas: os 81 entregáveis.** F0, S0 a S7 e os extras EX-01 e EX-02 estão commitados na `main` (o S7 em `a262578`, pronto sem a planilha real). Nada foi enviado a remoto. O que falta depende de fora: as provas fora dos simuladores esperam as contas (da Meta para o S2 e o S5, P34; da Asaas para o S4 e o S6, P41), a carga da base real espera a planilha da escolinha (P21), e as pendências da §8 esperam decisão.
 
 ---
 
@@ -88,7 +88,7 @@ O registro completo, com data, está em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-AB
 | S4 — Financeiro: mensalidade, régua e conciliação | 8 | **Pronto no simulador** e commitado (`44df87a`), com os 8 concluídos. A prova com a sandbox da Asaas espera a conta (P41). | 28/09/2026 |
 | S5 — Eventos e convocações | 10 | **Pronto no simulador** e commitado (`ec42cc3`), com os 10 concluídos. A resposta de uma família real pelo WhatsApp espera a conta na Meta (P34). | 28/09/2026 |
 | S6 — Portal do responsável | 6 | **Pronto no simulador** e commitado (`f9699c8`), com os 6 concluídos. O pagamento na sandbox da Asaas espera a conta (P41). | 28/09/2026 |
-| S7 — Carga inicial da escolinha piloto | 5 | **Pronto**, com os 5 concluídos, sem a planilha real: o modelo e o mapeamento das colunas a recebem sem código novo (P21). | 28/09/2026 |
+| S7 — Carga inicial da escolinha piloto | 5 | **Pronto** e commitado (`a262578`), com os 5 concluídos, sem a planilha real: o modelo e o mapeamento das colunas a recebem sem código novo (P21). | 28/09/2026 |
 
 Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [`BACKLOG.md`](BACKLOG.md).
 
@@ -401,3 +401,4 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | 28/09/2026 | **Validação no navegador** (Playwright), na escolinha A, com uma planilha escrita como uma escolinha escreveria: <ul><li>o mapeamento, a conferência com os motivos e o quadro de decisões;</li><li>a confirmação com a declaração das autorizações;</li><li>a ficha com a saúde restrita, os consentimentos e a "Carga inicial" no histórico;</li><li>a filha nova aparecendo na hora no portal da responsável que já tinha acesso;</li><li>as mensalidades projetadas;</li><li>as telas em 320, 375 e 1280 px, no claro e no escuro.</li></ul> |
 | 28/09/2026 | **Defeitos achados e corrigidos:** <ul><li>O repositório filtrava e ordenava os lotes depois da projeção, o que o EF não traduz (achado nos testes).</li><li>"2º responsável" e "Celular 2" não eram reconhecidos no mapeamento.</li><li>Em 320 px, as tabelas rolavam de 1 a 4 px, e um rótulo passava do cartão.</li></ul> |
 | 28/09/2026 | **Resultado:** build sem aviso; 420 testes passando (14 do S7); 0 classes faltando; nenhuma rolagem horizontal, nem das tabelas, em 320 e 375 px nas telas do S7, no claro e no escuro. **Os 81 entregáveis do piloto estão prontos.** |
+| 28/09/2026 | **Commit do S7** na `main` (`a262578`), com a autorização por fatia do responsável ("continuar"). Fim das fatias do piloto; a lista de pendências foi entregue ao responsável, como pedido. |
