@@ -1,0 +1,40 @@
+@model ConfirmarMensalidadeRequisicao
+@{
+    var acao = (CobrancaParaAcao)ViewData["Cobranca"]!;
+    ViewData["Title"] = "Confirmar mensalidade";
+    var voltar = Context.Request.Query["voltar"].ToString();
+    var destino = Url.IsLocalUrl(voltar) ? voltar : "/Mensalidades";
+    var valor = ViewData.ModelState[nameof(Model.Valor)]?.AttemptedValue ?? Moeda.ParaCampo(Model.Valor);
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Confirmar a primeira mensalidade" meta="@($"{acao.Linha.Aluno} · {Formatacao.Mes(acao.Linha.Competencia)}")"
+                      voltar-href="@destino" voltar-texto="Voltar"
+                      descricao="A primeira mensalidade de cada matrícula só vai para a Asaas depois que a gestão confere o valor: quem entrou no meio do mês pode pagar menos. As seguintes saem sozinhas, com o valor da matrícula."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[640px]">
+        <form method="post" asp-action="Confirmar" novalidate>
+            <input type="hidden" asp-for="Id" />
+            @if (Url.IsLocalUrl(voltar))
+            {
+                <input type="hidden" name="voltar" value="@voltar" />
+            }
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <partial name="_ResumoMensalidade" model="acao.Linha" />
+                <div class="flex flex-col gap-1 max-w-[260px]">
+                    <label class="kt-form-label" asp-for="Valor">Valor desta mensalidade</label>
+                    <div class="kt-input-group">
+                        <span class="kt-input-addon">R$</span>
+                        <input class="kt-input" asp-for="Valor" type="text" inputmode="decimal" value="@valor" required autocomplete="off" />
+                    </div>
+                    <span class="text-xs text-muted-foreground">O valor da matrícula já vem preenchido. Mude só para esta mensalidade (a matrícula não muda).</span>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="@destino">Voltar</a>
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>

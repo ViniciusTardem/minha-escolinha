@@ -133,6 +133,9 @@ public interface IMensageriaRepositorio
     /// <summary>Responsáveis do aluno que recebem notificação (o vínculo diz quem recebe, BL-M03-03).</summary>
     Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisDoAlunoAsync(Guid alunoId, CancellationToken ct = default);
 
+    /// <summary>Responsáveis financeiros do aluno: os vínculos que recebem cobrança (o pagador sempre recebe, BL-M03-03).</summary>
+    Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisFinanceirosDoAlunoAsync(Guid alunoId, CancellationToken ct = default);
+
     Task<IReadOnlyList<TemplateMensagem>> ListarTemplatesAsync(CancellationToken ct = default);
     Task<TemplateMensagem?> ObterTemplateAsync(Guid id, CancellationToken ct = default);
     Task<TemplateMensagem?> TemplateDoGatilhoAsync(GatilhoMensagem gatilho, TomMensagem tom, CancellationToken ct = default);

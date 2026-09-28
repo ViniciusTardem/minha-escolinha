@@ -8,6 +8,7 @@ using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
+using MinhaEscolinha.Application.Financeiro;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
 using MinhaEscolinha.Application.Presencas;
@@ -18,7 +19,9 @@ using MinhaEscolinha.Infrastructure.Comum;
 using MinhaEscolinha.Infrastructure.Configuracao;
 using MinhaEscolinha.Infrastructure.Data.Contexto;
 using MinhaEscolinha.Infrastructure.Data.Interceptadores;
+using MinhaEscolinha.Infrastructure.Financeiro;
 using MinhaEscolinha.Infrastructure.Hangfire;
+using MinhaEscolinha.Infrastructure.Integracao.Asaas;
 using MinhaEscolinha.Infrastructure.Integracao.Stripe;
 using MinhaEscolinha.Infrastructure.Integracao.WhatsApp;
 using MinhaEscolinha.Infrastructure.Mensageria;
@@ -80,6 +83,12 @@ public static class DependencyInjection
 
         // S3 — presença e alerta de faltas
         services.AddScoped<IPresencaRepositorio, PresencaRepositorio>();
+
+        // S4 — mensalidades na Asaas da escolinha (API ou simulador)
+        services.AddScoped<IFinanceiroRepositorio, FinanceiroRepositorio>();
+        services.AddScoped<IAgendadorFinanceiro, AgendadorFinanceiroHangfire>();
+        services.AddScoped<JobsFinanceiro>();
+        services.AddAsaas(configuracao, ambiente, aviso);
 
         // Plataforma: pacotes de créditos vendidos pelo Stripe da LDNA
         services.AddScoped<IPlataformaRepositorio, PlataformaRepositorio>();

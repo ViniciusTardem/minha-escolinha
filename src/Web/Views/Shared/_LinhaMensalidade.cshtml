@@ -1,0 +1,160 @@
+@model LinhaMensalidadeViewModel
+@{
+    var l = Model.Linha;
+    var aberta = l.EmAberto || l.Situacao == SituacaoCobranca.Prevista;
+    var rotulo = Model.MostrarAluno ? l.Aluno : Formatacao.Mes(l.Competencia);
+}
+@* Uma mensalidade na tabela (painel, divergências, ficha). No celular ficam o aluno e as ações: o vencimento, o valor e a
+   situação descem para a célula principal (cabe em 320 px sem rolar a tabela). *@
+<tr>
+    @if (Model.ComMarcacao)
+    {
+        <td>
+            @if (l.AguardandoConfirmacao)
+            {
+                <input class="kt-checkbox kt-checkbox-sm" type="checkbox" form="form-confirmar" name="selecionadas" value="@l.Id"
+                       aria-label="@($"Confirmar a mensalidade de {l.Aluno}")" />
+            }
+        </td>
+    }
+    <td>
+        <div class="flex flex-col gap-0.5">
+            @if (Model.MostrarAluno)
+            {
+                <a class="font-medium text-mono hover:text-primary" href="/Alunos/Ficha/@l.AlunoId?aba=financeiro">@rotulo</a>
+            }
+            else
+            {
+                <span class="font-medium text-mono">@rotulo</span>
+            }
+            <span class="text-xs text-secondary-foreground">@l.Turma@(l.Pagador is null ? "" : $" · pagador: {l.Pagador}")</span>
+            <span class="text-xs text-secondary-foreground sm:hidden">Vence @Formatacao.Data(l.Vencimento) · @Formatacao.Moeda(l.Valor)</span>
+            <span class="flex flex-wrap items-center gap-1.5 sm:hidden">
+                <selo-status valor="l.Situacao"></selo-status>
+                @if (l.AguardandoConfirmacao)
+                {
+                    <selo-status valor="SinalTela.MensalidadeAConfirmar"></selo-status>
+                }
+                @if (l.Impedimento is not null)
+                {
+                    <selo-status valor="SinalTela.MensalidadeImpedida"></selo-status>
+                }
+                @if (l.Sinal != SinalCobranca.Nenhum)
+                {
+                    <selo-status valor="l.Sinal"></selo-status>
+                }
+                @if (l.DebitoRemanescente)
+                {
+                    <selo-status valor="SinalTela.DebitoRemanescente"></selo-status>
+                }
+            </span>
+            @if (l.Impedimento is not null)
+            {
+                <span class="text-xs text-secondary-foreground sm:hidden">@l.Impedimento</span>
+            }
+        </div>
+    </td>
+    <td class="hidden sm:table-cell text-secondary-foreground">@Formatacao.Data(l.Vencimento)</td>
+    <td class="hidden sm:table-cell">
+        <div class="flex flex-col gap-0.5">
+            <span class="text-mono">@Formatacao.Moeda(l.Valor)</span>
+            @if (l.ValorPago is { } pago && pago != l.Valor)
+            {
+                <span class="text-xs text-secondary-foreground">entrou @Formatacao.Moeda(pago)</span>
+            }
+        </div>
+    </td>
+    <td class="hidden sm:table-cell">
+        <div class="flex flex-col gap-1">
+            <span class="flex flex-wrap items-center gap-1.5">
+                <selo-status valor="l.Situacao"></selo-status>
+                @if (l.AguardandoConfirmacao)
+                {
+                    <selo-status valor="SinalTela.MensalidadeAConfirmar"></selo-status>
+                }
+                @if (l.Impedimento is not null)
+                {
+                    <selo-status valor="SinalTela.MensalidadeImpedida"></selo-status>
+                }
+                @if (l.Sinal != SinalCobranca.Nenhum)
+                {
+                    <selo-status valor="l.Sinal"></selo-status>
+                }
+                @if (l.DebitoRemanescente)
+                {
+                    <selo-status valor="SinalTela.DebitoRemanescente"></selo-status>
+                }
+            </span>
+            @if (l.Impedimento is not null)
+            {
+                <span class="text-xs text-secondary-foreground">@l.Impedimento</span>
+            }
+            @if (l.Sinal != SinalCobranca.Nenhum && l.SinalDetalhe is not null)
+            {
+                <span class="text-xs text-secondary-foreground">@l.SinalDetalhe</span>
+            }
+            @if (l.PagaEm is { } pagaEm && l.Situacao is SituacaoCobranca.Paga or SituacaoCobranca.PagaEmAtraso)
+            {
+                <span class="text-xs text-secondary-foreground">Em @Formatacao.Data(pagaEm)@(l.Meio is { } meio ? $" · {Cobranca.Rotulo(meio)}" : "")</span>
+            }
+            else if (l.UltimaEtapaData is { } etapaData && l.EmAberto)
+            {
+                <span class="text-xs text-secondary-foreground">Último aviso em @Formatacao.Data(etapaData)</span>
+            }
+            @if (l.Motivo is not null && l.Situacao is SituacaoCobranca.Cancelada or SituacaoCobranca.Isenta)
+            {
+                <span class="text-xs text-secondary-foreground">@l.Motivo</span>
+            }
+        </div>
+    </td>
+    <td class="text-end">
+        <div class="flex flex-wrap xl:flex-nowrap justify-end gap-1">
+            @if (l.EmAberto && l.UrlFatura is not null)
+            {
+                <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" href="@l.UrlFatura" target="_blank" rel="noopener noreferrer"
+                   aria-label="@($"Abrir a fatura de {rotulo}")"><i class="ki-filled ki-bill"></i></a>
+            }
+            @if (Model.PodeAlterar)
+            {
+                if (l.AguardandoConfirmacao)
+                {
+                    <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Mensalidades/Confirmar/@l.Id?voltar=@Uri.EscapeDataString(Model.Voltar)"
+                       aria-label="@($"Confirmar a mensalidade de {rotulo}")"><i class="ki-filled ki-check"></i> <span class="hidden sm:inline">Confirmar</span></a>
+                }
+                if (l.Sinal != SinalCobranca.Nenhum)
+                {
+                    <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Mensalidades/Resolver/@l.Id"
+                       aria-label="@($"Resolver a divergência de {rotulo}")"><i class="ki-filled ki-information-2"></i> <span class="hidden sm:inline">Resolver</span></a>
+                }
+                else if (l.EmAberto && l.UrlFatura is not null)
+                {
+                    <form method="post" asp-controller="Mensalidades" asp-action="Reenviar" asp-route-id="@l.Id"
+                          data-esc-confirmar="@($"Mandar de novo o link da fatura de {rotulo} aos responsáveis financeiros?")">
+                        <input type="hidden" name="voltar" value="@Model.Voltar" />
+                        <button class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" type="submit" aria-label="@($"Reenviar a cobrança de {rotulo}")"><i class="ki-filled ki-arrows-circle"></i></button>
+                    </form>
+                }
+                else if (l.RecusadaPelaAsaas)
+                {
+                    <form method="post" asp-controller="Mensalidades" asp-action="TentarDeNovo" asp-route-id="@l.Id"
+                          data-esc-confirmar="@($"Mandar de novo para a Asaas a mensalidade de {rotulo}? Corrija antes o que a Asaas recusou.")">
+                        <input type="hidden" name="voltar" value="@Model.Voltar" />
+                        <button class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" type="submit" aria-label="@($"Tentar emitir de novo a mensalidade de {rotulo}")"><i class="ki-filled ki-arrows-circle"></i></button>
+                    </form>
+                }
+                if (aberta && !l.AguardandoConfirmacao && l.Sinal == SinalCobranca.Nenhum)
+                {
+                    <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" href="/Mensalidades/Receber/@l.Id?voltar=@Uri.EscapeDataString(Model.Voltar)"
+                       aria-label="@($"Registrar pagamento por fora de {rotulo}")"><i class="ki-filled ki-wallet"></i></a>
+                }
+                if (aberta && l.Sinal == SinalCobranca.Nenhum)
+                {
+                    <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" href="/Mensalidades/Encerrar/@l.Id?para=Isenta&voltar=@Uri.EscapeDataString(Model.Voltar)"
+                       aria-label="@($"Isentar a mensalidade de {rotulo}")"><i class="ki-filled ki-discount"></i></a>
+                    <a class="kt-btn kt-btn-sm kt-btn-icon kt-btn-ghost" href="/Mensalidades/Encerrar/@l.Id?para=Cancelada&voltar=@Uri.EscapeDataString(Model.Voltar)"
+                       aria-label="@($"Cancelar a mensalidade de {rotulo}")"><i class="ki-filled ki-cross-circle"></i></a>
+                }
+            }
+        </div>
+    </td>
+</tr>

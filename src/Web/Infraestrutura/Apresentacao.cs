@@ -6,6 +6,7 @@ using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Domain.Alunos;
 using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
+using MinhaEscolinha.Domain.Financeiro;
 using MinhaEscolinha.Domain.Integracao;
 using MinhaEscolinha.Domain.Mensageria;
 using MinhaEscolinha.Domain.Plataforma;
@@ -65,7 +66,16 @@ public enum SinalTela
     Pagador,
 
     /// <summary>Frequência da janela de risco abaixo do mínimo (BL-M05-11): sinal, não bloqueio (R9).</summary>
-    RiscoEvasao
+    RiscoEvasao,
+
+    /// <summary>A primeira mensalidade da matrícula, esperando a gestão confirmar (P17).</summary>
+    MensalidadeAConfirmar,
+
+    /// <summary>A prevista não vai para a Asaas: falta conta, pagador com CPF, ou a Asaas recusou.</summary>
+    MensalidadeImpedida,
+
+    /// <summary>Desligado com mensalidade em aberto: o débito que sobrou do desligamento (BL-M06-14).</summary>
+    DebitoRemanescente
 }
 
 /// <summary>
@@ -115,6 +125,9 @@ public static class ApresentacaoStatus
         SinalTela.SemAcesso => ("Sem acesso ainda", VarianteSelo.Neutro),
         SinalTela.Pagador => ("Pagador", VarianteSelo.Primario),
         SinalTela.RiscoEvasao => ("Risco de evasão", VarianteSelo.Alerta),
+        SinalTela.MensalidadeAConfirmar => ("A confirmar", VarianteSelo.Alerta),
+        SinalTela.MensalidadeImpedida => ("Não emitida", VarianteSelo.Alerta),
+        SinalTela.DebitoRemanescente => ("Débito após o desligamento", VarianteSelo.Alerta),
 
         SituacaoAluno.Trial => ("Trial", VarianteSelo.Info),
         SituacaoAluno.Ativo => ("Ativo", VarianteSelo.Sucesso),
@@ -172,6 +185,22 @@ public static class ApresentacaoStatus
         SituacaoAlertaFaltas.Disparado => ("Disparado", VarianteSelo.Info),
         SituacaoAlertaFaltas.Suprimido => ("Suprimido", VarianteSelo.Neutro),
         SituacaoAlertaFaltas.Anulado => ("Anulado", VarianteSelo.Neutro),
+
+        SituacaoCobranca.Prevista => ("Prevista", VarianteSelo.Neutro),
+        SituacaoCobranca.Emitida => ("Emitida", VarianteSelo.Info),
+        SituacaoCobranca.Paga => ("Paga", VarianteSelo.Sucesso),
+        SituacaoCobranca.Vencida => ("Vencida", VarianteSelo.Perigo),
+        SituacaoCobranca.PagaEmAtraso => ("Paga em atraso", VarianteSelo.Sucesso),
+        SituacaoCobranca.Cancelada => ("Cancelada", VarianteSelo.Neutro),
+        SituacaoCobranca.Isenta => ("Isenta", VarianteSelo.Neutro),
+
+        SinalCobranca.Nenhum => ("Sem divergência", VarianteSelo.Neutro),
+        SinalCobranca.ValorDivergente => ("Valor divergente", VarianteSelo.Alerta),
+        SinalCobranca.Estorno => ("Estorno", VarianteSelo.Alerta),
+        SinalCobranca.Chargeback => ("Contestação no cartão", VarianteSelo.Alerta),
+        SinalCobranca.ExcluidaNaAsaas => ("Excluída na Asaas", VarianteSelo.Alerta),
+        SinalCobranca.PagaDepoisDeEncerrada => ("Paga depois de encerrada", VarianteSelo.Alerta),
+        SinalCobranca.ContaAnterior => ("Conta Asaas anterior", VarianteSelo.Alerta),
 
         _ => (valor.ToString(), VarianteSelo.Neutro)
     };

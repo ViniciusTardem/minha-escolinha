@@ -85,6 +85,10 @@ public class ContaAsaasEscolinhaConfiguracao : IEntityTypeConfiguration<ContaAsa
 
         builder.Property(c => c.ChaveApiProtegida).HasMaxLength(2000).IsUnicode(false).IsRequired();
         builder.Property(c => c.FinalChave).HasMaxLength(ContaAsaasEscolinha.TamanhoFinal).IsUnicode(false).IsRequired();
+        // A conta vinculada antes do S4 ganha um identificador na migração.
+        builder.Property(c => c.Identificador).HasDefaultValueSql("NEWSEQUENTIALID()");
+        builder.Property(c => c.TokenWebhookProtegido).HasMaxLength(2000).IsUnicode(false);
+        builder.Property(c => c.WebhookErro).HasMaxLength(ContaAsaasEscolinha.TamanhoErroWebhook);
 
         builder.HasIndex(c => c.Escolinha_ID).IsUnique().HasDatabaseName("UQ_ContaAsaasEscolinha_Escolinha");
     }

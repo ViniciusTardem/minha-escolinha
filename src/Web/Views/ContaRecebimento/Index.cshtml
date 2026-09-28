@@ -33,11 +33,37 @@
                     <dd class="font-mono">••••@Model.FinalChave</dd>
                     <dt>Vinculada em</dt>
                     <dd>@Formatacao.DataHora(Model.VinculadaEm)</dd>
+                    <dt>Integração</dt>
+                    <dd>@Model.Integracao</dd>
+                    <dt>Avisos da Asaas</dt>
+                    <dd class="flex flex-col gap-1">
+                        @if (Model.Simulador)
+                        {
+                            <span>O simulador avisa direto o sistema: <a class="kt-link" href="/dev/asaas">/dev/asaas</a></span>
+                        }
+                        else if (Model.WebhookRegistradoEm is { } registrado)
+                        {
+                            <span>Webhook cadastrado na conta em @Formatacao.DataHora(registrado).</span>
+                        }
+                        else if (Model.WebhookErro is not null)
+                        {
+                            <span>A Asaas recusou o cadastro do webhook: @Model.WebhookErro</span>
+                        }
+                        else
+                        {
+                            <span>O webhook está sendo cadastrado na conta.</span>
+                        }
+                        @if (Model.UrlWebhook is not null && !Model.Simulador)
+                        {
+                            <span class="text-xs text-secondary-foreground font-mono wrap-anywhere">@Model.UrlWebhook</span>
+                        }
+                    </dd>
                 </dl>
             </div>
         }
         <div class="kt-card-footer text-xs text-muted-foreground">
-            A chave fica cifrada e nunca volta para a tela. A emissão das cobranças e a conciliação chegam na fatia S4.
+            A chave fica cifrada e nunca volta para a tela. As mensalidades são emitidas nesta conta, e a Asaas avisa o sistema quando
+            uma é paga, vence ou é excluída: a conciliação é automática.
             @if (ambiente is { EhProducao: false })
             {
                 <text>Este ambiente (@ambiente.Nome) só aceita conta Sandbox.</text>

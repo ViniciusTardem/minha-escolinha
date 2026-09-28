@@ -12,6 +12,13 @@
         ("consentimentos", "Consentimentos", null)
     };
     if (presenca is not null) abas.Insert(3, ("presenca", "Presença", null));
+    var financeiro = ViewData["Financeiro"] as IReadOnlyList<LinhaMensalidade>;
+    if (financeiro is not null)
+    {
+        // O contador é o que pede atenção (em aberto ou com divergência); tudo pago, sem contador.
+        var pendentes = financeiro.Count(l => l.EmAberto || l.Sinal != SinalCobranca.Nenhum);
+        abas.Insert(abas.FindIndex(a => a.Chave == "saude"), ("financeiro", "Financeiro", pendentes > 0 ? pendentes : null));
+    }
     if (Model.Pode.VerHistorico) abas.Add(("historico", "Histórico", null));
     if (abas.All(a => a.Chave != aba)) aba = "resumo";
     string Ou(string? valor) => string.IsNullOrWhiteSpace(valor) ? "—" : valor;
@@ -325,6 +332,48 @@
                     }
                 </div>
             }
+        </section>
+    }
+
+    @* ── Financeiro (S4): as mensalidades do aluno, só para quem vê o financeiro da escolinha (BL-M06-24) ── *@
+    @if (financeiro is not null)
+    {
+        var voltarFicha = $"/Alunos/Ficha/{Model.Id}?aba=financeiro";
+        var alterarFinanceiro = ViewData["FinanceiroAlterar"] is true;
+        <section id="painel_financeiro" role="tabpanel" aria-labelledby="aba_financeiro" hidden="@(aba != "financeiro")">
+            <div class="kt-card">
+                <div class="kt-card-header flex-wrap gap-3 py-4">
+                    <h3 class="kt-card-title">Mensalidades</h3>
+                    <a class="kt-btn kt-btn-sm kt-btn-outline" href="/Mensalidades"><i class="ki-filled ki-dollar"></i> Painel de pagamentos</a>
+                </div>
+                @if (financeiro.Count == 0)
+                {
+                    <estado-vazio icone="ki-dollar" titulo="Nenhuma mensalidade ainda"
+                                  texto="As mensalidades aparecem aqui quando o aluno está ativo com matrícula (trial não é cobrado)."></estado-vazio>
+                }
+                else
+                {
+                    <div class="kt-card-table kt-scrollable-x-auto">
+                        <table class="kt-table kt-table-border align-middle text-sm">
+                            <thead>
+                                <tr>
+                                    <th class="min-w-[130px] sm:min-w-[200px]">Mês</th>
+                                    <th class="min-w-[100px] hidden sm:table-cell">Vencimento</th>
+                                    <th class="min-w-[100px] hidden sm:table-cell">Valor</th>
+                                    <th class="min-w-[200px] hidden sm:table-cell">Situação</th>
+                                    <th class="w-[1%] text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var l in financeiro)
+                                {
+                                    <partial name="_LinhaMensalidade" model="@(new LinhaMensalidadeViewModel(l, alterarFinanceiro, false, voltarFicha, false))" />
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
         </section>
     }
 

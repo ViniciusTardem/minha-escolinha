@@ -101,7 +101,7 @@ public static class CatalogoModulos
             "A mensalidade é emitida sozinha (Pix, boleto ou cartão), o lembrete sai antes do vencimento e o pagamento é conciliado sem ninguém " +
             "conferir na mão.",
             ["Emissão automática", "Régua de cobrança", "Conciliação automática", "Fila de pagamentos divergentes"],
-            "S4", SituacaoModulo.Planejado, "/mensalidades", Recurso.FinanceiroEscolinha),
+            "S4", SituacaoModulo.Disponivel, "/Mensalidades", Recurso.FinanceiroEscolinha),
 
         new("mensagens", "Mensagens", "ki-message-text-2", SecaoComunicacao,
             "Tudo o que saiu pelo WhatsApp e pelo portal, com entrega, leitura e resposta.",

@@ -1,0 +1,84 @@
+@model IReadOnlyList<MinhaEscolinha.Infrastructure.Integracao.Asaas.ArmazemSimuladorAsaas.CobrancaSimulada>
+@{
+    ViewData["Title"] = "Simulador da Asaas";
+    string Situacao(MinhaEscolinha.Infrastructure.Integracao.Asaas.ArmazemSimuladorAsaas.CobrancaSimulada c) => c.Excluida ? "excluída" : c.Status switch
+    {
+        "PENDING" => "aguardando pagamento",
+        "OVERDUE" => "vencida",
+        "RECEIVED" => "recebida",
+        "CONFIRMED" => "confirmada (cartão)",
+        "RECEIVED_IN_CASH" => "recebida por fora",
+        "REFUNDED" => "estornada",
+        _ => c.Status.ToLowerInvariant()
+    };
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Simulador da Asaas" meta="Só em Development"
+                      descricao="A conta Asaas de mentira desta escolinha: as cobranças que o sistema emitiu. Pagar, vencer, estornar e excluir mandam o aviso (webhook) pelo endpoint de verdade, com o token da escolinha, e a mensalidade muda em instantes.">
+        <a class="kt-btn kt-btn-outline" href="/Mensalidades"><i class="ki-filled ki-dollar"></i> Mensalidades</a>
+    </cabecalho-pagina>
+
+    <div class="kt-card">
+        @if (Model.Count == 0)
+        {
+            <estado-vazio icone="ki-bill" titulo="Nenhuma cobrança emitida"
+                          texto="As mensalidades confirmadas vão para a Asaas na data de emissão (ou em Mensalidades › Atualizar agora) e aparecem aqui."></estado-vazio>
+        }
+        else
+        {
+            <ul class="esc-linhas">
+                @foreach (var c in Model)
+                {
+                    var aberta = !c.Excluida && c.Status is "PENDING" or "OVERDUE";
+                    var paga = c.Status is "RECEIVED" or "CONFIRMED" or "RECEIVED_IN_CASH";
+                    <li class="flex flex-col gap-3 px-5 py-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div class="flex flex-col gap-0.5 min-w-0">
+                                <a class="text-sm font-medium text-mono hover:text-primary wrap-anywhere" href="/dev/asaas/fatura/@c.Id">@c.Descricao</a>
+                                <span class="text-xs text-secondary-foreground">@c.ClienteNome · vence @Formatacao.Data(c.Vencimento) · @c.Id</span>
+                            </div>
+                            <div class="flex flex-col items-start sm:items-end gap-0.5 shrink-0">
+                                <span class="text-sm font-semibold text-mono">@Formatacao.Moeda(c.Valor)</span>
+                                <span class="text-xs text-secondary-foreground">@Situacao(c)</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if (aberta)
+                            {
+                                <form method="post" asp-action="Pagar" asp-route-id="@c.Id">
+                                    <input type="hidden" name="meio" value="PIX" />
+                                    <button class="kt-btn kt-btn-sm kt-btn-primary" type="submit"><i class="ki-filled ki-copy"></i> Pagar (Pix)</button>
+                                </form>
+                                <form method="post" asp-action="PagarDiferente" asp-route-id="@c.Id" class="flex items-center gap-2">
+                                    <label class="sr-only" for="valor_@c.Id">Valor pago</label>
+                                    <input class="kt-input kt-input-sm w-[110px]" id="valor_@c.Id" name="valor" type="text" inputmode="decimal"
+                                           value="@Moeda.ParaCampo(Math.Round(c.Valor / 2, 2))" />
+                                    <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit">Pagar outro valor</button>
+                                </form>
+                            }
+                            @if (!c.Excluida && c.Status == "PENDING")
+                            {
+                                <form method="post" asp-action="Vencer" asp-route-id="@c.Id">
+                                    <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit"><i class="ki-filled ki-time"></i> Vencer</button>
+                                </form>
+                            }
+                            @if (paga)
+                            {
+                                <form method="post" asp-action="Estornar" asp-route-id="@c.Id">
+                                    <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit"><i class="ki-filled ki-arrows-circle"></i> Estornar</button>
+                                </form>
+                            }
+                            @if (aberta)
+                            {
+                                <form method="post" asp-action="Excluir" asp-route-id="@c.Id">
+                                    <button class="kt-btn kt-btn-sm kt-btn-ghost" type="submit"><i class="ki-filled ki-cross-circle"></i> Excluir no painel</button>
+                                </form>
+                            }
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>

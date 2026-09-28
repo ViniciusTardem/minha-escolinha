@@ -137,10 +137,16 @@ public class MensageriaRepositorio(EscolinhaDbContext contexto) : IMensageriaRep
             .ToList();
     }
 
-    public async Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisDoAlunoAsync(Guid alunoId, CancellationToken ct = default)
+    public Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisDoAlunoAsync(Guid alunoId, CancellationToken ct = default) =>
+        ResponsaveisAsync(alunoId, financeiros: false, ct);
+
+    public Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisFinanceirosDoAlunoAsync(Guid alunoId, CancellationToken ct = default) =>
+        ResponsaveisAsync(alunoId, financeiros: true, ct);
+
+    private async Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisAsync(Guid alunoId, bool financeiros, CancellationToken ct)
     {
         var linhas = await contexto.VinculosResponsavel.AsNoTracking()
-            .Where(v => v.Aluno_ID == alunoId && v.RecebeNotificacao)
+            .Where(v => v.Aluno_ID == alunoId && (financeiros ? v.RecebeCobranca : v.RecebeNotificacao))
             .Select(v => new
             {
                 v.Responsavel_ID,

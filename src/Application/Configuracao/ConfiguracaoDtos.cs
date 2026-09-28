@@ -100,7 +100,12 @@ public class VincularContaAsaasRequisicao
     public string SenhaAtual { get; set; } = string.Empty;
 }
 
-public record ContaAsaasResposta(bool Vinculada, AmbienteAsaas? Ambiente, string? FinalChave, DateTime? VinculadaEm);
+/// <param name="UrlWebhook">O endereço que a conta Asaas avisa (cobrança paga, vencida, excluída).</param>
+/// <param name="WebhookRegistradoEm">Quando o webhook foi cadastrado na conta pela API (modo Api).</param>
+/// <param name="Integracao">O modo desta instalação (simulador ou API).</param>
+public record ContaAsaasResposta(bool Vinculada, AmbienteAsaas? Ambiente, string? FinalChave, DateTime? VinculadaEm,
+    string? UrlWebhook = null, DateTime? WebhookRegistradoEm = null, string? WebhookErro = null, string? Integracao = null,
+    bool Simulador = false);
 
 public class ConcederCreditosRequisicao
 {

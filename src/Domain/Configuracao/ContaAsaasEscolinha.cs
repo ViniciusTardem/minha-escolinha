@@ -34,6 +34,33 @@ public class ContaAsaasEscolinha : IEntidadeAuditavel, IEntidadeDaEscolinha
     public DateTime VinculadaEm { get; set; }
     public Guid? VinculadaPor_ID { get; set; }
 
+    /// <summary>
+    /// Muda a cada vínculo ou troca de chave (S4): a cobrança e o cliente guardam em qual conta foram criados, porque a
+    /// chave nova não enxerga o que ficou na conta anterior.
+    /// </summary>
+    public Guid Identificador { get; set; }
+
+    /// <summary>
+    /// Token que a Asaas manda no cabeçalho <c>asaas-access-token</c> de cada webhook, cifrado. Nasce no primeiro vínculo e
+    /// não muda na troca de conta: os webhooks da conta anterior continuam valendo para o que foi emitido nela.
+    /// </summary>
+    public string? TokenWebhookProtegido { get; set; }
+
+    /// <summary>Quando o webhook foi cadastrado na conta Asaas (pela API, no modo Api), e o último erro dessa tentativa.</summary>
+    public DateTime? WebhookRegistradoEm { get; set; }
+
+    public string? WebhookErro { get; set; }
+
+    public const int TamanhoErroWebhook = 500;
+
+    /// <summary>Um novo identificador para a conta (vínculo ou troca de chave).</summary>
+    public void NovaVersao()
+    {
+        Identificador = Guid.NewGuid();
+        WebhookRegistradoEm = null;
+        WebhookErro = null;
+    }
+
     public DateTime DataCadastro { get; set; }
     public Guid? UsuarioCadastro_ID { get; set; }
     public DateTime? DataAtualizacao { get; set; }

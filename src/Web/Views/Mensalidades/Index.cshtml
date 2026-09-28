@@ -1,0 +1,149 @@
+@model MensalidadesViewModel
+@{
+    ViewData["Title"] = "Mensalidades";
+    var p = Model.Painel;
+    var f = Model.Filtro;
+    var voltar = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var anterior = p.Competencia.AddMonths(-1).ToString("yyyy-MM-dd");
+    var seguinte = p.Competencia.AddMonths(1).ToString("yyyy-MM-dd");
+    var aConfirmar = Model.PodeAlterar && p.Linhas.Any(l => l.AguardandoConfirmacao);
+    var icones = new Dictionary<GrupoMensalidade, string>
+    {
+        [GrupoMensalidade.AConfirmar] = "ki-check",
+        [GrupoMensalidade.AEmitir] = "ki-time",
+        [GrupoMensalidade.EmAberto] = "ki-bill",
+        [GrupoMensalidade.Vencidas] = "ki-information-2",
+        [GrupoMensalidade.Pagas] = "ki-double-check",
+        [GrupoMensalidade.CanceladasEIsentas] = "ki-cross-circle"
+    };
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Mensalidades" meta="@($"{Formatacao.Mes(p.Competencia)} · Asaas: {p.Integracao}")"
+                      descricao="A mensalidade de cada matrícula, do mês escolhido: a emissão na Asaas é automática, a régua avisa antes e depois do vencimento e o pagamento é conciliado sozinho. Pagamento com valor diferente não muda nada: vai para as divergências.">
+        <a class="kt-btn kt-btn-outline" href="/Mensalidades/Divergencias"><i class="ki-filled ki-information-2"></i> Divergências (@p.Divergencias)</a>
+        @if (Model.PodeAlterar)
+        {
+            <form method="post" asp-action="Atualizar">
+                <input type="hidden" name="voltar" value="@voltar" />
+                <button class="kt-btn kt-btn-outline" type="submit"><i class="ki-filled ki-arrows-circle"></i> Atualizar agora</button>
+            </form>
+        }
+    </cabecalho-pagina>
+
+    @if (!p.ContaVinculada)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3 mb-5" role="status">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <div class="flex flex-col gap-1 text-sm">
+                <span class="font-medium">Sem conta Asaas vinculada: nenhuma mensalidade é emitida</span>
+                <span>As previstas continuam aqui e saem assim que a conta de recebimento for vinculada.</span>
+                <a class="kt-link" href="/ContaRecebimento">Vincular a conta de recebimento</a>
+            </div>
+        </div>
+    }
+
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex items-center gap-2">
+            <a class="kt-btn kt-btn-icon kt-btn-outline" href="?competencia=@anterior" aria-label="Mês anterior"><i class="ki-filled ki-arrow-left"></i></a>
+            <span class="text-base font-semibold text-mono min-w-[150px] text-center">@Formatacao.Mes(p.Competencia)</span>
+            <a class="kt-btn kt-btn-icon kt-btn-outline" href="?competencia=@seguinte" aria-label="Mês seguinte"><i class="ki-filled ki-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-5 mb-5">
+        @foreach (var t in p.Totais)
+        {
+            var ativo = f.Grupo == t.Grupo;
+            var icone = icones[t.Grupo];
+            <a class="kt-card hover:border-primary @(ativo ? "border-primary" : "")" href="?competencia=@p.Competencia.ToString("yyyy-MM-dd")&grupo=@t.Grupo"
+               aria-current="@(ativo ? "true" : null)">
+                <div class="kt-card-content flex flex-col gap-1">
+                    <span class="flex items-center gap-1.5 text-xs text-secondary-foreground"><i class="ki-filled @icone"></i> @ServicoMensalidades.RotuloGrupo(t.Grupo)</span>
+                    <span class="text-2xl font-semibold text-mono">@Formatacao.Numero(t.Quantidade)</span>
+                    <span class="text-xs text-muted-foreground">@Formatacao.Moeda(t.Valor)</span>
+                </div>
+            </a>
+        }
+    </div>
+
+    <form method="get" class="kt-card mb-5">
+        <input type="hidden" name="competencia" value="@p.Competencia.ToString("yyyy-MM-dd")" />
+        <div class="kt-card-content grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div class="flex flex-col gap-1 lg:col-span-2">
+                <label class="kt-form-label" for="busca">Buscar</label>
+                <div class="kt-input">
+                    <i class="ki-filled ki-magnifier"></i>
+                    <input id="busca" name="busca" type="search" value="@f.Busca" placeholder="Nome do aluno" />
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label" for="turmaId">Turma</label>
+                <select class="kt-select" id="turmaId" name="turmaId" data-esc-enviar-ao-mudar>
+                    <option value="">Todas</option>
+                    @foreach (var t in p.Turmas)
+                    {
+                        <option value="@t.Id" selected="@(t.Id == f.TurmaId)">@t.Nome</option>
+                    }
+                </select>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label" for="grupo">Situação</label>
+                <select class="kt-select" id="grupo" name="grupo" data-esc-enviar-ao-mudar>
+                    <option value="">Todas</option>
+                    @foreach (var g in Enum.GetValues<GrupoMensalidade>())
+                    {
+                        <option value="@g" selected="@(g == f.Grupo)">@ServicoMensalidades.RotuloGrupo(g)</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <div class="kt-card">
+        @if (aConfirmar)
+        {
+            <div class="kt-card-header flex-wrap gap-3 py-4">
+                <h3 class="kt-card-title">Primeiras mensalidades</h3>
+                <form id="form-confirmar" method="post" asp-action="ConfirmarMarcadas" class="flex flex-wrap items-center gap-2.5"
+                      data-esc-confirmar="Confirmar as mensalidades marcadas com o valor da matrícula?">
+                    <input type="hidden" name="voltar" value="@voltar" />
+                    <span class="text-xs text-secondary-foreground">A primeira de cada matrícula só vai para a Asaas depois de confirmada.</span>
+                    <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Confirmar marcadas</button>
+                </form>
+            </div>
+        }
+        @if (p.Linhas.Count == 0)
+        {
+            <estado-vazio icone="ki-dollar" titulo="Nenhuma mensalidade aqui"
+                          texto="@(f.Grupo is null && f.TurmaId is null && string.IsNullOrWhiteSpace(f.Busca) ? "As mensalidades do mês aparecem quando há aluno ativo com matrícula. A projeção roda toda madrugada (ou em Atualizar agora)." : "Mude a busca ou os filtros.")">
+            </estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            @if (aConfirmar)
+                            {
+                                <th class="w-[1%]"><span class="sr-only">Marcar</span></th>
+                            }
+                            <th class="min-w-[120px] sm:min-w-[220px]">Aluno</th>
+                            <th class="min-w-[100px] hidden sm:table-cell">Vencimento</th>
+                            <th class="min-w-[100px] hidden sm:table-cell">Valor</th>
+                            <th class="min-w-[200px] hidden sm:table-cell">Situação</th>
+                            <th class="w-[1%] text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var l in p.Linhas)
+                        {
+                            <partial name="_LinhaMensalidade" model="@(new LinhaMensalidadeViewModel(l, Model.PodeAlterar, aConfirmar, voltar, true))" />
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

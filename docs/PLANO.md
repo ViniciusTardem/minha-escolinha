@@ -8,7 +8,7 @@ Plano vivo, atualizado ao fim de cada fatia. Cada documento responde por uma coi
 | **Como** construir | A herança do AlternativaDepartamentoPessoal ([`HERANCA.md`](HERANCA.md)) |
 | **Em que ordem** e onde estamos | Este plano |
 
-Última atualização: **27/09/2026**. F0, S0, o extra EX-01, o S1 (com o extra EX-02) e o S2 estão commitados na `main`. A prova do S2 com um número real espera a conta na Meta (P34). O S3 está pronto e aguarda a autorização de commit. A próxima fatia é o S4.
+Última atualização: **28/09/2026**. F0, S0, o extra EX-01, o S1 (com o extra EX-02), o S2 e o S3 estão commitados na `main`. O S4 está pronto no simulador e vai para a `main` com a autorização por fatia ("continue"). As provas fora dos simuladores esperam as contas: a da Meta, para o S2 (P34), e a da Asaas, para o S4 (P41). A próxima fatia é o S5.
 
 ---
 
@@ -65,6 +65,8 @@ O registro completo, com data, está em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-AB
 | Conta Asaas | Chave cifrada com Data Protection, final visível, troca pede a senha | D14, X04 |
 | Front | Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons filled, prefixo `esc-`, marca provisória | D17 |
 | Formulários | Erro com campo (`aria-invalid`), assistente abre na etapa do erro, coleção em action com nome de binding | D19, D20 |
+| Mensagens (R3) | Motor único: o módulo chama o emissor, a mensagem é gravada com o negócio (outbox), e o envio revalida a origem | D45, D46 |
+| Mensalidades (R1) | Recorrência própria pela matrícula; emissão na Asaas por job; conciliação por webhook, varredura e revalidação no envio; divergência só sinaliza | D66 a D72 |
 
 ---
 
@@ -77,11 +79,11 @@ O registro completo, com data, está em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-AB
 | Design system (4 superfícies + vitrine `/dev/design`) | — | **Pronto** | 26/09/2026 |
 | S0 — Fundação: conta, identidade e permissões | 12 | **Pronto** e commitado (`a444b48`). O parcial (`BL-M02-12`) fechou no S1, com a Turma. | 26/09/2026 |
 | Extra EX-01 — Compra de pacotes de créditos pelo Stripe da LDNA (X08) | — | **Pronto** no modo Simulado e commitado (`3c28d97`); falta configurar as chaves de teste | 26/09/2026 |
-| S1 — Cadastro: turma, sessões, aluno, responsável, equipe | 20 | **Pronto** e commitado (`b6a4c3f`): 19 concluídos e 1 parcial, que depende do S4 (recorrência no desligamento). O `BL-M04-06` fechou no S2. Com o extra EX-02 (alerta de quadra ocupada). | 27/09/2026 |
+| S1 — Cadastro: turma, sessões, aluno, responsável, equipe | 20 | **Pronto** e commitado (`b6a4c3f`), com os 20 concluídos: o `BL-M04-06` fechou no S2 e o `BL-M03-08` no S4 (recorrência no desligamento). Com o extra EX-02 (alerta de quadra ocupada). | 27/09/2026 |
 | S2 — Mensageria e acesso das famílias | 14 | **Pronto no simulador** e commitado (`c642f2f`), com os 14 concluídos. A prova com um número real espera a conta na Meta (P34). | 27/09/2026 |
-| S3 — Presença e controle de evasão | 6 | **Pronto**, com os 6 concluídos. A reabertura da chamada sem sinal pelo service worker espera um navegador que confie no certificado e o teste em aparelho real (P37). Aguarda autorização de commit. | 27/09/2026 |
-| S4 — Financeiro: mensalidade, régua e conciliação | 8 | Próxima | — |
-| S5 — Eventos e convocações | 10 | — | — |
+| S3 — Presença e controle de evasão | 6 | **Pronto** e commitado (`c6bdbc4`), com os 6 concluídos. A reabertura da chamada sem sinal pelo service worker espera um navegador que confie no certificado e o teste em aparelho real (P37). | 27/09/2026 |
+| S4 — Financeiro: mensalidade, régua e conciliação | 8 | **Pronto no simulador**, com os 8 concluídos. A prova com a sandbox da Asaas espera a conta (P41). | 28/09/2026 |
+| S5 — Eventos e convocações | 10 | Próxima | — |
 | S6 — Portal do responsável | 6 | — | — |
 | S7 — Carga inicial da escolinha piloto | 5 | — | — |
 
@@ -92,8 +94,12 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
 ## 4. Próximos passos
 
 ### 4.0 Agora
-1. **Autorizar o commit do S3**, direto na `main`, como o S2.
-2. **Provar o S2 com um número real** (P34), assim que a LDNA tiver:
+1. **S5 — Eventos e convocações:** próxima fatia (§4.1).
+2. **Provar o S4 com a sandbox da Asaas** (P41), assim que houver a conta sandbox e um endereço https público:
+   - gravar em user-secrets `Asaas:Modo = Api` e `Asaas:UrlPublica` (CLAUDE.md §7);
+   - vincular a chave sandbox na tela Conta de recebimento; o webhook é cadastrado sozinho;
+   - confirmar uma mensalidade, esperar a emissão, pagar na fatura da sandbox e conferir a conciliação e a régua parada.
+3. **Provar o S2 com um número real** (P34), assim que a LDNA tiver:
    - a conta WhatsApp Business na Cloud API;
    - a URL pública em HTTPS para o webhook;
    - os templates aprovados;
@@ -103,7 +109,6 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
    - convide um número de teste;
    - responda pelo celular;
    - confira a resposta e o log em Mensagens.
-3. **S4 — Financeiro:** próxima fatia (§4.1).
 4. **Validar a chamada sem sinal com o service worker** (P37):
    - confiar o certificado de desenvolvimento (§7) e repetir o roteiro: abrir a lista com sinal, tirar a rede, recarregar a sessão e marcar;
    - antes do piloto, repetir num Android e num iPhone, no servidor com HTTPS.
@@ -111,22 +116,41 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
    - criar um sandbox próprio no painel do Stripe (P27);
    - gravar em user-secrets `Stripe:Modo = Teste` e `Stripe:ChaveSecreta` (chave de teste, `sk_test_` ou `rk_test_` restrita);
    - para os webhooks em localhost, rodar o Stripe CLI (`stripe listen --forward-to https://localhost:7186/api/v1/webhooks/stripe`) e gravar o `whsec_` que ele mostrar em `Stripe:SegredoWebhook`. Sem isso, a volta do pagamento e a varredura confirmam as compras.
-### 4.1 O que o S4 precisa e ainda não existe
-- **Critério de pronto da spec:** a mensalidade do mês é emitida sozinha, o lembrete sai antes do vencimento, o pagamento é conciliado sem ação humana e a régua para na hora.
-- **Decisões que o S4 toca:**
-  - o cliente Asaas: reaproveitar um dos dois achados na herança (HERANCA §3) ou escrever o próprio, no padrão do DP, com simulador `/dev/asaas` e trava de ambiente;
-  - P17: vencimento, emissão antecipada, pró-rata e pagador sem CPF;
-  - P18: dinheiro em espécie, estorno e chargeback;
-  - P22: limpeza do corpo bruto dos webhooks;
-  - P36: o descadastro pelo WhatsApp diante da mensagem essencial de cobrança.
+### 4.1 O que o S5 precisa e ainda não existe
+- **Critério de pronto da spec:** o professor monta 4 eventos com 12 convocados cada e dispara tudo em um fluxo só; as respostas chegam pelo WhatsApp e o painel mostra confirmados, recusados e pendentes sem atualizar a tela.
+- **Itens:** cadastro do evento (só o tipo jogo, com adversário opcional), conflito do professor, seleção de convocados com contador e sinais, aluno em dois jogos, disparo, lote de vários jogos num fluxo, painel em tempo real, lembrete a quem não respondeu, cancelar ou alterar em um toque, escopo por turma.
+- **Decisões que o S5 toca:**
+  - P01: duração do evento, 60 min pela modalidade (D12);
+  - P03: dois responsáveis respondem; vale a primeira, e o professor pode sobrescrever;
+  - P13: "evento alterado" vai aos responsáveis dos convocados, e só fura a janela de silêncio nas próximas 24 h;
+  - P19: transições do evento e o momento em que a convocação vira "sem resposta";
+  - P35: a resposta livre a uma mensagem que não espera resposta; o sino do painel (D55) faz sentido com o painel ao vivo;
+  - o tempo real: SignalR no padrão do DP (`AdmissoesHub`: o servidor empurra `{id, versão}` e a tela busca de novo, com `?desde=` ao reconectar).
 - **O que as fatias anteriores deixam pronto:**
-  - a conta Asaas da escolinha, com a chave cifrada, e os parâmetros `financeiro.*` (S0);
-  - a matrícula com o valor próprio e o pagador marcado no vínculo, e o desligamento que encerra as matrículas (S1). É dele que nasce o encerramento da recorrência (`BL-M06-14`, CA-2);
-  - os gatilhos de mensalidade e de pagamento no catálogo, com templates; a revalidação da origem no envio (CA-8), a janela de silêncio e a retenção das essenciais sem crédito (S2);
-  - o padrão de webhook bruto + job + varredura, do Stripe (EX-01) e do WhatsApp (S2).
-- **Maior risco do S4:** o CA-8 ("quem pagou nunca recebe cobrança") e a semântica da Asaas (valor original, data do pagamento, estorno).
+  - `TipoEvento` e `PoliticaPerfil` (R8) e os parâmetros `convocacao.*` (S0);
+  - o compromisso datado, a ocupação de agenda (`IOcupacaoAgenda`) e o detector de conflitos de professor e de local, e o escopo do professor (S1);
+  - os gatilhos de convocação, lembrete e evento alterado no catálogo, com templates e botões Sim/Não, e a resposta do botão devolvida ao módulo de origem (`IReceptorResposta`) (S2);
+  - o layout da quadra, com a barra de ação inferior (S3);
+  - as mensalidades vencidas, para o sinal de inadimplência na seleção (`convocacao.inadimplencia.*`, RF-CON-016) (S4).
+- **Maior risco do S5:** o fluxo em lote no celular e o limite de envio de um número novo (cerca de 96 mensagens por fim de semana cabem no primeiro nível da Meta).
 
-### 4.2 O que o S3 entregou (referência)
+### 4.2 O que o S4 entregou (referência)
+- **Recorrência pela matrícula:** previstas até o fim do mês seguinte, sem cobrar para trás; trial e pausa não pagam; a primeira de cada matrícula espera a gestão (D66).
+- **Emissão na Asaas:** um job por mensalidade na data de emissão, na conta da escolinha e no nome do pagador; a família escolhe Pix, boleto ou cartão; multa e juros congelados; sem duplicar; a impedida mostra o motivo, e a recusada volta com "Tentar de novo" ou com a conta vinculada de novo (D67, D73).
+- **Painel de pagamentos** por mês, com os grupos provisórios (P40), a aba Financeiro na ficha e o cartão no painel da gestão (D68).
+- **Régua** com tom crescente, um degrau por vez, pelo motor, com o link da fatura (D69).
+- **Conciliação:** webhook por escolinha com token, corpo bruto e job; valor original e data do pagamento; varredura de hora em hora; revalidação na hora do envio (CA-8) (D70).
+- **Divergências:** sinalizam sem mudar a situação; a fila resolve com explicação e autor; recebimento por fora (D72).
+- **Desligamento:** as previstas depois da data saem canceladas, e o débito emitido fica sinalizado (D71, CA-2).
+- **Acesso:** o financeiro é só do gestor, em todos os caminhos (D74).
+- **Integração:** cliente próprio da API, trava de ambiente e simulador `/dev/asaas` (D75).
+- **Testes:** 374 passando, 36 deles novos no S4. Entre eles:
+  - CA-2, CA-7, CA-8 e CA-9;
+  - o consumidor `financeiro.*` (CA-18);
+  - o contrato HTTP da Asaas e a trava de ambiente;
+  - o professor sem acesso ao financeiro.
+
+### 4.3 O que o S3 entregou (referência)
 - **Chamada na quadra** (`/Chamada`):
   - o treino do dia e a chamada esquecida dos últimos 7 dias;
   - P, F ou J num toque, "Todos presentes" e "Concluir chamada" na barra inferior (D58).
@@ -144,7 +168,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - o consumidor `presenca.*` (CA-18);
   - a restrição do motivo de saúde.
 
-### 4.3 O que o S2 entregou (referência)
+### 4.4 O que o S2 entregou (referência)
 - **Motor único de mensagens** (R3):
   - catálogo fechado de 11 gatilhos, com uma regra por gatilho;
   - outbox na mesma gravação do negócio, despacho depois do commit e varredura a cada 5 min (D45);
@@ -169,7 +193,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - isolamento A/B das mensagens e dos convites;
   - o teste de arquitetura: só o emissor cria mensagem e só o motor envia.
 
-### 4.4 O que o S1 entregou (referência)
+### 4.5 O que o S1 entregou (referência)
 - **Turmas e agenda:**
   - locais e professores, com disponibilidade semanal e indisponibilidades;
   - turma em etapas, com os valores iniciais do catálogo;
@@ -191,7 +215,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - escopo do professor e isolamento A/B;
   - saúde fora do registro de alterações.
 
-### 4.5 O que o S0 entregou (referência)
+### 4.6 O que o S0 entregou (referência)
 - **Criação da escolinha pela plataforma:** assistente em 3 etapas (escolinha → modalidade → 1º gestor). Grava tudo junto: escolinha, modalidade, os 26 parâmetros, conta de créditos, gestor e auditoria. A senha temporária aparece uma vez.
 - **Acesso:**
   - login com troca obrigatória de senha e bloqueio;
@@ -211,7 +235,7 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
   - criação atômica;
   - regras de arquitetura: relógio, `IgnoreQueryFilters`, acesso declarado, binding de coleções.
 
-### 4.6 O que o F0 entregou (referência)
+### 4.7 O que o F0 entregou (referência)
 - **Base do projeto:**
   - solução de 4 camadas + testes, em .NET 9;
   - Central Package Management, com o prefixo `MinhaEscolinha` nas DLLs;
@@ -234,12 +258,11 @@ Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [
 
 | Fatia | O essencial | Maior risco |
 |---|---|---|
-| S4 | <ul><li>Recorrência própria por matrícula → cobrança prevista → emissão por job → régua por avaliador → webhook + varredura.</li><li>Fila de divergências.</li><li>**Reaproveitar um cliente Asaas existente** (SDK `Projetos\Aplicativos\Asaas API` ou o cliente da AgenciaAzul; ver HERANCA §3).</li></ul> | CA-8 e a semântica da Asaas (valor original, estorno) |
 | S5 | <ul><li>Evento genérico, convocação por convocado, lote com rascunho até o disparo.</li><li>Painel em tempo real (SignalR, padrão do DP).</li><li>Lembretes, cancelamento e adiamento, alertas de conflito.</li></ul> | O fluxo em lote no celular e o limite de envio de um número novo |
 | S6 | <ul><li>`Areas/Portal`: filhos verificados, total do mês por filho.</li><li>Pix obtido antes por job; fatura Asaas para cartão.</li><li>Resposta à convocação.</li></ul> | Dado de menor exposto |
 | S7 | <ul><li>Planilha → mapear → validar e classificar → conferência (saúde mascarada) → gravação única.</li><li>ClosedXML (dependência nova, registrar em 12.3).</li></ul> | O formato real da planilha |
 
-**Massa de demonstração**, construída aos poucos (spec §13): 1 escolinha, 3 turmas, cerca de 60 alunos, irmãos, alunos com 2 responsáveis, 4 jogos no fim de semana com 12 convocados cada, e mensalidades pagas, vencidas, isentas e parciais. **O S1 montou a base** (turmas, alunos e famílias, em `/dev/massa`); os jogos entram no S5 e as mensalidades no S4.
+**Massa de demonstração**, construída aos poucos (spec §13): 1 escolinha, 3 turmas, cerca de 60 alunos, irmãos, alunos com 2 responsáveis, 4 jogos no fim de semana com 12 convocados cada, e mensalidades pagas, vencidas, isentas e parciais. **O S1 montou a base** (turmas, alunos e famílias, em `/dev/massa`). No S4, as mensalidades nascem da projeção das matrículas da massa ("Atualizar agora"), e o simulador da Asaas produz as pagas, as parciais e os estornos. Os jogos entram no S5.
 
 ---
 
@@ -249,9 +272,9 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 
 | Padrão | Onde está no DP | Fatia |
 |---|---|---|
-| Integração: opções Simulado/Api, trava de ambiente, simulador com página `/dev`, contrato HTTP com handler falso | ZapSign e GoHighLevel | S4 (o WhatsApp seguiu o padrão no S2) |
-| Outbox + varredura de lembretes | `docs/integrador/08-MOTOR-LEMBRETES.md` | S4, S5 (o motor de mensagens seguiu o padrão no S2) |
-| Webhook: gravar o corpo bruto, responder 200, processar por job | ZapSign | S4 (o WhatsApp seguiu o padrão no S2) |
+| Integração: opções Simulado/Api, trava de ambiente, simulador com página `/dev`, contrato HTTP com handler falso | ZapSign e GoHighLevel | Adotado no S2 (WhatsApp) e no S4 (Asaas) |
+| Outbox + varredura de lembretes | `docs/integrador/08-MOTOR-LEMBRETES.md` | Adotado no S2 (motor) e no S4 (régua); S5 (lembrete da convocação) |
+| Webhook: gravar o corpo bruto, responder 200, processar por job | ZapSign | Adotado no S2 (WhatsApp) e no S4 (Asaas) |
 | Agendador em memória nos testes | `AgendadorDeTeste` | Adotado no S2 (`AgendadorMensageriaDeTeste`) |
 | Tempo real: o servidor empurra `{id, versão}`; recuperação com `?desde=` | `AdmissoesHub` | S5 |
 | Ficha lateral: drawer com versão e resposta 409 no conflito | `ficha.js` | Não adotado no S1: a ficha é página com abas; a versão de linha entrou sem o drawer (D37) |
@@ -266,13 +289,14 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 - **SQL Server:**
   - servidor `VINICIUSTARDEM\SQLEXPRESS`, banco `escolinhaesporte` (compatibilidade 150, AUTO_CLOSE desligado);
   - testes em `escolinhaesporte_Testes`, recriado a cada execução, com autenticação do Windows ou a conexão em `ESC_TESTES_SQL`.
-- **Segredos** (user-secrets `minha-escolinha-web`): `ConnectionStrings:ConexaoPadrao`, `Seed:Administrador:Login`, `Seed:Administrador:Nome` e `Seed:Administrador:Senha`. As chaves do WhatsApp (modo Api) e do Stripe (modo Teste) só entram quando houver conta (CLAUDE.md §7).
-- **Endereços:** https://localhost:7186 (e http://localhost:5186); vitrine em `/dev/design`; simuladores em `/dev/whatsapp` e `/dev/stripe`; Hangfire em `/jobs`; saúde em `/health`.
+- **Segredos** (user-secrets `minha-escolinha-web`): `ConnectionStrings:ConexaoPadrao`, `Seed:Administrador:Login`, `Seed:Administrador:Nome` e `Seed:Administrador:Senha`. As chaves do WhatsApp (modo Api) e do Stripe (modo Teste) só entram quando houver conta (CLAUDE.md §7). A Asaas não tem segredo de instalação: a chave é de cada escolinha, cifrada no banco (D14), e o modo Api pede só `Asaas:Modo` e `Asaas:UrlPublica`.
+- **Endereços:** https://localhost:7186 (e http://localhost:5186); vitrine em `/dev/design`; simuladores em `/dev/whatsapp`, `/dev/stripe` e `/dev/asaas`; Hangfire em `/jobs`; saúde em `/health`.
 - **Dados de validação no banco de desenvolvimento:**
   - as escolinhas "Escolinha Piloto Londrina" (A) e "Escolinha Bola na Rede" (B), cada uma com o seu gestor, criadas na validação do S0. As senhas não ficam em arquivo versionado;
   - em A, desde o S1: as turmas, os alunos e as famílias da validação e da massa de demonstração (`/dev/massa`);
   - em A, desde o S2: a responsável Ana Almeida ativou o acesso sem e-mail (login pelo CPF), e o vínculo com o Arthur foi confirmado. O treino de sábado, 03/10, da Sub-9 foi cancelado na validação, e o log tem as mensagens do convite e do cancelamento;
   - em A, desde o S3: a turma "Sub-11 · segunda e quarta" tem uma sessão realizada no domingo, 27/09, com a falta da Ana Lima, o alerta disparado e a mensagem à Maria Lima. Para a validação, o limite de faltas foi a 1 e voltou a 4, e um horário de domingo entrou e saiu da turma, tudo com histórico;
+  - em A, desde o S4: a conta de recebimento está vinculada (Sandbox), com o simulador. As 53 mensalidades de outubro foram projetadas: 50 a confirmar, a da Alice Pereira impedida (pagador sem CPF), a do Antônio Moura paga com divergência aceita (R$ 100,00) e a do Anthony Pacheco cancelada depois do estorno. Os parâmetros ajustados para a validação (emissão, lembrete e janela de silêncio) voltaram pela tela, com histórico. O simulador guarda as faturas em `%LOCALAPPDATA%\MinhaEscolinha\simulador-asaas.json`;
   - para validar o escopo do professor com um login real, o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A: a ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL, e o vínculo Professor em A foi criado.
 
 ---
@@ -284,7 +308,8 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | A planilha real da escolinha piloto | Importação (S7). O S1 seguiu com os campos da §5 da spec; conferir se a planilha traz algo a mais. | P21 |
 | Conta WhatsApp Business da LDNA na Cloud API, URL HTTPS pública, templates aprovados e números de teste | A prova do S2 com um número real e todo envio real | P14, P34 |
 | Validar a categoria e os textos dos 13 templates (tela Templates, da plataforma) | Submissão à Meta | P02 |
-| Conta Asaas da escolinha piloto (sandbox e produção) | "Pronto" do S4 | P21 |
+| Conta Asaas sandbox (da escolinha piloto ou da LDNA, para o teste) e endereço https público; para produção, a conta da escolinha | A prova do S4 fora do simulador; a cobrança real | P21, P41 |
+| Confirmar com a escolinha: os grupos do painel de pagamentos; se alguma turma é cobrada fora do mês; se a mudança no cadastro atualiza o cliente na Asaas; se o piloto precisa reabrir a mensalidade estornada | Nada bloqueia; seguem os encaminhamentos provisórios | P40, P42, P43, P44 |
 | Pacote de créditos (comercial) | Envio real (S2) | P06, P21 |
 | Hospedagem com HTTPS público | Webhooks do WhatsApp e da Asaas | P21 |
 | Identidade visual (logo, cor) | Trocar a marca provisória | D17 |
@@ -329,3 +354,8 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | 27/09/2026 | **Validação no navegador** (Playwright), com o celular emulado sem rede: <ul><li>marcações guardadas no aparelho;</li><li>sincronização ao reconectar;</li><li>o alerta e a mensagem à responsável certa;</li><li>a ficha, o painel e a lista de alunos em risco;</li><li>as telas novas em 375 e 320 px, no claro e no escuro.</li></ul> O service worker não registra nesta máquina: o certificado de desenvolvimento não é confiável (P37). |
 | 27/09/2026 | **Defeitos achados e corrigidos:** <ul><li>Incluir um horário na turma gerava as sessões dele duas vezes, e a gravação falhava (defeito do S1, D65, com teste de regressão).</li><li>O aviso de faltas dizia "1 falta(s)". Agora a quantidade vai flexionada, nos templates e no banco de desenvolvimento.</li></ul> |
 | 27/09/2026 | **Resultado:** build sem aviso; 338 testes passando (19 novos no S3); 0 classes faltando; nenhuma rolagem horizontal em 375 e 320 px nas telas do S3, no claro e no escuro. Aguarda autorização de commit. |
+| 27/09/2026 | **Commit do S3** na `main` (`c6bdbc4`), com a autorização por fatia do responsável ("continuar"). |
+| 28/09/2026 | **S4 construído** (8 itens), direto na `main`: <ul><li>recorrência pela matrícula;</li><li>emissão por job, com o cliente próprio da Asaas, a trava de ambiente e o simulador `/dev/asaas`;</li><li>régua com tom crescente;</li><li>conciliação por webhook, varredura e revalidação no envio;</li><li>fila de divergências e recebimento por fora;</li><li>fim da recorrência no desligamento;</li><li>financeiro só do gestor.</li></ul> Decisões D66 a D75; pendências P40 a P44. |
+| 28/09/2026 | **Validação no navegador** (Playwright), com o simulador da Asaas: <ul><li>a entrada no sistema, com as 53 mensalidades de outubro;</li><li>a confirmação em lote, a emissão e o lembrete;</li><li>o pagamento por Pix conciliado sozinho, com a régua parada;</li><li>a divergência aceita e o estorno cancelado;</li><li>o professor sem acesso;</li><li>as telas em 375 e 320 px, no claro e no escuro.</li></ul> |
+| 28/09/2026 | **Defeitos achados e corrigidos:** <ul><li>A mensalidade impedida entrava na conta de "indo para a Asaas". Agora ela não vira job (D67).</li><li>A régua não dizia de qual escolinha era a cobrança. Os templates começam por "Escolinha X informa" (D69).</li><li>A paga e estornada só aceitava "ciência" e continuaria contada como paga. Agora a fila cancela ou isenta (D72).</li><li>A recusa definitiva da Asaas prendia a mensalidade para sempre, inclusive com a chave revogada. Agora voltam pelo "Tentar de novo" e pela conta vinculada de novo (D67, D73).</li><li>Na entrada no sistema, o painel abria no mês vazio. Agora abre no mês seguinte.</li><li>No celular, o cabeçalho "Situação" aparecia sem a célula dele.</li><li>No computador, as ações da linha quebravam em duas.</li><li>O cabeçalho de cartão que quebra encostava na borda de cima, também em Convites, do S2.</li><li>O cartão do painel tinha o link longo, e a aba Financeiro mostrava "0".</li></ul> |
+| 28/09/2026 | **Resultado:** build sem aviso; 374 testes passando (36 novos no S4); 0 classes faltando; nenhuma rolagem horizontal, nem das tabelas, em 375 e 320 px nas telas do S4, no claro e no escuro. |

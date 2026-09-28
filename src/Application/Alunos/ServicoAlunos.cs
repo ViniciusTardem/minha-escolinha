@@ -59,7 +59,8 @@ public class ServicoAlunos(
     IValidator<DadosAlunoRequisicao> validadorDados,
     IValidator<SaudeAlunoRequisicao> validadorSaude,
     IValidator<MudarSituacaoRequisicao> validadorSituacao,
-    Presencas.IRiscoEvasao risco)
+    Presencas.IRiscoEvasao risco,
+    Financeiro.EfeitosFinanceirosDoCadastro financeiro)
 {
     public const string Entidade = nameof(Aluno);
     private static readonly CultureInfo PtBr = new("pt-BR");
@@ -218,6 +219,7 @@ public class ServicoAlunos(
         if (await AvisoCapacidadeAsync(turma, 1, ct) is { } capacidade) avisos.Add(capacidade);
 
         await repositorio.SalvarAsync(ct);
+        financeiro.CadastroMudou();
         return ResultadoOperacao.Ok(string.Join(" ", new[] { $"Matrícula de {aluno.Nome} em {turma.Nome} registrada." }.Concat(avisos)), aluno.Aluno_ID);
     }
 
@@ -359,6 +361,10 @@ public class ServicoAlunos(
         {
             foreach (var matricula in ativas) matricula.Encerrar(data, $"Desligamento: {r.Motivo!.Trim()}");
             detalhe = ativas.Count == 0 ? " Não havia matrícula ativa." : $" {ativas.Count} matrícula(s) encerrada(s) e vaga(s) liberada(s).";
+            // Encerra a recorrência de cobrança (BL-M06-14, CA-2): as previstas depois da data saem; o débito em aberto fica sinalizado.
+            var canceladas = await financeiro.EncerrarRecorrenciaAsync(ativas.Select(m => m.Matricula_ID).ToList(), data,
+                $"desligamento ({r.Motivo!.Trim()})", ct);
+            if (canceladas > 0) detalhe += $" {canceladas} mensalidade(s) prevista(s) cancelada(s).";
         }
         else if (turmaRematricula is not null)
         {
@@ -374,6 +380,7 @@ public class ServicoAlunos(
         registro.Registrar(Entidade, aluno.Aluno_ID, "Situação", MaquinaSituacaoAluno.Rotulo(de),
             $"{MaquinaSituacaoAluno.Rotulo(r.Para)} em {data:dd/MM/yyyy}.{detalhe}", r.Motivo);
         await repositorio.SalvarAsync(ct);
+        financeiro.CadastroMudou();
         return ResultadoOperacao.Ok($"Situação de {aluno.Nome}: {MaquinaSituacaoAluno.Rotulo(r.Para)} desde {data:dd/MM/yyyy}.{detalhe}");
     }
 

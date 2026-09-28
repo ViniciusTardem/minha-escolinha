@@ -782,6 +782,16 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(4)");
 
+                    b.Property<Guid>("Identificador")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("TokenWebhookProtegido")
+                        .HasMaxLength(2000)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(2000)");
+
                     b.Property<Guid?>("UsuarioAtualizacao_ID")
                         .HasColumnType("uniqueidentifier");
 
@@ -793,6 +803,13 @@ namespace MinhaEscolinha.Infrastructure.Migrations
 
                     b.Property<Guid?>("VinculadaPor_ID")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("WebhookErro")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("WebhookRegistradoEm")
+                        .HasColumnType("datetime2(3)");
 
                     b.HasKey("ContaAsaasEscolinha_ID")
                         .HasName("PK_ContaAsaasEscolinha");
@@ -1249,6 +1266,248 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.ToTable("Professor", (string)null);
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Financeiro.ClienteAsaas", b =>
+                {
+                    b.Property<Guid>("ClienteAsaas_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Conta")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IdAsaas")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(60)");
+
+                    b.Property<Guid>("Responsavel_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ClienteAsaas_ID")
+                        .HasName("PK_ClienteAsaas");
+
+                    b.HasIndex("Responsavel_ID");
+
+                    b.HasIndex("Escolinha_ID", "Responsavel_ID", "Conta")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_ClienteAsaas_Escolinha_Responsavel_Conta");
+
+                    b.ToTable("ClienteAsaas", (string)null);
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Financeiro.Cobranca", b =>
+                {
+                    b.Property<Guid>("Cobranca_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Aluno_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("Competencia")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("ConciliadaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("ConferidaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("ConfirmadaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("ConfirmadaPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("ConfirmadaPor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ContaAsaas")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("EmitidaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("EncerradaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("EncerradaPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("EncerradaPor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ErroEmissao")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("ErroEmissaoDefinitivo")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IdAsaas")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(60)");
+
+                    b.Property<decimal?>("JurosPercentualMes")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<Guid>("Matricula_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Meio")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Motivo")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<decimal?>("MultaPercentual")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateOnly?>("PagaEm")
+                        .HasColumnType("date");
+
+                    b.Property<string>("PagadorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("Pagador_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("PrimeiraDaMatricula")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Sinal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SinalDetalhe")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime?>("SinalEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("SinalResolucao")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime?>("SinalResolvidoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("SinalResolvidoPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TentativasEmissao")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Turma_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UltimaEtapa")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateOnly?>("UltimaEtapaData")
+                        .HasColumnType("date");
+
+                    b.Property<string>("UrlFatura")
+                        .HasMaxLength(300)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(300)");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Valor")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<decimal?>("ValorPago")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<DateOnly>("Vencimento")
+                        .HasColumnType("date");
+
+                    b.Property<byte[]>("Versao")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Cobranca_ID")
+                        .HasName("PK_Cobranca");
+
+                    b.HasIndex("Aluno_ID");
+
+                    b.HasIndex("Matricula_ID");
+
+                    b.HasIndex("Pagador_ID");
+
+                    b.HasIndex("Turma_ID");
+
+                    b.HasIndex("Escolinha_ID", "Aluno_ID")
+                        .HasDatabaseName("IX_Cobranca_Escolinha_Aluno");
+
+                    b.HasIndex("Escolinha_ID", "Competencia")
+                        .HasDatabaseName("IX_Cobranca_Escolinha_Competencia");
+
+                    b.HasIndex("Escolinha_ID", "IdAsaas")
+                        .HasDatabaseName("IX_Cobranca_Escolinha_IdAsaas")
+                        .HasFilter("[IdAsaas] IS NOT NULL");
+
+                    b.HasIndex("Escolinha_ID", "Sinal")
+                        .HasDatabaseName("IX_Cobranca_Escolinha_Sinal")
+                        .HasFilter("[Sinal] <> 0");
+
+                    b.HasIndex("Escolinha_ID", "Matricula_ID", "Competencia")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Cobranca_Escolinha_Matricula_Competencia");
+
+                    b.HasIndex("Escolinha_ID", "Situacao", "Vencimento")
+                        .HasDatabaseName("IX_Cobranca_Escolinha_Situacao_Vencimento");
+
+                    b.ToTable("Cobranca", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Cobranca_Sinal", "[Sinal] IN (0, 10, 20, 30, 40, 50, 60)");
+
+                            t.HasCheckConstraint("CK_Cobranca_Situacao", "[Situacao] IN (10, 20, 30, 40, 50, 60, 70)");
+
+                            t.HasCheckConstraint("CK_Cobranca_Valor", "[Valor] > 0");
+                        });
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Integracao.WebhookRecebido", b =>
                 {
                     b.Property<Guid>("WebhookRecebido_ID")
@@ -1259,6 +1518,9 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Property<string>("Corpo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("EventoExterno")
                         .IsRequired()
@@ -1510,6 +1772,11 @@ namespace MinhaEscolinha.Infrastructure.Migrations
 
                     b.Property<bool>("Essencial")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Etapa")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTime?>("FalhouEm")
                         .HasColumnType("datetime2(3)");
@@ -2770,6 +3037,60 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasForeignKey("Pessoa_ID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("FK_Professor_Pessoa");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Financeiro.ClienteAsaas", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ClienteAsaas_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Responsavel", null)
+                        .WithMany()
+                        .HasForeignKey("Responsavel_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ClienteAsaas_Responsavel");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Financeiro.Cobranca", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Aluno", null)
+                        .WithMany()
+                        .HasForeignKey("Aluno_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Cobranca_Aluno");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Cobranca_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Matricula", null)
+                        .WithMany()
+                        .HasForeignKey("Matricula_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Cobranca_Matricula");
+
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Responsavel", null)
+                        .WithMany()
+                        .HasForeignKey("Pagador_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_Cobranca_Pagador");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Turma", null)
+                        .WithMany()
+                        .HasForeignKey("Turma_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Cobranca_Turma");
                 });
 
             modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.ConviteAcesso", b =>

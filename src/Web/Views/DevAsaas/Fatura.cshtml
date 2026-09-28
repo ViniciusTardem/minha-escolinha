@@ -1,0 +1,53 @@
+@model MinhaEscolinha.Infrastructure.Integracao.Asaas.ArmazemSimuladorAsaas.CobrancaSimulada
+@{
+    ViewData["Title"] = "Fatura (simulador da Asaas)";
+    Layout = "_LayoutAutenticacao";
+    var hoje = (DateOnly)ViewData["Hoje"]!;
+    var aberta = !Model.Excluida && Model.Status is "PENDING" or "OVERDUE";
+    var atrasada = hoje > Model.Vencimento;
+    var voltar = $"/dev/asaas/fatura/{Model.Id}";
+}
+
+<div class="kt-card max-w-[420px] w-full">
+    <div class="kt-card-content flex flex-col gap-5 p-8 sm:p-10">
+        <div class="flex flex-col gap-2 text-center">
+            <span class="kt-badge kt-badge-sm kt-badge-outline kt-badge-warning self-center">Simulador da Asaas · nada é cobrado</span>
+            <h1 class="text-lg font-medium text-mono">@Formatacao.Moeda(Model.ValorOriginal ?? Model.Valor)</h1>
+            <p class="text-sm text-secondary-foreground">@Model.Descricao</p>
+            <p class="text-xs text-secondary-foreground">Vencimento @Formatacao.Data(Model.Vencimento) · @Model.ClienteNome</p>
+            @if (aberta && atrasada && (Model.Multa > 0 || Model.Juros > 0))
+            {
+                <p class="text-xs text-secondary-foreground">Depois do vencimento: multa de @Formatacao.Percentual(Model.Multa) e juros de @Formatacao.Percentual(Model.Juros) ao mês.</p>
+            }
+        </div>
+
+        @if (aberta)
+        {
+            <div class="flex flex-col gap-2.5">
+                <form method="post" asp-action="Pagar" asp-route-id="@Model.Id">
+                    <input type="hidden" name="meio" value="PIX" />
+                    <input type="hidden" name="voltar" value="@voltar" />
+                    <button class="kt-btn kt-btn-primary w-full justify-center" type="submit"><i class="ki-filled ki-copy"></i> Pagar com Pix</button>
+                </form>
+                <form method="post" asp-action="Pagar" asp-route-id="@Model.Id">
+                    <input type="hidden" name="meio" value="BOLETO" />
+                    <input type="hidden" name="voltar" value="@voltar" />
+                    <button class="kt-btn kt-btn-outline w-full justify-center" type="submit"><i class="ki-filled ki-bill"></i> Pagar o boleto</button>
+                </form>
+                <form method="post" asp-action="Pagar" asp-route-id="@Model.Id">
+                    <input type="hidden" name="meio" value="CREDIT_CARD" />
+                    <input type="hidden" name="voltar" value="@voltar" />
+                    <button class="kt-btn kt-btn-outline w-full justify-center" type="submit"><i class="ki-filled ki-credit-cart"></i> Pagar com cartão</button>
+                </form>
+            </div>
+            <p class="text-xs text-muted-foreground text-center">Pagar aqui manda o aviso da Asaas ao sistema, como o pagamento de verdade.</p>
+        }
+        else
+        {
+            <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3" role="status">
+                <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                <span class="text-sm">@(Model.Excluida ? "Esta fatura não vale mais." : $"Fatura paga em {Formatacao.Data(Model.PagaEm)} ({Formatacao.Moeda(Model.Valor)}).")</span>
+            </div>
+        }
+    </div>
+</div>

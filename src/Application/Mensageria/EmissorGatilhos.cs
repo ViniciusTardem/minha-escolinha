@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
+using MinhaEscolinha.Domain.Financeiro;
 using MinhaEscolinha.Domain.Mensageria;
 using MinhaEscolinha.Domain.Presencas;
 using MinhaEscolinha.Domain.Turmas;
@@ -28,6 +29,7 @@ public class EmissorGatilhos(
     public const string OrigemSessao = "Sessao";
     public const string OrigemConvite = "Convite";
     public const string OrigemAlertaFaltas = "AlertaFaltas";
+    public const string OrigemCobranca = "Cobranca";
 
     /// <summary>
     /// Treino cancelado (§8.3): os responsáveis que recebem notificação, dos alunos que treinam na turma, um aviso por
@@ -112,6 +114,70 @@ public class EmissorGatilhos(
     }
 
     /// <summary>
+    /// Mensalidade a vencer ou vencida (§8.3, BL-M06-04): um degrau da régua (ou um reenvio manual) para os responsáveis
+    /// financeiros do aluno — os vínculos que recebem cobrança —, com o link da fatura da Asaas. O degrau entra na chave: a
+    /// mesma cobrança manda um aviso por degrau. Essencial (spec §8.2): sem crédito, fica retida.
+    /// </summary>
+    public async Task<int> MensalidadeAsync(Cobranca cobranca, GatilhoMensagem gatilho, TomMensagem tom, string etapa, string aluno,
+        CancellationToken ct = default)
+    {
+        if (gatilho is not (GatilhoMensagem.MensalidadeAVencer or GatilhoMensagem.MensalidadeVencida))
+            throw new ArgumentException("A régua só manda mensalidade a vencer ou vencida.", nameof(gatilho));
+        if (string.IsNullOrWhiteSpace(cobranca.UrlFatura)) throw new InvalidOperationException("Cobrança sem fatura na Asaas.");
+
+        var regra = CatalogoGatilhos.Obter(gatilho);
+        var template = await TemplateAsync(gatilho, tom, ct);
+        var escolinha = await NomeEscolinhaAsync(ct);
+        var agora = relogio.Agora();
+
+        var criadas = 0;
+        foreach (var d in await repositorio.ResponsaveisFinanceirosDoAlunoAsync(cobranca.Aluno_ID, ct))
+        {
+            var valores = new Dictionary<string, string>
+            {
+                ["responsavel"] = PrimeiroNome(d.Nome),
+                ["escolinha"] = escolinha,
+                ["aluno"] = PrimeiroNome(aluno),
+                ["valor"] = Cobranca.Dinheiro(cobranca.Valor),
+                ["vencimento"] = cobranca.Vencimento.ToString("dd/MM/yyyy", PtBr),
+                ["link"] = cobranca.UrlFatura!
+            };
+            criadas += await CriarAsync(regra, template, OrigemCobranca, cobranca.Cobranca_ID, TipoDestinatario.Responsavel,
+                d.ResponsavelId, d.Nome, d.Telefone, d.AcessoAtivo && d.TodosVerificados ? d.PessoaId : null, cobranca.Aluno_ID,
+                valores, false, null, agora, ct, etapa);
+        }
+        return criadas;
+    }
+
+    /// <summary>
+    /// Pagamento confirmado (§8.3, na conciliação): o agradecimento aos responsáveis financeiros do aluno. Uma vez por
+    /// cobrança. Não é essencial: sem crédito, não fica na fila.
+    /// </summary>
+    public async Task<int> PagamentoConfirmadoAsync(Cobranca cobranca, string aluno, CancellationToken ct = default)
+    {
+        var regra = CatalogoGatilhos.Obter(GatilhoMensagem.PagamentoConfirmado);
+        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var escolinha = await NomeEscolinhaAsync(ct);
+        var agora = relogio.Agora();
+
+        var criadas = 0;
+        foreach (var d in await repositorio.ResponsaveisFinanceirosDoAlunoAsync(cobranca.Aluno_ID, ct))
+        {
+            var valores = new Dictionary<string, string>
+            {
+                ["responsavel"] = PrimeiroNome(d.Nome),
+                ["escolinha"] = escolinha,
+                ["aluno"] = PrimeiroNome(aluno),
+                ["valor"] = Cobranca.Dinheiro(cobranca.ValorPago ?? cobranca.Valor)
+            };
+            criadas += await CriarAsync(regra, template, OrigemCobranca, cobranca.Cobranca_ID, TipoDestinatario.Responsavel,
+                d.ResponsavelId, d.Nome, d.Telefone, d.AcessoAtivo && d.TodosVerificados ? d.PessoaId : null, cobranca.Aluno_ID,
+                valores, false, null, agora, ct);
+        }
+        return criadas;
+    }
+
+    /// <summary>
     /// A origem deixou de valer (regra de ouro 5: quando o evento chega, cancele o que ficou pendente): o WhatsApp que ainda
     /// está na fila é suprimido na hora, e o aviso do portal que ninguém abriu sai do portal, com o motivo, na mesma gravação
     /// de quem chama. Fica de fora a mensagem com envio em andamento ou com crédito já reservado (tentativa que volta à
@@ -137,7 +203,8 @@ public class EmissorGatilhos(
 
     private async Task<int> CriarAsync(RegraGatilho regra, TemplateMensagem template, string tipoOrigem, Guid origemId,
         TipoDestinatario tipoDestinatario, Guid destinatarioId, string nome, string? telefone, Guid? pessoaPortal, Guid? alunoId,
-        IReadOnlyDictionary<string, string> valores, bool urgente, DateTime? referencia, DateTime agora, CancellationToken ct)
+        IReadOnlyDictionary<string, string> valores, bool urgente, DateTime? referencia, DateTime agora, CancellationToken ct,
+        string? etapa = null)
     {
         var parametros = template.ValoresEmOrdem(valores);
         var conteudo = RenderizadorTemplate.Renderizar(template.Corpo, parametros);
@@ -145,18 +212,20 @@ public class EmissorGatilhos(
         var criadas = 0;
 
         if (!string.IsNullOrWhiteSpace(telefone)
-            && !await repositorio.ChaveEmUsoAsync(Mensagem.MontarChave(regra.Gatilho, origemId, tipoDestinatario, destinatarioId, CanalMensagem.WhatsApp), ct))
+            && !await repositorio.ChaveEmUsoAsync(
+                Mensagem.MontarChave(regra.Gatilho, origemId, tipoDestinatario, destinatarioId, CanalMensagem.WhatsApp, etapa), ct))
         {
             repositorio.AdicionarMensagem(Mensagem.Nova(regra, CanalMensagem.WhatsApp, tipoOrigem, origemId, tipoDestinatario, destinatarioId,
-                nome, telefone, pessoaPortal, alunoId, template.NomeNaMeta, variaveis, conteudo, urgente, referencia, agora));
+                nome, telefone, pessoaPortal, alunoId, template.NomeNaMeta, variaveis, conteudo, urgente, referencia, agora, etapa));
             criadas++;
         }
 
         if (regra.AvisoNoPortal && pessoaPortal is not null
-            && !await repositorio.ChaveEmUsoAsync(Mensagem.MontarChave(regra.Gatilho, origemId, tipoDestinatario, destinatarioId, CanalMensagem.Portal), ct))
+            && !await repositorio.ChaveEmUsoAsync(
+                Mensagem.MontarChave(regra.Gatilho, origemId, tipoDestinatario, destinatarioId, CanalMensagem.Portal, etapa), ct))
         {
             repositorio.AdicionarMensagem(Mensagem.Nova(regra, CanalMensagem.Portal, tipoOrigem, origemId, tipoDestinatario, destinatarioId,
-                nome, null, pessoaPortal, alunoId, template.NomeNaMeta, variaveis, conteudo, urgente, referencia, agora));
+                nome, null, pessoaPortal, alunoId, template.NomeNaMeta, variaveis, conteudo, urgente, referencia, agora, etapa));
             criadas++;
         }
         return criadas;

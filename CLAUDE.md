@@ -50,11 +50,12 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - Hoje:
     - `Comum`, `Acesso` (M01), `Configuracao` (M02), `Eventos` e `Auditoria`;
     - `Turmas` (M04), `Alunos` (M03) e `Equipe` (M08), do S1; `Agenda`, só no domínio: compromisso datado e conflitos;
-    - `Plataforma` e `Integracao` (Stripe, EX-01; WhatsApp, S2);
+    - `Plataforma` e `Integracao` (Stripe, EX-01; WhatsApp, S2; Asaas, S4);
     - `Mensageria` (M09), do S2: motor, templates, convites (em `Acesso`) e o portal inicial;
-    - `Presencas` (M05), do S3: chamada, alerta de faltas e risco de evasão.
+    - `Presencas` (M05), do S3: chamada, alerta de faltas e risco de evasão;
+    - `Financeiro` (M06), do S4: mensalidades, régua, conciliação e divergências.
     - Na `Infrastructure`, os repositórios do cadastro ficam juntos em `Cadastro/`.
-  - Próximos: `Financeiro` e `Carga`.
+  - Próximos: a tabela `Evento` e a convocação (S5, sobre o `Eventos` do domínio) e `Carga` (S7).
 
 ---
 
@@ -68,7 +69,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - datas `datetime2(3)` no horário de Brasília;
   - tabelas no singular; índices nomeados `IX_`/`UQ_`;
   - configuração EF em `Data/Configuracoes`;
-  - `rowversion` onde há concorrência: saldo de créditos, compra, turma, aluno, mensagem e presença;
+  - `rowversion` onde há concorrência: saldo de créditos, compra, turma, aluno, mensagem, presença e cobrança;
   - `TimeOnly` como `time(0)` (horários de turma e de disponibilidade).
 - **Armadilha do EF com filho novo:** com a chave preenchida, o filho novo achado pelo grafo (a coleção de uma entidade já rastreada) é tratado como existente e gera `UPDATE`, que falha por concorrência. Há duas saídas:
   - a entidade nova ganha `Guid.NewGuid()` na criação e entra por `DbSet.Add` explícito, que é o padrão dos cadastros;
@@ -81,7 +82,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - o `EscolinhaInterceptor` carimba a escolinha no insert e lança exceção em gravação sem contexto, em outra escolinha ou trocando `Escolinha_ID`;
   - na requisição, o contexto vem do `ContextoEscolinhaMiddleware`; em plataforma, jobs e startup, do `IExecutorEscolinha`, que abre um escopo com o contexto definido;
   - `IgnoreQueryFilters()` só em `AcessoRepositorio.cs` e `ConsultasPlataforma.cs`. Um teste falha em qualquer outro arquivo. Aumentar a lista é decisão registrada, nunca atalho;
-  - globais de propósito, sem `Escolinha_ID`: a identidade (`Pessoa`, `Credencial`), o webhook bruto (`WebhookRecebido`), os templates da plataforma (`TemplateMensagem`, D48) e o índice `RastreioWhatsApp`, que guarda só o id da Meta, a escolinha e a mensagem (D50).
+  - globais de propósito, fora do filtro: a identidade (`Pessoa`, `Credencial`), o webhook bruto (`WebhookRecebido`, que guarda a escolinha do aviso da Asaas numa coluna comum), os templates da plataforma (`TemplateMensagem`, D48) e o índice `RastreioWhatsApp`, que guarda só o id da Meta, a escolinha e a mensagem (D50).
 - **Credenciais só em user-secrets** (dev) ou variável de ambiente (produção). O login `sa` do SQL local só vale para desenvolvimento.
 
 ---
@@ -173,10 +174,15 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
     - toda marcação passa pelo `ServicoChamada.SincronizarAsync`, online ou da fila do aparelho;
     - o id (UUID) gerado no aparelho garante que cada marcação seja aplicada uma vez só, e o registro da quadra prevalece (D59);
     - o alerta de faltas entra na mesma gravação das presenças (D61);
-    - o motivo de saúde nunca vai para a página guardada no aparelho nem para o log das marcações (D64).
+    - o motivo de saúde nunca vai para a página guardada no aparelho nem para o log das marcações (D64);
+  - **mensalidade:**
+    - nasce da projeção (`RotinaCobrancas`), nunca à mão. Quem muda a matrícula ou a situação do aluno chama o `EfeitosFinanceirosDoCadastro`: o fim da recorrência entra na mesma gravação, e a projeção sai depois, num job (D66, D71);
+    - toda conversa com a Asaas sai de um job (`JobsFinanceiro`), com a chave da escolinha aberta só para a chamada (`ServicoAcessoAsaas`);
+    - o que a Asaas diz de uma cobrança (webhook, varredura ou conferência) passa pela `ConciliacaoCobrancas`, que compara o valor original (D70);
+    - divergência só sinaliza: nenhuma rotina muda a situação de uma cobrança com sinal, e a régua a ignora (D72).
 - **Testes:**
   - xUnit + `FakeTimeProvider`;
-  - com banco, `[FatoComBanco]` e a coleção `BancoDeTestes`, com `AmbienteAplicacao.ComoPlataformaAsync`, `NaEscolinhaAsync` e `SemContextoAsync`. O WhatsApp é o `GatewayWhatsAppFalso` e os jobs vão para o `AgendadorMensageriaDeTeste`;
+  - com banco, `[FatoComBanco]` e a coleção `BancoDeTestes`, com `AmbienteAplicacao.ComoPlataformaAsync`, `NaEscolinhaAsync` e `SemContextoAsync`. O WhatsApp é o `GatewayWhatsAppFalso` e os jobs vão para o `AgendadorMensageriaDeTeste`; a Asaas é o `GatewayAsaasFalso` e os jobs do financeiro vão para o `AgendadorFinanceiroDeTeste`;
   - toda regra de negócio tem teste, e toda regra de ouro que pode ser verificada no código tem teste em `Arquitetura/RegrasDeOuroTestes.cs`.
 
 ---
@@ -201,7 +207,8 @@ Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons (só `ki-filled`). O mapa das tel
 - **Checagem de tela:**
   - sem rolagem horizontal em 375 e 320 px;
   - elemento `position: fixed` não aparece na checagem de rolagem, então confira que nada passa da largura da tela; item flex em barra fixa precisa de `min-width: 0`;
-  - **tabela no celular:** ficam só as colunas principais (cerca de 280 px, para caber em 320 px sem rolar a tabela). O dado secundário desce para a célula principal com `sm:hidden`, e a ação vira só ícone;
+  - **tabela no celular:** ficam só as colunas principais (cerca de 280 px, para caber em 320 px sem rolar a tabela). O dado secundário desce para a célula principal com `sm:hidden`, e a ação vira só ícone. O `<th>` da coluna escondida leva o mesmo `hidden sm:table-cell` da célula: sem isso, as colunas desalinham;
+  - cabeçalho de cartão com `flex-wrap` leva `py-4`: sem ele, quando quebra em duas linhas, o conteúdo encosta na borda;
   - texto longo sem espaço (um link) leva `wrap-anywhere`;
   - botão só com ícone tem `aria-label`; modal no fim do `<body>`;
   - `esc.reinicializarComponentes()` depois de HTML injetado.
@@ -251,6 +258,12 @@ dotnet user-secrets set "WhatsApp:TokenVerificacao" "<texto à escolha>" --proje
 dotnet user-secrets set "WhatsApp:NumerosTeste:0" "+5543..." --project src/Web            # fora de Production, só estes recebem
 dotnet user-secrets set "WhatsApp:UrlPublica" "https://<endereço público>" --project src/Web  # vai no link do convite
 
+# Asaas (mensalidades). Padrão: Simulado (/dev/asaas, sem conta). A chave de API é de cada escolinha, vinculada na tela
+# Conta de recebimento (fora de Production, só Sandbox). Para a API de verdade (P41):
+dotnet user-secrets set "Asaas:Modo" "Api" --project src/Web
+dotnet user-secrets set "Asaas:UrlPublica" "https://<endereço público>" --project src/Web     # o webhook de cada escolinha usa este endereço
+dotnet user-secrets set "Asaas:EmailAvisosWebhook" "<e-mail>" --project src/Web             # opcional: a Asaas avisa quando o webhook falha
+
 # Certificado HTTPS de desenvolvimento do SDK novo (uma vez; o Windows pede confirmação)
 dotnet dev-certs https --trust
 ```
@@ -266,7 +279,11 @@ dotnet dev-certs https --trust
   - **Api** exige `IdNumero`, `TokenAcesso`, `SegredoApp` e `TokenVerificacao`. Fora de Production, exige também `WhatsApp:NumerosTeste` e só manda para esses números (os demais são suprimidos, com o motivo). Em Production, exige `WhatsApp:ConfirmarProducao = true`;
   - só sai template **aprovado** pela Meta (tela Plataforma › Templates);
   - webhook: `https://<site>/api/v1/webhooks/whatsapp`, com o GET de verificação e o POST assinado. No painel da Meta, assine o campo `messages`.
-- **Asaas** (S4): vai seguir o mesmo padrão. Já hoje, a conta Asaas de Produção só é aceita com o sistema em Production.
+- **Asaas** (S4): roda em modo **Simulado** (`/dev/asaas`) até haver conta sandbox (P41). Trava de ambiente (`GuardaAsaas`):
+  - **Simulado** em Production: a emissão fica desligada, com aviso no log. As mensalidades continuam previstas, com o motivo;
+  - **Api** em Production exige `Asaas:ConfirmarProducao = true`. Fora de Production, a conta de produção é recusada ao vincular, então só a Sandbox cobra;
+  - `Asaas:UrlPublica` precisa ser https. O webhook de cada escolinha é `https://<site>/api/v1/webhooks/asaas/{escolinha}`, cadastrado na conta dela pela API quando a conta é vinculada (modo Api), com o token dela no cabeçalho `asaas-access-token`;
+  - as notificações da própria Asaas ficam desligadas no cliente: só o motor fala com a família (R3). A chave desabilitada ou revogada na Asaas faz a emissão ser recusada; vincular a chave nova libera as recusadas (D73).
 - **Stripe da LDNA** (só a LDNA cobra as escolinhas, pelos pacotes de créditos; a mensalidade do aluno é da Asaas, R1). Trava de ambiente (`GuardaStripe`):
   - **Simulado** em Production: a compra de créditos fica desligada, com aviso no log;
   - **Teste** em Production: o app **não sobe**, porque crédito comprado com cartão de teste gastaria WhatsApp de verdade. Para testar num servidor, use o ambiente Homologacao;
@@ -279,10 +296,13 @@ dotnet dev-certs https --trust
   - em A, os cadastros do S1 e a massa de demonstração;
   - o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A, para validar o escopo do professor com login real. A ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL;
   - em A, desde o S2: a responsável Ana Almeida tem acesso (login pelo CPF, com o vínculo do Arthur confirmado), e o log tem as mensagens da validação (convite e treino cancelado);
-  - em A, desde o S3: uma sessão de domingo, 27/09, na turma "Sub-11 · segunda e quarta", com a falta da Ana Lima, o alerta e a mensagem à responsável.
+  - em A, desde o S3: uma sessão de domingo, 27/09, na turma "Sub-11 · segunda e quarta", com a falta da Ana Lima, o alerta e a mensagem à responsável;
+  - em A, desde o S4: a conta de recebimento (Sandbox, com o simulador) e as mensalidades de outubro da validação: 50 a confirmar, 1 impedida, 1 paga com divergência aceita e 1 cancelada depois do estorno. As faturas do simulador ficam em `%LOCALAPPDATA%\MinhaEscolinha\simulador-asaas.json`.
 - **Chamada sem sinal:** o navegador só registra o service worker com certificado confiável. Em desenvolvimento, rode `dotnet dev-certs https --trust`; sem isso, a fila funciona com a página aberta, mas a página não reabre sem sinal (P37).
 - **Jobs recorrentes** (horário de Brasília, registrados no startup):
   - `sessoes-gerar-horizonte`, às 03:15: gera as sessões de treino até o fim do mês seguinte, uma escolinha por vez (D31);
   - `stripe-varredura-compras`, a cada 20 minutos: confere as compras de créditos pendentes. Sai quando o Stripe está desligado (`Stripe:Habilitado = false`);
-  - `mensagens-varredura`, a cada 5 minutos, uma escolinha por vez: solta as mensagens retidas quando o saldo volta e reenfileira as que venceram (D45).
-- **`/dev/design`** (vitrine), **`/dev/massa`** (massa de demonstração: 3 turmas e 60 alunos em 38 famílias na escolinha ativa, uma vez por escolinha, D40) e **`/dev/whatsapp`** (o celular das famílias: entregar, ler, falhar, tocar num botão ou responder manda o webhook assinado; só com o modo Simulado) só existem em Development. Fora dele respondem 404.
+  - `mensagens-varredura`, a cada 5 minutos, uma escolinha por vez: solta as mensagens retidas quando o saldo volta e reenfileira as que venceram (D45);
+  - `mensalidades-rotina`, às 06:30, uma escolinha por vez: projeção, vencidas, régua e emissões (D66). As mensagens da régua esperam o fim da janela de silêncio;
+  - `mensalidades-varredura`, de hora em hora (:40): confere na Asaas as mensalidades em aberto que o webhook não trouxe (D70). Sai quando a Asaas está desligada.
+- **`/dev/design`** (vitrine), **`/dev/massa`** (massa de demonstração: 3 turmas e 60 alunos em 38 famílias na escolinha ativa, uma vez por escolinha, D40), **`/dev/whatsapp`** (o celular das famílias: entregar, ler, falhar, tocar num botão ou responder manda o webhook assinado; só com o modo Simulado) e **`/dev/asaas`** (a conta Asaas de mentira: pagar, pagar outro valor, vencer, estornar e excluir mandam o aviso pelo webhook, com o token da escolinha; a fatura fica em `/dev/asaas/fatura/{id}`; só com o modo Simulado) só existem em Development. Fora dele respondem 404.

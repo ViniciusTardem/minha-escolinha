@@ -1,0 +1,44 @@
+@model EncerrarMensalidadeRequisicao
+@{
+    var acao = (CobrancaParaAcao)ViewData["Cobranca"]!;
+    var isentar = Model.Para == SituacaoCobranca.Isenta;
+    var titulo = isentar ? "Isentar mensalidade" : "Cancelar mensalidade";
+    ViewData["Title"] = titulo;
+    var voltar = Context.Request.Query["voltar"].ToString();
+    var destino = Url.IsLocalUrl(voltar) ? voltar : "/Mensalidades";
+    var descricao = isentar
+        ? "Isenta não é cobrada nem entra na inadimplência. Fica registrado quem isentou, quando e o motivo."
+        : "Cancelada deixa de ser cobrada. Fica registrado quem cancelou, quando e o motivo.";
+    if (acao.Linha.EmAberto) descricao += " A fatura na Asaas é excluída, e os avisos que ainda não saíram são recolhidos.";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="@titulo" meta="@($"{acao.Linha.Aluno} · {Formatacao.Mes(acao.Linha.Competencia)}")"
+                      voltar-href="@destino" voltar-texto="Voltar" descricao="@descricao"></cabecalho-pagina>
+
+    <div class="kt-card max-w-[640px]">
+        <form method="post" asp-action="Encerrar" novalidate>
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="Para" />
+            @if (Url.IsLocalUrl(voltar))
+            {
+                <input type="hidden" name="voltar" value="@voltar" />
+            }
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <partial name="_ResumoMensalidade" model="acao.Linha" />
+                <div class="flex flex-col gap-1">
+                    <label class="kt-form-label" asp-for="Motivo">Motivo</label>
+                    <textarea class="kt-textarea" asp-for="Motivo" rows="2" maxlength="300" required
+                              placeholder="@(isentar ? "Ex.: bolsa do mês, acordo com a família" : "Ex.: cobrança em dobro, aluno saiu antes do mês")"></textarea>
+                </div>
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="@destino">Voltar</a>
+                <button class="kt-btn @(isentar ? "kt-btn-primary" : "kt-btn-destructive")" type="submit">
+                    <i class="ki-filled @(isentar ? "ki-discount" : "ki-cross-circle")"></i> @(isentar ? "Isentar" : "Cancelar a mensalidade")
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

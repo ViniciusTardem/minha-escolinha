@@ -1,0 +1,55 @@
+@model ReceberPorForaRequisicao
+@{
+    var acao = (CobrancaParaAcao)ViewData["Cobranca"]!;
+    ViewData["Title"] = "Recebido por fora";
+    var voltar = Context.Request.Query["voltar"].ToString();
+    var destino = Url.IsLocalUrl(voltar) ? voltar : "/Mensalidades";
+    var meios = new[] { MeioPagamento.Dinheiro, MeioPagamento.Pix, MeioPagamento.Cartao, MeioPagamento.Boleto, MeioPagamento.Indefinido };
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Registrar pagamento por fora" meta="@($"{acao.Linha.Aluno} · {Formatacao.Mes(acao.Linha.Competencia)}")"
+                      voltar-href="@destino" voltar-texto="Voltar"
+                      descricao="Para quando a família pagou direto na escolinha. A mensalidade fica paga com o valor integral, a régua para na hora e a família recebe a confirmação. Fica registrado quem registrou e quando."></cabecalho-pagina>
+
+    <div class="kt-card max-w-[640px]">
+        <form method="post" asp-action="Receber" novalidate>
+            <input type="hidden" asp-for="Id" />
+            @if (Url.IsLocalUrl(voltar))
+            {
+                <input type="hidden" name="voltar" value="@voltar" />
+            }
+            <div class="kt-card-content flex flex-col gap-5">
+                <partial name="_ErrosFormulario" />
+                <partial name="_ResumoMensalidade" model="acao.Linha" />
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Data">Pago em</label>
+                        <input class="kt-input" asp-for="Data" type="date" />
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="kt-form-label" asp-for="Meio">Como</label>
+                        <select class="kt-select" asp-for="Meio">
+                            @foreach (var meio in meios)
+                            {
+                                <option value="@meio" selected="@(meio == Model.Meio)">@Cobranca.Rotulo(meio)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="kt-form-label" asp-for="Observacao">Observação</label>
+                    <textarea class="kt-textarea" asp-for="Observacao" rows="2" maxlength="300" required placeholder="Ex.: pago em dinheiro na secretaria, recibo 123"></textarea>
+                </div>
+                @if (acao.Linha.EmAberto)
+                {
+                    <span class="text-xs text-muted-foreground">A fatura na Asaas também fica marcada como recebida (sem aviso da Asaas à família).</span>
+                }
+            </div>
+            <div class="kt-card-footer justify-end gap-2.5">
+                <a class="kt-btn kt-btn-ghost me-auto" href="@destino">Voltar</a>
+                <button class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-wallet"></i> Registrar pagamento</button>
+            </div>
+        </form>
+    </div>
+</div>

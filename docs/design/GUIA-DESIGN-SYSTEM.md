@@ -5,7 +5,7 @@
 > **Stack:** ASP.NET Core MVC (.NET 9) + Razor · Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons (só `ki-filled`).
 > **Prefixo do projeto:** `esc-` (classes), `data-esc-` (atributos), `window.esc` (JS), `esc:*` (eventos).
 >
-> **Como foi verificado (27/09/2026, fatia S3 pronta):** toda classe citada aqui foi conferida no CSS que o navegador recebe (`keenicons-filled.css`, `styles.css`, `css/esc.css` e `custom.css`, em `src/Web/wwwroot`), e todo comportamento, no código. O que ainda não existe está marcado como **planejado** e listado na §14.
+> **Como foi verificado (28/09/2026, fatia S4 pronta):** toda classe citada aqui foi conferida no CSS que o navegador recebe (`keenicons-filled.css`, `styles.css`, `css/esc.css` e `custom.css`, em `src/Web/wwwroot`), e todo comportamento, no código. O que ainda não existe está marcado como **planejado** e listado na §14.
 >
 > **Base:** o guia verificado do Adama/Candeias (`docs/metronic/GUIA-DESIGN-SYSTEM.md`, cópia local fora do git), reescrito para este projeto. O `docs/metronic/GUIA-REFERENCIA-METRONIC-KTUI.md` está superado e tem afirmações erradas: não use.
 >
@@ -15,7 +15,8 @@
 > - D22 (validação no navegador);
 > - D23 (toast escapado), D24 (mensagens de validação em pt-BR), D25 (`SinalTela`);
 > - do S1: D30 (valor em reais), D37 (ficha em página com abas), D41 (escopo no que vem junto) e D42 (assistente sem botões);
-> - do S3: D58 a D60 (chamada e sem sinal, X07) e D64 (motivo de saúde).
+> - do S3: D58 a D60 (chamada e sem sinal, X07) e D64 (motivo de saúde);
+> - do S4: D68 (painel de pagamentos, aba da ficha e cartão do painel) e D72 (fila de divergências).
 
 ## Sumário
 
@@ -339,6 +340,9 @@ A utility que falta nasce no `npm run css` quando uma View passa a usá-la; o ve
 | `SituacaoPresenca` | `Presente` · Sucesso; `Falta` · Perigo; `Justificada` → "Falta justificada" · Alerta. O "não marcado" é a ausência de presença, sem selo | ficha do aluno (Presença) |
 | `SituacaoAlertaFaltas` | `Disparado` · Info; `Suprimido` · Neutro; `Anulado` · Neutro | ficha do aluno (alertas de faltas) |
 | `SinalTela.RiscoEvasao` (S3) | "Risco de evasão" · Alerta; o `texto` diz o percentual ("Risco: 0 %", "Risco de evasão: 0 % em 30 dias") | Alunos, cabeçalho e aba Presença da ficha, Painel |
+| `SituacaoCobranca` (S4) | `Prevista` · Neutro; `Emitida` · Info; `Paga` · Sucesso; `PagaEmAtraso` → "Paga em atraso" · Sucesso; `Vencida` · Perigo; `Cancelada` · Neutro; `Isenta` · Neutro | Mensalidades, Divergências, telas de ação, aba Financeiro da ficha |
+| `SinalCobranca` (S4) | `ValorDivergente` → "Valor divergente", `Estorno`, `Chargeback` → "Contestação no cartão", `ExcluidaNaAsaas` → "Excluída na Asaas", `PagaDepoisDeEncerrada` → "Paga depois de encerrada", `ContaAnterior` → "Conta Asaas anterior": todos Alerta. `Nenhum` não aparece | idem, e o cartão do painel (divergências) |
+| `SinalTela`, valores do S4 | `MensalidadeAConfirmar` → "A confirmar" · Alerta; `MensalidadeImpedida` → "Não emitida" · Alerta, com o motivo em texto ao lado; `DebitoRemanescente` → "Débito após o desligamento" · Alerta | Mensalidades, aba Financeiro da ficha, cartão do painel |
 
 Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e sem cor. **Máquina nova entra inteira no mapa, na mesma entrega:**
 
@@ -346,12 +350,13 @@ Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e
 2. os valores no array `selos` da vitrine (`Views/Design/Index.cshtml`);
 3. na View, só `<selo-status>`.
 
-### 4.3 A tabela do plano (Aluno, Sessão, Mensagem, Presença e risco prontos; as demais planejadas)
+### 4.3 A tabela do plano (Aluno, Sessão, Mensagem, Presença, risco e Cobrança prontos; as demais planejadas)
 
 A tabela da §4.2 do plano:
 - **Aluno e Sessão entraram no mapa no S1, e Mensagem no S2, como planejados.** A "pendente" do plano aparece como "Na fila".
 - O "trial vencido" é o `SinalTela.TrialVencido`, porque o trial vencido continua em trial (§6 da spec).
 - **Presença e o risco de evasão entraram no S3.** A "justificada" aparece como "Falta justificada", e o "não marcado" não tem selo: é a linha sem marcação.
+- **Cobrança entrou no S4, como planejada.** O "divergente" é o `SinalCobranca`, um selo ao lado do da situação, que não muda.
 - As outras máquinas valem quando cada uma nascer.
 
 | Máquina | Sucesso | Info | Alerta | Perigo | Neutro |
@@ -391,7 +396,7 @@ Estado que não tem enum de domínio por trás (a conta existe ou não, o saldo 
 <selo-status class="self-start" valor="SinalTela.SaldoCreditosBaixo" texto="@($"abaixo de {Model.AvisoSaldoAbaixoDe}")"></selo-status>
 ```
 
-Na vitrine, "prevista", "paga", "emitida" e "convocação · Pedro" são escritos à mão porque as máquinas ainda não existem; na tela real, é `<selo-status>`.
+Na vitrine, só a "convocação · Pedro" do portal é escrita à mão, porque a convocação nasce no S5; na tela real, é `<selo-status>`. A sessão prevista (quadra) e a mensalidade paga e emitida (portal) já usam o selo desde o S4.
 
 ---
 
@@ -1140,6 +1145,32 @@ As telas `/Chamada` (o dia) e `/Chamada/Sessao/{id}`, no `_LayoutQuadra`. Cada t
 - **Limpeza:** o logout (formulário `/Conta/Sair`) e a tela de login (`data-esc-limpar-offline`) apagam as páginas guardadas. A fila de marcações fica até sair (D60).
 - **Service worker:** ao mudar o que ele guarda, suba a `VERSAO` do `sw-chamada.js`, para a cópia antiga sair dos aparelhos.
 
+### 6.30 Mensalidades: a linha, as telas de ação e o cartão (S4)
+
+**A linha** (`Shared/_LinhaMensalidade.cshtml`, com o `LinhaMensalidadeViewModel`) serve às três listas: o painel de pagamentos, a fila de divergências e a aba Financeiro da ficha. Na ficha, o rótulo é o mês; nas outras, o aluno, com link para a ficha.
+- **Colunas:** aluno (ou mês), vencimento, valor, situação e ações. No celular ficam só a primeira e as ações, e o `<th>` das escondidas leva o mesmo `hidden sm:table-cell` da célula. Sem isso, as ações ficam embaixo do cabeçalho errado (achado no S4).
+- **O que desce no celular:** o vencimento, o valor e os selos (situação, a confirmar, não emitida com o motivo, divergência, débito após o desligamento) descem para a célula principal com `sm:hidden`.
+- **Valor:** quando entrou um valor diferente, "entrou R$ X" fica embaixo.
+- **Situação:** os selos, e embaixo o motivo do impedimento, o detalhe da divergência, a data e o meio do pagamento, o último aviso da régua ou o motivo do cancelamento.
+- **Ações:** `flex flex-wrap xl:flex-nowrap justify-end gap-1`. Numa linha só a partir de 1280 px; abaixo disso, quebram.
+  - Ações de texto, o texto some no celular (`hidden sm:inline`): Confirmar, na primeira que espera a gestão; Resolver, na divergência.
+  - Ações só com ícone: abrir a fatura (`ki-bill`, nova aba), reenviar (`ki-arrows-circle`, com confirmação), tentar de novo a recusada (`ki-arrows-circle`, com confirmação), receber por fora (`ki-wallet`), isentar (`ki-discount`) e cancelar (`ki-cross-circle`).
+  - Todo botão só com ícone tem `aria-label` com o nome do aluno ou do mês. A marcação "Confirmar marcadas" usa o atributo `form` do checkbox.
+
+**Telas de ação** (Confirmar, Encerrar, Receber, Resolver): `kt-card max-w-[640px]` com o `_ResumoMensalidade` (um `dl` de aluno, turma, mês, vencimento, valor, situação, pagador e divergência) e o formulário embaixo. O rodapé tem "Voltar" à esquerda e a ação primária à direita. Na Resolver, as opções vêm do domínio (`PodeAceitarPagamentoDivergente`, `PodeSerEncerrada`), e o texto de ajuda muda quando o dinheiro já voltou para a família.
+
+**Painel de pagamentos** (`/Mensalidades`):
+- a navegação por mês, com setas;
+- seis cartões de total (`grid-cols-2 lg:grid-cols-6`), cada um um link para o grupo, com o ícone, a quantidade e o valor;
+- os filtros num `kt-card`;
+- a tabela. Com alguma mensalidade a confirmar, o cabeçalho do cartão ganha "Confirmar marcadas".
+
+**Cabeçalho de cartão que quebra:** `kt-card-header flex-wrap gap-3 py-4`. Sem o `py-4`, quando quebra em duas linhas no celular, o conteúdo encosta nas bordas (achado no S4, também em Convites).
+
+**Cartão "Mensalidades" do painel:** título e "Ver painel" na mesma linha, como os cartões vizinhos ("Ver todos"). A lista (`esc-linhas`) mostra só o que pede ação (primeiras a confirmar, impedidas, vencidas, divergências), cada item um link com o selo e a quantidade. Sem pendência, o cartão não aparece.
+
+**Simulador da Asaas** (`/dev/asaas` e `/dev/asaas/fatura/{id}`): no padrão do simulador do WhatsApp (§6.28). A lista mostra uma cobrança por item, com o valor e o status; no celular, a coluna do valor desce e alinha à esquerda. A fatura usa o `_LayoutAutenticacao`: o valor, a descrição, o vencimento e o pagador, e os botões Pix, boleto e cartão. Cada ação manda o aviso pelo webhook de verdade, e o toast confirma.
+
 ---
 
 ## 7. Erro de formulário: o padrão do projeto
@@ -1274,7 +1305,7 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 
 ### 9.1 Domínio (a lista validada do plano)
 
-"Uso hoje" conferido no código em 27/09/2026, no fim do S3. Além do que a tabela cita, todo ícone aparece na vitrine (`/dev/design`).
+"Uso hoje" conferido no código em 28/09/2026, no fim do S4. Além do que a tabela cita, todo ícone aparece na vitrine (`/dev/design`).
 
 | Conceito | Ícone | Uso hoje |
 |---|---|---|
@@ -1287,14 +1318,14 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 | chamada | `ki-check-squared` | menu (Chamada); "Chamada de hoje" no Painel; "Chamada" na Agenda; "Todos presentes" na chamada; aba Presença da ficha (estado vazio) |
 | jogos | `ki-cup` | menu (Jogos e convocações, em breve); Painel (próximas entregas); aba Jogos do portal; **logo provisório** |
 | convocação | `ki-flag` | só a vitrine (S5) |
-| confirmações | `ki-double-check` | Mensagens (entregue e lida); simulador do WhatsApp |
+| confirmações | `ki-double-check` | Mensagens (entregue e lida); simulador do WhatsApp; total das pagas (Mensalidades) |
 | mensagens | `ki-message-text-2` | menu (Mensagens); passos do Painel; Mensagens e detalhe; Templates; ficha do aluno; simulador do WhatsApp |
 | WhatsApp | `ki-whatsapp` | Mensagens; Convites; acesso da ficha; ficha do aluno (destinatário do alerta); simulador do WhatsApp |
 | avisos | `ki-notification-status` | Mensagens (portal); ficha do aluno; portal (aba Avisos e início) |
-| financeiro | `ki-dollar` | menu (Mensalidades, em breve); ficha do aluno; aba Pagamentos do portal |
-| cobrança | `ki-bill` | simulador do Stripe (S4 na Asaas) |
-| cartão | `ki-credit-cart` | simulador do Stripe. O nome é `credit-cart` mesmo |
-| créditos | `ki-wallet` | menu (Créditos); passos do Painel; Créditos; Mensagens; Plataforma |
+| financeiro | `ki-dollar` | menu (Mensalidades); painel de pagamentos (estado vazio); aba Financeiro da ficha; aba Pagamentos do portal |
+| cobrança | `ki-bill` | abrir a fatura e o total em aberto (Mensalidades); simuladores da Asaas e do Stripe |
+| cartão | `ki-credit-cart` | simuladores da Asaas e do Stripe. O nome é `credit-cart` mesmo |
+| créditos | `ki-wallet` | menu (Créditos); passos do Painel; Créditos; Mensagens; Plataforma; receber por fora (Mensalidades) |
 | configuração | `ki-setting-2` | só a vitrine |
 | parâmetros | `ki-setting-3` | menu (Parâmetros); passos do Painel |
 | locais | `ki-geolocation` | menu (Locais); passos do Painel; Locais |
@@ -1308,9 +1339,9 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 | modelo para baixar | `ki-file-down` | só a vitrine (S7) |
 | online (conexão) | `ki-wifi` | selo de conexão da quadra, com sinal |
 | sem sinal / sincronizar | `ki-cloud-change` | selo de conexão da quadra, sem sinal (o `app.js` troca o ícone); página "sem sinal" da chamada |
-| horário, histórico | `ki-time` | Parâmetros e histórico; ficha do aluno; ficha do professor; Mensagens; compra de créditos |
+| horário, histórico | `ki-time` | Parâmetros e histórico; ficha do aluno; ficha do professor; Mensagens; compra de créditos; total a emitir e "Vencer" no simulador da Asaas |
 | início do portal | `ki-home-2` | aba Início do portal; "Ir para o início" na página de erro |
-| copiar (Pix) | `ki-copy` | copiar a senha temporária; Pacotes de créditos; simulador do Stripe |
+| copiar (Pix) | `ki-copy` | copiar a senha temporária; Pacotes de créditos; simuladores do Stripe e da Asaas (pagar com Pix) |
 | risco | `ki-chart-line-down` | só a vitrine: o risco de evasão aparece como selo (`SinalTela.RiscoEvasao`), sem ícone |
 
 ### 9.2 Estrutura (menu e cabeçalho), fora da lista do plano
@@ -1346,9 +1377,10 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 | sair | `ki-exit-right` | | entrar como equipe | `ki-entrance-left` |
 | modo escuro | `ki-moon` | | acesso negado | `ki-lock-2` |
 | aviso, erro, estado vazio padrão | `ki-information-2` | | filtrar (Agenda) | `ki-filter` |
-| encerrar turma | `ki-archive` | | cancelar sessão | `ki-cross-circle` |
-| trocar o responsável escolhido; reenviar convite | `ki-arrows-circle` | | revogar consentimento | `ki-shield-cross` |
+| encerrar turma | `ki-archive` | | cancelar sessão; cancelar mensalidade | `ki-cross-circle` |
+| trocar o responsável escolhido; reenviar convite ou cobrança; tentar a emissão de novo; atualizar agora | `ki-arrows-circle` | | revogar consentimento | `ki-shield-cross` |
 | cadastrar o celular (Convites, no celular) | `ki-phone` | | ler (simulador) | `ki-double-check` |
+| isentar mensalidade | `ki-discount` | | mês anterior e seguinte | `ki-arrow-left`, `ki-arrow-right` |
 
 ### 9.4 Não existem (conferidos no CSS servido; não usar)
 
@@ -1521,6 +1553,8 @@ O `kt-input` é um contêiner flex, e o `<input>` de dentro herda o estilo. A me
 ```
 
 - [ ] Tabela em 320 px sem rolar dentro do cartão: `[...document.querySelectorAll(".kt-scrollable-x-auto")].map(t => t.scrollWidth - t.clientWidth)` dá só zeros (§6.17).
+- [ ] Coluna escondida no celular: o `<th>` e o `<td>` levam a mesma classe (`hidden sm:table-cell`). Confira que o número de cabeçalhos visíveis é igual ao de células visíveis da primeira linha (§6.30).
+- [ ] Cabeçalho de cartão que pode quebrar (`kt-card-header flex-wrap`) leva `py-4` (§6.30).
 - [ ] Item flex dentro de barra fixa tem `min-width: 0`. Foi o defeito da barra da quadra em 375 px, corrigido no `custom.css` (`.esc-barra-acao > .kt-btn`).
 - [ ] Modo escuro: `localStorage.setItem("kt-theme", "dark"); location.reload();`, e depois `"light"`.
 - [ ] Quadra e portal: alvos de 48 px, campo com texto de 16 px, ação principal na barra inferior, nada escondido atrás da barra ou das abas.
@@ -1576,7 +1610,7 @@ Achadas no S1:
 
 ## 14. Diferenças entre o plano e o construído
 
-Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita na fatia S0 (26/09/2026) e revista na S1 e na S2 (27/09/2026).
+Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita na fatia S0 (26/09/2026), revista na S1 e na S2 (27/09/2026) e na S4 (28/09/2026).
 
 ### 14.1 Previsto no plano e diferente, parcial ou ainda não construído
 
@@ -1600,7 +1634,7 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita 
 | 16 | Quadra: `_StatusConexao`, `_LinhaChamada`, `_BarraAcaoInferior` (4.4) | não são parciais: selo no `_LayoutQuadra`, classes `esc-linha-chamada*`, seção `BarraAcao` | Forma diferente, mesma função |
 | 17 | Convocação: `_CartaoJogo`, `_SelecaoConvocados`, `_PainelConfirmacoes` (4.4) | não existem; a vitrine do portal mostra a forma do cartão de jogo | Planejado (S5) |
 | 18 | Portal: `_CartaoFilho`, `_CartaoConvocacao`, `_CartaoCobranca`, `_AbasPortal` (4.4) | não são parciais: abas no layout; os cartões só como markup na vitrine | Planejado (S6) |
-| 19 | Vitrine com "os selos de todas as máquinas" e "as 4 superfícies" (4.4) | selos de todos os enums do mapa central (S0, EX-01, S1 e S2, por `Enum.GetValues`); quadra, portal e autenticação em páginas próprias; o painel aparece só como miolo (`_LayoutVitrine`, sem sidebar e header, porque a vitrine não exige login); o ícone `ki-timer` não está na vitrine | Parcial, por construção |
+| 19 | Vitrine com "os selos de todas as máquinas" e "as 4 superfícies" (4.4) | selos de todos os enums do mapa central (S0 a S4 e EX-01, por `Enum.GetValues`); quadra, portal e autenticação em páginas próprias; o painel aparece só como miolo (`_LayoutVitrine`, sem sidebar e header, porque a vitrine não exige login); o ícone `ki-timer` não está na vitrine | Parcial, por construção |
 | 20 | Nova escolinha em etapas: dados → modalidade → 1º gestor → **revisão** (4.5) | três etapas, sem revisão | Sem a etapa de revisão |
 | 21 | Mapa de status com a coluna "secondary / mono" (4.2) | `VarianteSelo` tem `Neutro` (`kt-badge-secondary`) e **`Primario`**, que o plano não previa (usado no papel Gestor); não tem Mono | Diferença de variantes |
 | 22 | "Cor de status nunca é escolhida na View" (4.2) | cumprido: os três estados sem enum de domínio ("Conta vinculada"/"Sem conta", "Vinculada", "abaixo de N") passam pelo `SinalTela` do mapa central | Resolvido em 26/09/2026 |
@@ -1620,7 +1654,7 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita 
 | `_Paginacao` + `PaginacaoViewModel` | §6.15 |
 | Busca rápida (Ctrl+K e `/`) a partir do `CatalogoModulos` | §6.14 |
 | `_LayoutVitrine` (quinto layout, só da vitrine) | §5.5 |
-| `data-esc-enviar-ao-mudar` (envia o formulário ao mudar um filtro), ainda sem uso | `app.js` |
+| `data-esc-enviar-ao-mudar` (envia o formulário ao mudar um filtro), nos filtros de Turmas, Alunos, Agenda, Mensagens, Convites e Mensalidades | `app.js` |
 | Evento `esc:escolha` do controle segmentado e dos chips | §6.9 |
 | `esc.fetch` tratando 401 (toast e volta ao login com `returnUrl`) e o servidor respondendo JSON a quem manda `X-Requested-With` | §6.13 |
 | Tokens `--esc-foco`, `--esc-toque` e `--esc-barra-acao`; o anel de foco da marca; a correção do `:visited` dos botões-link | §3.2 e §11 |
@@ -1634,6 +1668,7 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita 
 | `_AcessoDaFicha`, pendências do painel, linha do tempo da mensagem e o simulador `/dev/whatsapp` | §6.25 a §6.28 |
 | Tabela que cabe em 320 px (dado secundário na célula principal, ação só com ícone) e `wrap-anywhere` | §6.17 |
 | Helpers `Formatacao` de dia, mês, horário, CPF e idade; `DecimalBrasileiroModelBinder` | §8 |
+| `_LinhaMensalidade`, as telas de ação com o `_ResumoMensalidade`, o cartão "Mensalidades" do painel, o cabeçalho de cartão que quebra (`py-4`) e o simulador `/dev/asaas` | §6.30 |
 
 ### 14.3 Achados técnicos da revisão do guia
 

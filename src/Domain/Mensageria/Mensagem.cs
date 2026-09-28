@@ -93,6 +93,12 @@ public class Mensagem : IEntidadeDaEscolinha
     public string TipoOrigem { get; private set; } = string.Empty;
     public Guid Origem_ID { get; private set; }
 
+    /// <summary>
+    /// O degrau da régua de cobrança ("A3", "D0", "V5"), ou a vez de um reenvio manual ("M1"...): a mesma cobrança manda um
+    /// aviso por degrau, e o degrau entra na chave. Nulo nos gatilhos que mandam uma vez por origem.
+    /// </summary>
+    public string? Etapa { get; private set; }
+
     public TipoDestinatario TipoDestinatario { get; private set; }
     public Guid Destinatario_ID { get; private set; }
     public string DestinatarioNome { get; private set; } = string.Empty;
@@ -157,8 +163,11 @@ public class Mensagem : IEntidadeDaEscolinha
     public bool ReservadaPorOutro(DateTime agora) => ReservadaAte is { } ate && ate > agora;
     public bool Saiu => Situacao is SituacaoMensagem.Enviada or SituacaoMensagem.Entregue or SituacaoMensagem.Lida;
 
-    public static string MontarChave(GatilhoMensagem gatilho, Guid origem, TipoDestinatario tipo, Guid destinatario, CanalMensagem canal) =>
-        $"{(int)gatilho}:{origem:N}:{(int)tipo}:{destinatario:N}:{(int)canal}";
+    public const int TamanhoEtapa = 20;
+
+    public static string MontarChave(GatilhoMensagem gatilho, Guid origem, TipoDestinatario tipo, Guid destinatario, CanalMensagem canal,
+        string? etapa = null) =>
+        $"{(int)gatilho}:{origem:N}:{(int)tipo}:{destinatario:N}:{(int)canal}" + (string.IsNullOrEmpty(etapa) ? "" : $":{etapa}");
 
     /// <summary>
     /// Mensagem nova de um gatilho do catálogo. WhatsApp nasce pendente (o motor envia); o aviso do portal nasce enviado
@@ -166,8 +175,9 @@ public class Mensagem : IEntidadeDaEscolinha
     /// </summary>
     public static Mensagem Nova(RegraGatilho regra, CanalMensagem canal, string tipoOrigem, Guid origemId,
         TipoDestinatario tipoDestinatario, Guid destinatarioId, string destinatarioNome, string? telefone, Guid? pessoaId, Guid? alunoId,
-        string template, string variaveis, string conteudo, bool urgente, DateTime? referencia, DateTime agora)
+        string template, string variaveis, string conteudo, bool urgente, DateTime? referencia, DateTime agora, string? etapa = null)
     {
+        if (etapa is { Length: > TamanhoEtapa }) throw new ArgumentException("Etapa longa demais.", nameof(etapa));
         if (canal == CanalMensagem.WhatsApp && string.IsNullOrWhiteSpace(telefone))
             throw new ArgumentException("Mensagem de WhatsApp sem telefone.", nameof(telefone));
         if (canal == CanalMensagem.Portal && pessoaId is null)
@@ -180,9 +190,10 @@ public class Mensagem : IEntidadeDaEscolinha
             Mensagem_ID = Guid.NewGuid(),
             Gatilho = regra.Gatilho,
             Canal = canal,
-            Chave = MontarChave(regra.Gatilho, origemId, tipoDestinatario, destinatarioId, canal),
+            Chave = MontarChave(regra.Gatilho, origemId, tipoDestinatario, destinatarioId, canal, etapa),
             TipoOrigem = TextoHelper.Truncar(tipoOrigem, TamanhoTipoOrigem) ?? string.Empty,
             Origem_ID = origemId,
+            Etapa = string.IsNullOrEmpty(etapa) ? null : etapa,
             TipoDestinatario = tipoDestinatario,
             Destinatario_ID = destinatarioId,
             DestinatarioNome = TextoHelper.Truncar(destinatarioNome, TamanhoNome) ?? string.Empty,

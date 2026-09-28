@@ -1,0 +1,32 @@
+@model LinhaMensalidade
+@* O que a gestão precisa ver antes de mexer numa mensalidade. *@
+<dl class="esc-dados">
+    <dt>Aluno</dt>
+    <dd><a class="kt-link" href="/Alunos/Ficha/@Model.AlunoId?aba=financeiro">@Model.Aluno</a></dd>
+    <dt>Turma</dt>
+    <dd>@Model.Turma</dd>
+    <dt>Mês</dt>
+    <dd>@Formatacao.Mes(Model.Competencia)</dd>
+    <dt>Vencimento</dt>
+    <dd>@Formatacao.Data(Model.Vencimento)</dd>
+    <dt>Valor</dt>
+    <dd>@Formatacao.Moeda(Model.Valor)</dd>
+    <dt>Situação</dt>
+    <dd class="flex flex-wrap items-center gap-1.5">
+        <selo-status valor="Model.Situacao"></selo-status>
+        @if (Model.Sinal != SinalCobranca.Nenhum)
+        {
+            <selo-status valor="Model.Sinal"></selo-status>
+        }
+    </dd>
+    @if (Model.Pagador is not null)
+    {
+        <dt>Pagador</dt>
+        <dd>@Model.Pagador</dd>
+    }
+    @if (Model.Sinal != SinalCobranca.Nenhum && Model.SinalDetalhe is not null)
+    {
+        <dt>Divergência</dt>
+        <dd>@Model.SinalDetalhe</dd>
+    }
+</dl>

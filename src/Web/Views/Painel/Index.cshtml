@@ -89,6 +89,52 @@
         </div>
 
         <div class="flex flex-col gap-5 lg:gap-7.5">
+        @if (Model.Financeiro is { } fin && (fin.AConfirmar + fin.Vencidas + fin.Divergencias + fin.Impedidas > 0 || !fin.ContaVinculada))
+        {
+            <div class="kt-card">
+                <div class="kt-card-header">
+                    <h3 class="kt-card-title">Mensalidades</h3>
+                    <a class="kt-link text-sm" href="/Mensalidades">Ver painel</a>
+                </div>
+                <ul class="esc-linhas">
+                    @if (!fin.ContaVinculada)
+                    {
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <a class="text-sm font-medium text-mono hover:text-primary" href="/ContaRecebimento">Sem conta Asaas: nada é emitido</a>
+                            <selo-status valor="SinalTela.ContaRecebimentoAusente"></selo-status>
+                        </li>
+                    }
+                    @if (fin.AConfirmar > 0)
+                    {
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <a class="text-sm font-medium text-mono hover:text-primary" href="/Mensalidades?grupo=AConfirmar">Primeiras mensalidades a confirmar</a>
+                            <selo-status valor="SinalTela.MensalidadeAConfirmar" texto="@Formatacao.Numero(fin.AConfirmar)"></selo-status>
+                        </li>
+                    }
+                    @if (fin.Impedidas > 0)
+                    {
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <a class="text-sm font-medium text-mono hover:text-primary" href="/Mensalidades?grupo=AEmitir">Sem pagador com CPF ou recusadas</a>
+                            <selo-status valor="SinalTela.MensalidadeImpedida" texto="@Formatacao.Numero(fin.Impedidas)"></selo-status>
+                        </li>
+                    }
+                    @if (fin.Vencidas > 0)
+                    {
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <a class="text-sm font-medium text-mono hover:text-primary" href="/Mensalidades?grupo=Vencidas">Vencidas · @Formatacao.Moeda(fin.ValorVencido)</a>
+                            <selo-status valor="SituacaoCobranca.Vencida" texto="@Formatacao.Numero(fin.Vencidas)"></selo-status>
+                        </li>
+                    }
+                    @if (fin.Divergencias > 0)
+                    {
+                        <li class="flex items-center justify-between gap-3 px-5 py-3">
+                            <a class="text-sm font-medium text-mono hover:text-primary" href="/Mensalidades/Divergencias">Divergências a resolver</a>
+                            <selo-status valor="SinalCobranca.ValorDivergente" texto="@Formatacao.Numero(fin.Divergencias)"></selo-status>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
         @if (Model.Riscos.Count > 0)
         {
             <div class="kt-card">

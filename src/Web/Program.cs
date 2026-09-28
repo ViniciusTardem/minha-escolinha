@@ -18,6 +18,7 @@ using MinhaEscolinha.Infrastructure;
 using MinhaEscolinha.Infrastructure.Cadastro;
 using MinhaEscolinha.Infrastructure.Data.Contexto;
 using MinhaEscolinha.Infrastructure.Data.Seed;
+using MinhaEscolinha.Infrastructure.Financeiro;
 using MinhaEscolinha.Infrastructure.Mensageria;
 using MinhaEscolinha.Infrastructure.Plataforma;
 using MinhaEscolinha.Infrastructure.Seguranca;
@@ -183,6 +184,8 @@ try
         JobsTurmas.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
         // Motor de mensagens: a varredura de 5 em 5 minutos (job perdido, fim da janela de silêncio, retidas com saldo)
         JobsMensageria.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
+        // Mensalidades: a rotina diária (projeção, régua, emissão) e a varredura de hora em hora na Asaas (S4)
+        JobsFinanceiro.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
     }
 
     // ── Pipeline ──

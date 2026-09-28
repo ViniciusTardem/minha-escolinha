@@ -1,0 +1,39 @@
+@model MensalidadesViewModel
+@{
+    ViewData["Title"] = "Divergências";
+    var voltar = $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+
+<div class="kt-container-fixed">
+    <cabecalho-pagina titulo="Divergências" meta="@($"{Model.Painel.Linhas.Count} em aberto")" voltar-href="/Mensalidades" voltar-texto="Mensalidades"
+                      descricao="Pagamento com valor diferente, estorno, contestação no cartão, fatura excluída na Asaas por fora ou cobrança de uma conta anterior: nada disso muda a mensalidade sozinho. A régua dela fica parada até a gestão resolver."></cabecalho-pagina>
+
+    <div class="kt-card">
+        @if (Model.Painel.Linhas.Count == 0)
+        {
+            <estado-vazio icone="ki-double-check" titulo="Nenhuma divergência" texto="Os pagamentos que chegaram batem com as mensalidades."></estado-vazio>
+        }
+        else
+        {
+            <div class="kt-card-table kt-scrollable-x-auto">
+                <table class="kt-table kt-table-border align-middle text-sm">
+                    <thead>
+                        <tr>
+                            <th class="min-w-[130px] sm:min-w-[220px]">Aluno</th>
+                            <th class="min-w-[100px] hidden sm:table-cell">Vencimento</th>
+                            <th class="min-w-[100px] hidden sm:table-cell">Valor</th>
+                            <th class="min-w-[240px] hidden sm:table-cell">Situação</th>
+                            <th class="w-[1%] text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var l in Model.Painel.Linhas)
+                        {
+                            <partial name="_LinhaMensalidade" model="@(new LinhaMensalidadeViewModel(l, Model.PodeAlterar, false, voltar, true))" />
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

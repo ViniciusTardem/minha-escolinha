@@ -30,6 +30,7 @@ public class MensagemConfiguracao : IEntityTypeConfiguration<Mensagem>
 
         builder.Property(m => m.Chave).HasMaxLength(Mensagem.TamanhoChave).IsUnicode(false).IsRequired();
         builder.Property(m => m.TipoOrigem).HasMaxLength(Mensagem.TamanhoTipoOrigem).IsUnicode(false).IsRequired();
+        builder.Property(m => m.Etapa).HasMaxLength(Mensagem.TamanhoEtapa).IsUnicode(false);
         builder.Property(m => m.DestinatarioNome).HasMaxLength(Mensagem.TamanhoNome).IsRequired();
         builder.Property(m => m.Telefone).HasMaxLength(Mensagem.TamanhoTelefone).IsUnicode(false);
         builder.Property(m => m.Template).HasMaxLength(Mensagem.TamanhoTemplate).IsUnicode(false).IsRequired();

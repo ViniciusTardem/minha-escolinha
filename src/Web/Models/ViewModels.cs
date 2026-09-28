@@ -3,6 +3,7 @@ using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
+using MinhaEscolinha.Application.Financeiro;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
 using MinhaEscolinha.Application.Presencas;
@@ -46,7 +47,8 @@ public record PainelViewModel(
     DateOnly Hoje,
     IReadOnlyList<PendenciaPainel> Pendencias,
     IReadOnlyList<RiscoEvasao> Riscos,
-    bool FazChamada);
+    bool FazChamada,
+    ResumoFinanceiro? Financeiro = null);
 
 public record ParametrosViewModel(
     DominioParametro Dominio,
@@ -77,6 +79,14 @@ public record ResponsaveisViewModel(string? Busca, Pagina<ResponsavelNaLista> Li
 
 /// <summary>Log de mensagens do gestor (S2): o filtro, a página e o quadro do motor.</summary>
 public record MensagensViewModel(FiltroMensagens Filtro, Pagina<MensagemNaLista> Lista, ResumoMensageria Resumo);
+
+/// <summary>Painel de pagamentos (S4): o mês, os grupos com os totais e as ações de quem pode alterar.</summary>
+public record MensalidadesViewModel(FiltroMensalidades Filtro, PainelMensalidades Painel, bool PodeAlterar);
+
+/// <summary>Uma mensalidade na tabela (painel, divergências e ficha do aluno).</summary>
+/// <param name="ComMarcacao">A coluna de marcar (confirmação em lote) está na tabela.</param>
+/// <param name="MostrarAluno">No painel, a linha diz o aluno; na ficha, o mês.</param>
+public record LinhaMensalidadeViewModel(LinhaMensalidade Linha, bool PodeAlterar, bool ComMarcacao, string Voltar, bool MostrarAluno);
 
 /// <summary>Convites de acesso (S2): a lista filtrada, todos (para os contadores) e os vínculos a confirmar.</summary>
 public record ConvitesViewModel(

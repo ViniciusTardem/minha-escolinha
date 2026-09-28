@@ -135,15 +135,17 @@ public static class TemplatesPadrao
             "Olá, {{1}}! {{2}} informa: o treino da turma {{3}} de {{4}} mudou para {{5}}. Aviso para: {{6}}.",
             "responsavel,escolinha,turma,de,para,alunos"),
         new(GatilhoMensagem.MensalidadeAVencer, TomMensagem.Cordial, "mensalidade_a_vencer_v1",
-            "Olá, {{1}}! A mensalidade de {{2}} ({{3}}) vence em {{4}}. Para pagar, acesse {{5}} e escolha Pix, boleto ou cartão.",
-            "responsavel,aluno,valor,vencimento,link"),
+            "Olá, {{1}}! {{2}} informa: a mensalidade de {{3}} ({{4}}) vence em {{5}}. Para pagar, acesse {{6}} e escolha Pix, " +
+            "boleto ou cartão.",
+            "responsavel,escolinha,aluno,valor,vencimento,link"),
         new(GatilhoMensagem.MensalidadeVencida, TomMensagem.Cordial, "mensalidade_vencida_cordial_v1",
-            "Olá, {{1}}! A mensalidade de {{2}} ({{3}}), com vencimento em {{4}}, ainda está em aberto. " +
-            "Para pagar, acesse {{5}} e escolha Pix, boleto ou cartão.",
-            "responsavel,aluno,valor,vencimento,link"),
+            "Olá, {{1}}! {{2}} informa: a mensalidade de {{3}} ({{4}}), com vencimento em {{5}}, ainda está em aberto. " +
+            "Para pagar, acesse {{6}} e escolha Pix, boleto ou cartão.",
+            "responsavel,escolinha,aluno,valor,vencimento,link"),
         new(GatilhoMensagem.MensalidadeVencida, TomMensagem.Direto, "mensalidade_vencida_direto_v1",
-            "Atenção, {{1}}: a mensalidade de {{2}} ({{3}}) está vencida desde {{4}}. Regularize pelo link {{5}} o quanto antes.",
-            "responsavel,aluno,valor,vencimento,link"),
+            "Atenção, {{1}}: {{2}} informa que a mensalidade de {{3}} ({{4}}) está vencida desde {{5}}. Regularize pelo link {{6}} " +
+            "o quanto antes.",
+            "responsavel,escolinha,aluno,valor,vencimento,link"),
         new(GatilhoMensagem.PagamentoConfirmado, TomMensagem.Cordial, "pagamento_confirmado_v1",
             "Olá, {{1}}! {{2}} confirma o pagamento da mensalidade de {{3}} ({{4}}). Agradecemos!",
             "responsavel,escolinha,aluno,valor"),

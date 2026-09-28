@@ -12,23 +12,20 @@ Registro de progresso exigido pela seção 12.4 da spec. Os 81 entregáveis e os
 
 Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-ABERTO.md).
 
-## Resumo (27/09/2026, fim do S3)
+## Resumo (28/09/2026, fim do S4)
 
 | Fatia | Itens | Concluídos | Parciais | Situação |
 |---|---:|---:|---:|---|
 | F0 — Esqueleto vivo | — | — | — | **Pronto** (sem itens de backlog) |
 | S0 — Fundação | 12 | 12 | 0 | **Pronto** e commitado (a444b48). O `BL-M02-12` fechou no S1, com o valor por turma. |
-| S1 — Cadastro | 20 | 19 | 1 | **Pronto** e commitado (b6a4c3f). O `BL-M04-06` fechou no S2, com o aviso às famílias. |
+| S1 — Cadastro | 20 | 20 | 0 | **Pronto** e commitado (b6a4c3f). O `BL-M04-06` fechou no S2, com o aviso às famílias, e o `BL-M03-08` no S4, com o fim da recorrência. |
 | S2 — Mensageria e acesso | 14 | 14 | 0 | **Pronto no simulador** e commitado (c642f2f). A prova com um número real espera a conta na Meta (P34). |
-| S3 — Presença e evasão | 6 | 6 | 0 | **Pronto** (27/09/2026). A reabertura da chamada sem sinal, pelo service worker, espera um navegador que confie no certificado (P37). Commit aguardando autorização. |
-| S4 — Financeiro | 8 | 0 | 0 | — |
+| S3 — Presença e evasão | 6 | 6 | 0 | **Pronto** e commitado (c6bdbc4). A reabertura da chamada sem sinal, pelo service worker, espera um navegador que confie no certificado (P37). |
+| S4 — Financeiro | 8 | 8 | 0 | **Pronto no simulador** (28/09/2026). A prova com a sandbox da Asaas espera a conta da escolinha piloto (P41). |
 | S5 — Eventos e convocações | 10 | 0 | 0 | — |
 | S6 — Portal do responsável | 6 | 0 | 0 | — |
 | S7 — Carga inicial | 5 | 0 | 0 | — |
-| **Total** | **81** | **51** | **1** | |
-
-O parcial do S1 depende do S4:
-- `BL-M03-08`: o desligamento exige data e motivo, encerra as matrículas, libera a vaga e preserva o histórico. Encerrar a recorrência de cobrança é do S4 (`BL-M06-14`), que nasce da matrícula já encerrada.
+| **Total** | **81** | **60** | **0** | |
 
 ---
 
@@ -96,7 +93,7 @@ O parcial do S1 depende do S4:
 | `BL-M03-04` | Matrícula em turma e múltiplas turmas | Concluído | `Matricula`: uma ativa por aluno e turma, com mensalidade e datas próprias. `ServicoMatriculas`; telas `Matriculas` (nova, encerrar, mensalidade, esta com registro de alterações). | `CadastroBancoTestes` (duas turmas, matrícula repetida barrada); `DominioCadastroTestes` (período da matrícula) |
 | `BL-M03-05` | Organização por turma e visão geral da escolinha | Concluído | Lista de alunos com busca, filtro por turma e por situação (padrão: quem está na escolinha); ficha da turma com a composição. | `CadastroBancoTestes` (listas por situação, composição da turma) |
 | `BL-M03-07` | Status do aluno e transições | Concluído | `MaquinaSituacaoAluno`, com as transições da §6 validadas e nenhuma automática, mais o atalho inativo → desistente decidido pelo responsável (D43). O trial vencido é só sinal (P12), no painel e nas listas. Tela `Alunos/Situacao`. | `DominioCadastroTestes` (16 pares de transição, trial vencido, rematrícula) |
-| `BL-M03-08` | Desligamento com data e motivo e efeitos em cascata | **Parcial** | <ul><li>Exige data e motivo; a data não vem antes da matrícula nem do início da situação atual.</li><li>Vale também para quem está em pausa (D43).</li><li>Encerra todas as matrículas na data e libera a vaga.</li><li>Tira o aluno das listas de trabalho e da composição da turma.</li><li>Preserva o histórico (ficha e registro de alterações).</li><li>A rematrícula volta a ativo com a data nova.</li></ul> **Falta encerrar a recorrência de cobrança:** ela nasce da matrícula no S4 e para na data de fim; cancelar as cobranças previstas é do BL-M06-14 (S4). | `CadastroBancoTestes` (CA-2 e CA-3, parte do S1; desligar direto da pausa); `DominioCadastroTestes` (data e motivo, rematrícula) |
+| `BL-M03-08` | Desligamento com data e motivo e efeitos em cascata | Concluído (no S4) | <ul><li>Exige data e motivo; a data não vem antes da matrícula nem do início da situação atual.</li><li>Vale também para quem está em pausa (D43).</li><li>Encerra todas as matrículas na data e libera a vaga.</li><li>Tira o aluno das listas de trabalho e da composição da turma.</li><li>Preserva o histórico (ficha e registro de alterações).</li><li>A rematrícula volta a ativo com a data nova.</li><li>**Desde o S4**, encerra a recorrência de cobrança na mesma gravação: as mensalidades previstas depois da data saem canceladas, com o motivo, e o débito já emitido fica sinalizado (BL-M06-14, D71).</li></ul> | `CadastroBancoTestes` (CA-2 e CA-3, parte do S1; desligar direto da pausa); `DominioCadastroTestes` (data e motivo, rematrícula); `FinanceiroBancoTestes` (a recorrência encerrada e o débito sinalizado) |
 | `BL-M03-09` | Consentimento na matrícula e sua revogação | Concluído | <ul><li>`ConsentimentoAluno` separado para tratamento de dados e uso de imagem, com a versão do termo, o responsável, a origem, quem registrou e quando.</li><li>Etapa no cadastro do aluno; telas para registrar e revogar.</li><li>Os textos dos termos são provisórios (P29).</li></ul> | `CadastroBancoTestes` (finalidades separadas; revogar a imagem não para a operação); `DominioCadastroTestes` (o último registro vale) |
 | `BL-M03-10` | Restrição de acesso a dado sensível do aluno | Concluído | `PoliticaSaude` define o acesso à saúde: <ul><li>completo para o gestor e para o responsável do próprio aluno, quando o vínculo estiver verificado (S2);</li><li>só o necessário ao treino para o professor da turma (P20);</li><li>nada para os demais.</li></ul> A restrição vale no view model. O registro de alterações não guarda o conteúdo (D36). "Documentos de campeonato" é Fase 3 (I09). | `CadastroBancoTestes` (professor × gestor, auditoria sem conteúdo) |
 | `BL-M03-11` | Observações médicas e contato de emergência | Concluído | Alergias, restrições, observações médicas e contato de emergência (nome, telefone, parentesco) na ficha; tela `Alunos/Saude`. | `CadastroBancoTestes` |
@@ -203,18 +200,47 @@ O parcial do S1 depende do S4:
 - **CA-21:** coberto no servidor e na fila do aparelho. A reabertura da página sem sinal espera a validação do service worker (P37).
 - **R4:** o aviso de faltas vai aos responsáveis, nunca ao aluno.
 
-## S4 — Financeiro: mensalidade, régua e conciliação · 8 itens · A fazer
+## S4 — Financeiro: mensalidade, régua e conciliação · 8 itens · **Pronto no simulador em 28/09/2026**
 
-| ID | Entregável | Status |
-|---|---|---|
-| `BL-M06-01` | Mensalidade recorrente por turma | A fazer |
-| `BL-M06-02` | Emissão e cobrança via Asaas | A fazer (exige conta vinculada, BL-M02-10) |
-| `BL-M06-03` | Painel de status de pagamento por aluno | A fazer |
-| `BL-M06-04` | Régua de cobrança com escalonamento de tom | A fazer |
-| `BL-M06-05` | Conciliação automática | A fazer |
-| `BL-M06-06` | Tratamento de pagamento parcial ou divergente | A fazer |
-| `BL-M06-14` | Encerramento da recorrência no desligamento | A fazer |
-| `BL-M06-24` | Restrição de acesso ao financeiro | A fazer (a matriz já nega; falta o teste por tela) |
+**Critério de pronto da spec:** a mensalidade do mês é emitida sozinha, o lembrete sai antes do vencimento, o pagamento é conciliado sem ação humana e a régua para na hora.
+
+**Situação:** o critério é coberto por teste no banco (`FinanceiroBancoTestes`, com a Asaas falsa) e foi demonstrado no navegador com o simulador da Asaas, que devolve os avisos pelo webhook de verdade, com o token da escolinha. A prova com a sandbox da Asaas espera a conta da escolinha piloto (P41). O cliente da API já existe e tem teste de contrato.
+
+**Demonstrado no navegador em 27 e 28/09/2026, na escolinha A:**
+- **Entrada no sistema:** "Atualizar agora" projetou as 53 mensalidades de outubro, todas "A confirmar" (R$ 7.350,00). Com setembro vazio, o painel abriu direto em outubro.
+- **Confirmação e emissão:** três primeiras mensalidades foram confirmadas em lote. Duas foram para a Asaas; a terceira ficou em "A emitir", com o selo "Não emitida" e o motivo "Pagador sem CPF válido". Achado: essa terceira também entrava na conta de "indo para a Asaas". Agora a impedida não vira job (D67).
+- **Régua:** com o lembrete ajustado para 13 dias antes, só para a validação, o aviso saiu para as duas famílias, com o link da fatura. Achado: o texto não dizia de qual escolinha era a cobrança. Os três templates de mensalidade passaram a começar por "Escolinha X informa" (D69); o reenvio manual confirmou o texto novo.
+- **Pagamento:** a família pagou com Pix na fatura do simulador. O aviso da Asaas conciliou a mensalidade como paga sem ação humana, a família recebeu "confirma o pagamento", e nenhuma cobrança ficou na fila.
+- **Divergência:** R$ 100,00 pagos para uma mensalidade de R$ 140,00 deixaram a mensalidade emitida, com o sinal "Valor divergente", na fila. A gestão aceitou o valor como pagamento, com explicação; a família recebeu a confirmação de R$ 100,00.
+- **Estorno:** o estorno de uma mensalidade paga só sinalizou. Achado: a fila oferecia apenas "registrar ciência", e a mensalidade devolvida continuaria contada como paga. Agora a fila também cancela ou isenta a paga cujo dinheiro voltou (D72). Ela foi cancelada com a explicação e saiu das pagas.
+- **Professor** (o login de gestão de B, que é professor em A): sem o menu Mensalidades, sem o cartão do painel, sem a aba Financeiro na ficha e sem nenhum valor em R$. `/Mensalidades`, `/Mensalidades/Divergencias` e `/Mensalidades/Resolver` deram **403**.
+- **Telas:** painel de pagamentos, divergências, confirmar, isentar, receber por fora, resolver, aba Financeiro da ficha, cartão do painel, conta de recebimento e o simulador (lista e fatura) foram conferidos em 375 e 320 px, no claro e no escuro, sem rolagem horizontal da página nem das tabelas. Achados:
+  - no celular, o cabeçalho "Situação" aparecia sem a célula dele, e as ações ficavam embaixo de "Situação";
+  - no computador, as ações quebravam em duas linhas;
+  - o cabeçalho de cartão que quebra encostava na borda de cima, também em Convites, do S2.
+
+  Todos foram corrigidos (guia §6.30).
+- **Dados de validação desfeitos:** a emissão (10 dias antes), o lembrete (3 dias antes) e a janela de silêncio (21:00 às 07:00) voltaram pela tela, com histórico. As mensalidades de outubro ficam no banco de desenvolvimento: 50 a confirmar, 1 impedida, 1 paga com divergência aceita e 1 cancelada depois do estorno.
+
+| ID | Entregável | Status | Onde está | Testes |
+|---|---|---|---|---|
+| `BL-M06-01` | Mensalidade recorrente por turma | Concluído | <ul><li>`Domain/Financeiro/Cobranca.cs`: a mensalidade, com as situações da §6 (prevista, emitida, paga, vencida, paga em atraso, cancelada, isenta).</li><li>`PlanejadorCobrancas` (`RegrasCobranca.cs`): o valor vem da matrícula, que nasce com o da turma (S1). As previstas vão até o fim do mês seguinte, sem cobrar para trás e sem duplicar.</li><li>Trial e pausa não são cobrados (P20). A primeira de cada matrícula espera a confirmação da gestão (P17).</li><li>`RotinaCobrancas`: todo dia às 06:30 (`mensalidades-rotina`) e em "Atualizar agora". Matrícula nova, valor novo, pausa e volta pedem a projeção por job (D66).</li></ul> | `FinanceiroUnidadeTestes` (sem cobrar para trás; idempotente; trial, pausa, valor zero e matrícula encerrada; a prevista acompanha a matrícula e a confirmada fica); `FinanceiroBancoTestes` (critério de pronto; o dia de vencimento novo vale na projeção seguinte) |
+| `BL-M06-02` | Emissão e cobrança via Asaas | Concluído (a prova na sandbox espera a P41) | <ul><li>`EmissaoCobrancas`, um job por mensalidade, na data de emissão: a cobrança vai para a conta da escolinha (R1), no nome do pagador (D34) e com a escolha do meio para a família (Pix, boleto ou cartão).</li><li>Multa e juros ficam congelados na emissão (regra de ouro 14).</li><li>O cliente e a cobrança são procurados pela referência antes de criados: a retentativa não duplica.</li><li>A impedida (sem conta, sem pagador com CPF, recusada pela Asaas) fica em "A emitir", com o motivo (D67).</li><li>Cliente próprio da API (`AsaasClienteHttp`, sem SDK), simulador `/dev/asaas` e trava de ambiente (D75).</li></ul> | `AsaasClienteHttpTestes` (contrato: conta da escolinha, referência, cliente sem notificações da Asaas, erros); `FinanceiroBancoTestes` (a emissão repetida reencontra a cobrança; sem pagador com CPF não emite e a tela diz o porquê); `FinanceiroUnidadeTestes` (multa e juros congelados; a trava) |
+| `BL-M06-03` | Painel de status de pagamento por aluno | Concluído (o agrupamento é provisório, P40) | Tela `/Mensalidades`: o mês com os totais por grupo (a confirmar, a emitir, em aberto, vencidas, pagas, canceladas e isentas), busca, filtro por turma e situação, e as ações por linha: confirmar, reenviar, receber por fora, isentar e cancelar. A aba Financeiro da ficha do aluno e o cartão "Mensalidades" do painel da gestão (D68). | `FinanceiroBancoTestes` (a fila e os grupos nos fluxos) |
+| `BL-M06-04` | Régua de cobrança com escalonamento de tom | Concluído | `ReguaCobranca`: lembretes antes e no dia, e cobranças depois do vencimento, pelos parâmetros lidos na hora. Depois do vencimento, a primeira é cordial e as seguintes, diretas. Sai um degrau por vez, o mais recente, pelo motor (R3), com o link da fatura (D69). | `FinanceiroUnidadeTestes` (degraus e tom; um degrau por vez, sem "a vencer" depois do vencimento; nada para paga, cancelada ou da conta anterior); `FinanceiroBancoTestes` (A3 e D0 saem uma vez cada) |
+| `BL-M06-05` | Conciliação automática | Concluído | <ul><li>Webhook `/api/v1/webhooks/asaas/{escolinha}`, com o token da escolinha. O corpo bruto é gravado e processado por job, uma vez por evento.</li><li>`ConciliacaoCobrancas`: confere o valor original (multa e juros não viram divergência) e decide entre paga e paga em atraso pela data em que a família pagou.</li><li>A régua para na hora, e a família recebe a confirmação.</li><li>A varredura `mensalidades-varredura` relê as mensalidades em aberto a cada hora (:40).</li><li>Na hora do envio, o motor confere de novo a cobrança, aqui e na Asaas (CA-8, D70).</li></ul> | `FinanceiroBancoTestes` (CA-7: concilia, recolhe o lembrete e agradece uma vez; CA-8: o aviso da Asaas atrasado não deixa a cobrança sair; paga em atraso pelo valor original; token e isolamento entre escolinhas); `FinanceiroUnidadeTestes` (leitura do webhook) |
+| `BL-M06-06` | Tratamento de pagamento parcial ou divergente | Concluído | <ul><li>Valor diferente, estorno, contestação no cartão, fatura excluída na Asaas, pagamento depois de cancelada e cobrança de uma conta anterior só sinalizam: a situação não muda sozinha, e a régua para.</li><li>Fila `/Mensalidades/Divergencias`, com resolução manual, explicação e autor no registro de alterações: registrar ciência, aceitar o valor, cancelar ou isentar.</li><li>Recebimento por fora (dinheiro na secretaria), com autoria. A Asaas é avisada por job (D72, P18).</li></ul> | `FinanceiroBancoTestes` (CA-9: sinaliza e a gestão aceita; o estorno só sinaliza e a gestão cancela sem mexer na Asaas; recebido por fora; cancelar a emitida exclui a fatura na Asaas); `FinanceiroUnidadeTestes` (a máquina da cobrança) |
+| `BL-M06-14` | Encerramento da recorrência no desligamento | Concluído | `EfeitosFinanceirosDoCadastro`: o desligamento e o encerramento da matrícula cancelam, na mesma gravação, as previstas com vencimento depois do fim, com o motivo. A emitida em aberto fica, com o selo "Débito após o desligamento", para a gestão decidir (R9, D71). | `FinanceiroBancoTestes` (CA-2: a recorrência encerrada e o débito sinalizado) |
+| `BL-M06-24` | Restrição de acesso ao financeiro | Concluído | Todo o financeiro exige `FinanceiroEscolinha`, que a §7 dá só ao gestor. O menu, a aba da ficha, o cartão do painel e as marcas financeiras seguem a mesma permissão (D74). | `FinanceiroUnidadeTestes` (toda action do financeiro exige a permissão; a matriz); `FinanceiroBancoTestes` (o professor não vê nem mexe) |
+
+**Critérios de aceite tocados no S4:**
+- **CA-2:** completo. O desligamento encerra a recorrência: as previstas depois da data saem canceladas, e o débito já emitido fica sinalizado.
+- **CA-7:** coberto. O pagamento confirmado pela Asaas muda a situação sem ação humana, recolhe o lembrete da fila e agradece uma vez.
+- **CA-8:** coberto. A régua ignora paga, cancelada e sinalizada. Na hora do envio, a cobrança é conferida de novo, aqui e na Asaas: a paga lá, com o aviso ainda não chegado, tem a mensagem suprimida e a conciliação pedida.
+- **CA-9:** coberto. Valor diferente, estorno e contestação sinalizam, sem conciliar, e esperam a gestão.
+- **CA-18:** consumidor `financeiro.*`. O dia de vencimento alterado vale na projeção seguinte, e a multa da mensalidade já emitida continua a da emissão.
+- **R1:** a cobrança vai para a conta Asaas da escolinha, e a família escolhe Pix, boleto ou cartão na fatura.
+- **R3:** as notificações da própria Asaas ficam desligadas no cliente, e só o motor fala com a família.
 
 ## S5 — Eventos e convocações · 10 itens · A fazer
 
@@ -270,14 +296,14 @@ Pendências do EX-01: P25 (plano recorrente), P26 (pacotes e preços comerciais)
 | CA | Resumo | Fatia | Status |
 |---|---|---|---|
 | CA-1 | 2º filho reaproveita o responsável, sem duplicidade | S1 (e S7) | **Coberto no S1** (`CadastroBancoTestes` e navegador); a importação repete no S7 |
-| CA-2 | Desligamento exige data e motivo e encerra a recorrência | S1 e S4 | Parte do S1 coberta (data e motivo, matrículas encerradas); a recorrência é do S4 |
+| CA-2 | Desligamento exige data e motivo e encerra a recorrência | S1 e S4 | **Coberto** (S1: data e motivo, matrículas encerradas; S4: previstas canceladas e débito sinalizado, `FinanceiroBancoTestes`) |
 | CA-3 | Desligado some da chamada e da convocação, fica no histórico | S1, S3 e S5 | S1 e S3 cobertos (sai das listas, da turma e da chamada a partir da data; fica no histórico); a convocação é do S5 |
 | CA-4 | "3 faltas no mês" dispara na 3ª falta | S3 | **Coberto no S3** (`PresencaBancoTestes` e `PresencaUnidadeTestes`) |
 | CA-5 | Sem dois alertas dentro da janela anti-duplicidade | S3 | **Coberto no S3** (o alerta dentro da janela fica suprimido, sem mensagem) |
 | CA-6 | Gestor vê na ficha qual alerta saiu, quando e para quem | S3 | **Coberto no S3** (aba Presença da ficha, P09; teste e navegador) |
-| CA-7 | Pagamento confirmado muda o estado e para a régua | S4 | A fazer |
-| CA-8 | Quem pagou nunca recebe cobrança posterior | S4 | A fazer |
-| CA-9 | Parcial ou divergente fica sinalizado, sem conciliar | S4 | A fazer |
+| CA-7 | Pagamento confirmado muda o estado e para a régua | S4 | **Coberto no S4** (`FinanceiroBancoTestes` e navegador, com o simulador) |
+| CA-8 | Quem pagou nunca recebe cobrança posterior | S4 | **Coberto no S4** (a régua ignora a paga; o envio confere a cobrança aqui e na Asaas, mesmo com o aviso atrasado) |
+| CA-9 | Parcial ou divergente fica sinalizado, sem conciliar | S4 | **Coberto no S4** (valor diferente, estorno e contestação só sinalizam; a gestão resolve na fila) |
 | CA-10 | 4 eventos × 12 convocados em um fluxo | S5 | A fazer |
 | CA-11 | Uma mensagem por convocado, com data, hora, mapa e pergunta | S5 | A fazer |
 | CA-12 | Resposta no WhatsApp aparece no painel sem atualizar | S5 | A fazer |
@@ -286,7 +312,7 @@ Pendências do EX-01: P25 (plano recorrente), P26 (pacotes e preços comerciais)
 | CA-15 | Uma conta mostra os dois filhos | S6 | A fazer (P10) |
 | CA-16 | Total do mês e detalhamento por filho | S6 | A fazer |
 | CA-17 | Nada essencial só no app | S2 (e S5, S6) | **Coberto no S2** (toda mensagem vai pelo WhatsApp; o portal é cópia). O S5 e o S6 repetem. |
-| CA-18 | Nenhum parâmetro exige nova entrega | S0 (+ um teste por consumidor em cada fatia) | **Parcial**: catálogo e "vale sem reiniciar" testados; no S1, o consumidor `turma.*` (a turma nova usa o valor alterado); no S2, o `mensagem.*` (janela de silêncio lida na hora do envio); no S3, o `presenca.*` (o limite alterado vale na falta seguinte) |
+| CA-18 | Nenhum parâmetro exige nova entrega | S0 (+ um teste por consumidor em cada fatia) | **Parcial**: catálogo e "vale sem reiniciar" testados; no S1, o consumidor `turma.*` (a turma nova usa o valor alterado); no S2, o `mensagem.*` (janela de silêncio lida na hora do envio); no S3, o `presenca.*` (o limite alterado vale na falta seguinte); no S4, o `financeiro.*` (o dia de vencimento alterado vale na projeção seguinte, e a multa emitida fica a da emissão) |
 | CA-19 | Nenhuma comunicação dirigida ao menor | S2 (e S5, S6) | **Coberto no S2** (destinatário nunca é o aluno: enum e restrição no banco). O S5 e o S6 repetem. |
 | CA-20 | Nenhum envio fora do catálogo de gatilhos | S2 (e S5, S6) | **Coberto no S2** (regra 1:1 por gatilho e teste de arquitetura: só o emissor cria mensagem, só o motor envia) |
 | CA-21 | Chamada sem sinal, registro da quadra prevalece | S3 | **Coberto no S3** no servidor (teste) e na fila do aparelho (navegador). A reabertura da página sem sinal, pelo service worker, espera a validação (P37). |

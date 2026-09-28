@@ -70,6 +70,8 @@ public sealed class BancoDeTestes : IAsyncLifetime
         GarantirBancoDeTeste();
         await using var contexto = NovoContextoSemEscolinha();
         await contexto.Database.ExecuteSqlRawAsync("""
+            DELETE FROM ClienteAsaas;
+            DELETE FROM Cobranca;
             DELETE FROM AlertaFaltas;
             DELETE FROM MarcacaoPresenca;
             DELETE FROM Presenca;
@@ -178,6 +180,17 @@ public sealed class AmbienteAplicacao : IDisposable
     public GatewayWhatsAppFalso GatewayWhatsApp { get; } = new();
     public AgendadorMensageriaDeTeste Mensageria { get; } = new();
 
+    /// <summary>Asaas no modo Api, com a Asaas falsa: o teste paga, vence e exclui as cobranças.</summary>
+    public MinhaEscolinha.Application.Integracao.Asaas.OpcoesAsaas Asaas { get; } = new()
+    {
+        Habilitado = true,
+        Modo = MinhaEscolinha.Application.Integracao.Asaas.OpcoesAsaas.ModoApi,
+        UrlPublica = "https://localhost:7186"
+    };
+
+    public GatewayAsaasFalso GatewayAsaas { get; } = new();
+    public AgendadorFinanceiroDeTeste Financeiro { get; } = new();
+
     private readonly ServiceProvider _servicos;
 
     public AmbienteAplicacao()
@@ -220,6 +233,10 @@ public sealed class AmbienteAplicacao : IDisposable
         services.AddSingleton(WhatsApp);
         services.AddSingleton<MinhaEscolinha.Application.Mensageria.IGatewayWhatsApp>(GatewayWhatsApp);
         services.AddSingleton<MinhaEscolinha.Application.Mensageria.IAgendadorMensageria>(Mensageria);
+        services.AddScoped<MinhaEscolinha.Application.Financeiro.IFinanceiroRepositorio, MinhaEscolinha.Infrastructure.Financeiro.FinanceiroRepositorio>();
+        services.AddSingleton(Asaas);
+        services.AddSingleton<MinhaEscolinha.Application.Integracao.Asaas.IGatewayAsaas>(GatewayAsaas);
+        services.AddSingleton<MinhaEscolinha.Application.Financeiro.IAgendadorFinanceiro>(Financeiro);
         _servicos = services.BuildServiceProvider();
     }
 

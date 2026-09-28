@@ -18,6 +18,7 @@ public class ServicoMatriculas(
     ITurmasRepositorio turmas,
     IAutorizacao autorizacao,
     ServicoAlunos alunos,
+    Financeiro.EfeitosFinanceirosDoCadastro financeiro,
     RegistroDeAlteracoes registro,
     IRelogioBrasil relogio,
     IValidator<NovaMatriculaRequisicao> validadorNova,
@@ -51,6 +52,7 @@ public class ServicoMatriculas(
             $"Nova matrícula em {turma.Nome} desde {r.DataInicio:dd/MM/yyyy}, mensalidade {ServicoAlunos.Moeda(mensalidade)}.");
         var aviso = await alunos.AvisoCapacidadeAsync(turma, 1, ct);
         await repositorio.SalvarAsync(ct);
+        financeiro.CadastroMudou();
         return ResultadoOperacao.Ok($"Matrícula de {aluno.Nome} em {turma.Nome} registrada." + (aviso is null ? string.Empty : " " + aviso));
     }
 
@@ -69,12 +71,15 @@ public class ServicoMatriculas(
             return ResultadoOperacao.Erro($"A matrícula começou em {matricula.DataInicio:dd/MM/yyyy}.", nameof(r.Data));
 
         matricula.Encerrar(data, r.Motivo!);
+        var canceladas = await financeiro.EncerrarRecorrenciaAsync([matricula.Matricula_ID], data, $"matrícula encerrada ({r.Motivo!.Trim()})", ct);
         registro.Registrar(ServicoAlunos.Entidade, matricula.Aluno_ID, "Matrícula", $"{matricula.Turma?.Nome} (ativa)",
-            $"Encerrada em {data:dd/MM/yyyy}", r.Motivo);
+            $"Encerrada em {data:dd/MM/yyyy}" + (canceladas > 0 ? $"; {canceladas} mensalidade(s) prevista(s) cancelada(s)" : string.Empty), r.Motivo);
 
         var restantes = (await repositorio.MatriculasDoAlunoAsync(matricula.Aluno_ID, ct)).Count(m => m.Ativa && m.Matricula_ID != matricula.Matricula_ID);
         await repositorio.SalvarAsync(ct);
+        financeiro.CadastroMudou();
         return ResultadoOperacao.Ok($"Matrícula em {matricula.Turma?.Nome} encerrada; a vaga foi liberada." +
+                                    (canceladas > 0 ? $" {canceladas} mensalidade(s) prevista(s) cancelada(s)." : string.Empty) +
                                     (restantes == 0 ? " Não sobrou matrícula ativa: se a saída é da escolinha, use Desligar na ficha (data e motivo)." : string.Empty));
     }
 
@@ -99,6 +104,7 @@ public class ServicoMatriculas(
             $"{matricula.Turma?.Nome}: {ServicoAlunos.Moeda(antes)}", $"{matricula.Turma?.Nome}: {ServicoAlunos.Moeda(matricula.Mensalidade)}",
             Cadastros.Vazio(r.Motivo));
         await repositorio.SalvarAsync(ct);
+        financeiro.CadastroMudou();
         return ResultadoOperacao.Ok($"Mensalidade em {matricula.Turma?.Nome} passou de {ServicoAlunos.Moeda(antes)} para " +
                                     $"{ServicoAlunos.Moeda(matricula.Mensalidade)} (vale para as próximas cobranças).");
     }

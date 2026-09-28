@@ -53,7 +53,7 @@ A tabela da §4.5 do plano, com o status de hoje.
 | S1 | Alunos (por turma ou visão geral), **ficha do aluno** (página com abas: responsáveis, matrículas, saúde restrita, consentimentos, histórico; D37), novo aluno em etapas com detecção de duplicidade, desligar (data + motivo + efeitos); Responsáveis; Professores com disponibilidade | gestor; professor P · Painel | `public-profile/profiles/crm`, `account/members/*` | **Pronto** (27/09/2026) |
 | S2 | Mensagens (log de entrega + linha do tempo), Templates (categoria, tom, aprovação), Convites em lote, fila de verificação de vínculos; ativação do convite; portal inicial (filhos confirmados e avisos); `/dev/whatsapp` (caixa de entrada por número, com os botões do template) | gestor · Painel; equipe LDNA · Painel (Templates); convidado · Autenticação; responsável · Portal | `account/notifications`, `account/members/import-members` | **Pronto** (27/09/2026), no simulador. O sino não foi construído: as pendências ficam no Painel (D55) |
 | S3 | **Hoje → Chamada** (P/F/J num toque, sem sinal, "Concluir chamada" na barra inferior); selo de risco nas listas; aba Presença na ficha, com os alertas (CA-6) | professor · **Quadra**; gestor · Painel | — (tela própria) | **Pronto** (27/09/2026). A reabertura sem sinal espera o certificado confiável (P37) |
-| S4 | Financeiro › Pagamentos (agrupado por situação, com as ações isentar, cancelar e reenviar); Divergências (resolução manual com autoria); aba Financeiro na ficha; `/dev/asaas` | gestor · Painel | `account/billing/*` | Em breve (`/mensalidades`) |
+| S4 | Financeiro › Pagamentos (agrupado por situação, com as ações isentar, cancelar e reenviar); Divergências (resolução manual com autoria); aba Financeiro na ficha; `/dev/asaas` | gestor · Painel | `account/billing/*` | **Pronto** (28/09/2026), no simulador. Com as ações confirmar, receber por fora e tentar de novo, e o cartão no Painel |
 | S5 | **Montar fim de semana** (jogos → convocados por jogo, com alertas → revisar → disparar tudo); **Painel de confirmações** em tempo real (registrar resposta por fora; cancelar, adiar ou alterar em um toque) | professor · **Quadra** (e Painel) | `network/user-cards/*` | Em breve (`/jogos`) |
 | S6 | Portal: Início (filhos, pendências, próximos jogos), Jogos (Sim/Não por filho), Pagamentos (total do mês + detalhamento por filho, pagar pela fatura Asaas ou pelo Pix copia-e-cola), Presenças (só leitura), Avisos | responsável · **Portal** | `store-client/checkout/*` (só a forma) | Começado no S2: Início (filhos confirmados) e Avisos prontos; Jogos e Pagamentos "em breve" |
 | S7 | Importação: enviar planilha → mapear → validar e classificar → **conferência** (novos, reaproveitados, vínculos, bloqueados; saúde mascarada) → confirmar; modelo `.xlsx` para baixar | gestor ou equipe · Painel | `account/members/import-members` | Em breve (`/importacao`) |
@@ -229,6 +229,37 @@ O **Painel** ganhou, no S3, o botão "Chamada de hoje" nos próximos treinos e o
 
 ---
 
+## 3C. S4: telas prontas (28/09/2026)
+
+### 3C.1 Gestão (Painel, `MensalidadesController`)
+
+Tudo exige `FinanceiroEscolinha`, que é só do gestor: o professor recebe 403 em qualquer rota (D74). As ações pedem `Alterar` e voltam, com PRG e toast, para a tela de origem (lista ou ficha).
+
+| Tela | Rota | Acesso | Observações | BL |
+|---|---|---|---|---|
+| Painel de pagamentos | `GET /Mensalidades` (`competencia`, `grupo`, `turmaId`, `busca`) | `FinanceiroEscolinha` | o mês, com os seis totais por grupo, os filtros e a tabela (`_LinhaMensalidade`). Sem mês na URL, abre o de hoje, ou o seguinte na entrada no sistema | M06-03 |
+| Atualizar agora | `POST /Mensalidades/Atualizar` | `Alterar` | a rotina da madrugada, sob demanda: projeção, vencidas, régua e emissões | M06-01 |
+| Confirmar a primeira | `GET` e `POST /Mensalidades/Confirmar/{id}`; `POST /Mensalidades/ConfirmarMarcadas` (`selecionadas`) | `Alterar` | o valor só desta mensalidade; em lote, o valor da matrícula | M06-01 |
+| Cancelar ou isentar | `GET /Mensalidades/Encerrar/{id}?para=Cancelada\|Isenta` e `POST` | `Alterar` | pede o motivo; a emitida é excluída na Asaas por job | M06-06 |
+| Receber por fora | `GET` e `POST /Mensalidades/Receber/{id}` | `Alterar` | data (sem futuro), meio e observação; a régua para e a família recebe a confirmação | M06-06 |
+| Reenviar | `POST /Mensalidades/Reenviar/{id}` | `Alterar` | o link da fatura de novo, pelo motor | M06-04 |
+| Tentar de novo | `POST /Mensalidades/TentarDeNovo/{id}` | `Alterar` | a recusada pela Asaas volta para a emissão | M06-02 |
+| Divergências | `GET /Mensalidades/Divergencias` | `FinanceiroEscolinha` | a fila, de qualquer mês | M06-06 |
+| Resolver | `GET` e `POST /Mensalidades/Resolver/{id}` | `Alterar` | ciência, aceitar o valor, cancelar ou isentar, com explicação; sem divergência → 404 | M06-06 |
+| Ficha do aluno, aba Financeiro | `GET /Alunos/Ficha/{id}?aba=financeiro` | `FinanceiroEscolinha` (para os demais, a aba não aparece) | as 24 mensalidades mais recentes, com as mesmas ações; o contador da aba mostra só o que pede atenção | M06-03, M06-24 |
+
+O **Painel** ganhou o cartão "Mensalidades", com as primeiras a confirmar, as impedidas, as vencidas e as divergências. A **Conta de recebimento** passou a mostrar a integração (Simulador ou API), o endereço do webhook e quando ele foi cadastrado na Asaas.
+
+### 3C.2 Integração e ferramentas
+
+| Tela | Rota | Acesso | Observações | BL |
+|---|---|---|---|---|
+| Webhook da Asaas | `POST /api/v1/webhooks/asaas/{escolinhaId}` | `[AllowAnonymous]`, com o token da escolinha no cabeçalho `asaas-access-token` (401 sem ele) | grava o corpo bruto e responde 200; um job processa | M06-05 |
+| Simulador da Asaas | `GET /dev/asaas`; `POST /dev/asaas/{id}/pagar`, `pagar-diferente`, `vencer`, `estornar` e `excluir` | `[SomenteAutenticado]`, na escolinha ativa; só em Development e com o modo Simulado (fora disso, 404) | as cobranças que o sistema emitiu; cada ação manda o aviso pelo webhook de verdade | — |
+| Fatura do simulador | `GET /dev/asaas/fatura/{id}` | idem | o link que vai na mensagem da régua; pagar com Pix, boleto ou cartão | — |
+
+---
+
 ## 4. Páginas "em breve" (catálogo de módulos)
 
 A rota `{chave}` (registrada antes da rota padrão) só aceita as chaves dos módulos com situação `Planejado` no `CatalogoModulos`. A página mostra o que o módulo vai fazer, a fatia e a lista de recursos.
@@ -236,11 +267,10 @@ A rota `{chave}` (registrada antes da rota padrão) só aceita as chaves dos mó
 | Rota | Módulo | Seção do menu | Fatia | Aparece no menu para (recurso, leitura) | Ícone |
 |---|---|---|---|---|---|
 | `/jogos` | Jogos e convocações | Operação | S5 | `EventosConvocacao`: gestor e professor | `ki-cup` |
-| `/mensalidades` | Mensalidades | Financeiro | S4 | `FinanceiroEscolinha`: gestor | `ki-dollar` |
 | `/importacao` | Importação | Escolinha | S7 | `ConfiguracaoEscolinha`: gestor | `ki-file-up` |
 
 - **A página não confere o recurso** (não mostra dado nenhum): qualquer pessoa logada a abre pela URL. Quem filtra é o menu.
-- **Desde o S1**, Turmas, Alunos, Responsáveis e Agenda (Operação) e Professores e Locais de treino (Escolinha) são módulos prontos no `CatalogoModulos` e saíram desta lista. **Desde o S2**, também Mensagens e Convites de acesso (Comunicação), e Templates (Plataforma). **Desde o S3**, a Chamada (Operação).
+- **Desde o S1**, Turmas, Alunos, Responsáveis e Agenda (Operação) e Professores e Locais de treino (Escolinha) são módulos prontos no `CatalogoModulos` e saíram desta lista. **Desde o S2**, também Mensagens e Convites de acesso (Comunicação), e Templates (Plataforma). **Desde o S3**, a Chamada (Operação). **Desde o S4**, as Mensalidades (Financeiro).
 - **Quem é só Responsável não vê o painel:** desde o S2, o painel o leva ao portal (D54).
 - **Quando o módulo ficar pronto:** no `CatalogoModulos`, troque a `Situacao` para `Disponivel` e aponte a `Url` para o controller real. A chave sai da rota `{chave}` sozinha, e o menu, a busca rápida e o Painel acompanham.
 
@@ -281,10 +311,12 @@ O que cada fatia encontra pronto no design system e o que ainda precisa ser cons
 - **Não validado nesta máquina:** a reabertura da página sem sinal, que depende do service worker e de um certificado confiável (P37).
 - **R10:** poucos toques; funciona sem sinal; o registro da quadra prevalece.
 
-### S4 — Financeiro (gestor · Painel)
+### S4 — Financeiro (gestor · Painel) — **pronto em 28/09/2026** (§3C)
 
-- **Onde entra:** `/mensalidades` deixa de ser "em breve"; Divergências; a aba Financeiro na ficha; o simulador `/dev/asaas`.
-- **A construir:** o selo da Cobrança e o sinal de inadimplência (§4.3); o helper `Formatacao.Moeda` já existe (§8); as ações por linha (isentar, cancelar, reenviar), que pedem o menu de ações ⋮ e o modal com motivo.
+- **Construído com o que já existia:** tabela padrão (§6.17), abas da ficha, `<selo-status>` com as duas máquinas novas e três sinais (§4.2), `Formatacao.Moeda` e o binder de reais (§8), `_LayoutAutenticacao` na fatura do simulador.
+- **Construído no S4** (guia §6.30): a `_LinhaMensalidade` das três listas, as telas de ação com o `_ResumoMensalidade`, o cartão do Painel e o simulador `/dev/asaas`. Novas regras: o `<th>` da coluna escondida acompanha a célula, e o cabeçalho de cartão que quebra leva `py-4`.
+- **Não construído:** o menu de ações ⋮ e o modal com motivo. As ações da linha são ícones com `aria-label`, e cancelar, isentar, receber e resolver são páginas próprias, com o motivo no formulário, como no S1.
+- **O sinal de inadimplência** (§4.3) nasce com a convocação, no S5 (`convocacao.inadimplencia.*`).
 
 ### S5 — Eventos e convocações (professor · Quadra e Painel)
 

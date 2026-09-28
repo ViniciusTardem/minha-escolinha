@@ -34,6 +34,7 @@ public class PainelController(
     ServicoVerificacaoVinculos vinculos,
     ServicoMensagens mensagens,
     ServicoPresenca presenca,
+    Application.Financeiro.ServicoMensalidades mensalidades,
     IParametros valores,
     IRelogioBrasil relogio) : Controller
 {
@@ -123,6 +124,7 @@ public class PainelController(
             .ToList();
 
         return View(new PainelViewModel(dados?.Nome ?? "Escolinha", RotulosAcesso.Papeis(autorizacao.Papeis), veConfiguracao, passos, proximas,
-            proximosTreinos, vencendo, vencidos, hoje, pendencias, riscos, autorizacao.Pode(Recurso.RegistroPresenca, Operacao.Alterar)));
+            proximosTreinos, vencendo, vencidos, hoje, pendencias, riscos, autorizacao.Pode(Recurso.RegistroPresenca, Operacao.Alterar),
+            await mensalidades.ResumoAsync(ct)));
     }
 }

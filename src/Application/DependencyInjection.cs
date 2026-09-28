@@ -6,6 +6,7 @@ using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
+using MinhaEscolinha.Application.Financeiro;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
 using MinhaEscolinha.Application.Presencas;
@@ -75,6 +76,18 @@ public static class DependencyInjection
         services.AddScoped<ServicoPresenca>();
         services.AddScoped<IRiscoEvasao>(sp => sp.GetRequiredService<ServicoPresenca>());
         services.AddScoped<IValidadorOrigemMensagem, ValidadorOrigemAlertaFaltas>();
+
+        // S4 — mensalidade (M06): projeção pela matrícula, emissão e conciliação na Asaas da escolinha, régua pelo motor
+        services.AddScoped<ServicoAcessoAsaas>();
+        services.AddScoped<EmissaoCobrancas>();
+        services.AddScoped<ConciliacaoCobrancas>();
+        services.AddScoped<ProcessadorWebhooksAsaas>();
+        services.AddScoped<VarreduraCobrancas>();
+        services.AddScoped<OperacoesAsaas>();
+        services.AddScoped<RotinaCobrancas>();
+        services.AddScoped<EfeitosFinanceirosDoCadastro>();
+        services.AddScoped<ServicoMensalidades>();
+        services.AddScoped<IValidadorOrigemMensagem, ValidadorOrigemCobranca>();
 
         // Plataforma — a LDNA vende pacotes de créditos às escolinhas (Stripe da LDNA; mensalidade de aluno segue na Asaas)
         services.AddScoped<ServicoPacotesCreditos>();

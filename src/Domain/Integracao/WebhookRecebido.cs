@@ -23,6 +23,7 @@ public enum SituacaoWebhook
 public class WebhookRecebido
 {
     public const string OrigemStripe = "stripe";
+    public const string OrigemAsaas = "asaas";
 
     public const int TamanhoOrigem = 20;
     public const int TamanhoEvento = 255;
@@ -32,6 +33,12 @@ public class WebhookRecebido
 
     public Guid WebhookRecebido_ID { get; set; }
     public string Origem { get; set; } = string.Empty;
+
+    /// <summary>
+    /// A escolinha que o endereço do webhook indicou (Asaas: cada conta avisa no endereço da própria escolinha, e o token
+    /// dela já foi conferido). Vazio quando a escolinha sai do conteúdo (Stripe, WhatsApp).
+    /// </summary>
+    public Guid? Escolinha_ID { get; set; }
 
     /// <summary>Id do evento no parceiro (<c>evt_...</c> no Stripe).</summary>
     public string EventoExterno { get; set; } = string.Empty;
