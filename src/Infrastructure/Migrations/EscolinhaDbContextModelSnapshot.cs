@@ -2362,6 +2362,11 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .IsUnicode(false)
                         .HasColumnType("varchar(10)");
 
+                    b.Property<string>("NomeAnterior")
+                        .HasMaxLength(120)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(120)");
+
                     b.Property<string>("NomeNaMeta")
                         .IsRequired()
                         .HasMaxLength(120)

@@ -94,6 +94,7 @@ public class TemplateMensagemConfiguracao : IEntityTypeConfiguration<TemplateMen
         builder.HasKey(t => t.TemplateMensagem_ID).HasName("PK_TemplateMensagem");
         builder.Property(t => t.TemplateMensagem_ID).HasDefaultValueSql("NEWSEQUENTIALID()").ValueGeneratedOnAdd();
         builder.Property(t => t.NomeNaMeta).HasMaxLength(TemplateMensagem.TamanhoNome).IsUnicode(false).IsRequired();
+        builder.Property(t => t.NomeAnterior).HasMaxLength(TemplateMensagem.TamanhoNome).IsUnicode(false);
         builder.Property(t => t.Idioma).HasMaxLength(TemplateMensagem.TamanhoIdioma).IsUnicode(false).IsRequired();
         builder.Property(t => t.Corpo).HasMaxLength(TemplateMensagem.TamanhoCorpo).IsRequired();
         builder.Property(t => t.Variaveis).HasMaxLength(TemplateMensagem.TamanhoVariaveis).IsUnicode(false).IsRequired();

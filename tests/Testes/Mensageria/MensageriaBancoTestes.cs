@@ -179,7 +179,7 @@ public sealed class MensageriaBancoTestes(BancoDeTestes banco) : IAsyncLifetime,
         Assert.Equal((GatilhoMensagem.TreinoCancelado, CanalMensagem.WhatsApp, TipoDestinatario.Responsavel, b.Maria),
             (mensagem.Gatilho, mensagem.Canal, mensagem.TipoDestinatario, mensagem.Destinatario_ID));
         Assert.Equal("+5543988887777", mensagem.Telefone);
-        Assert.Contains("Aviso para: Ana e Pedro", mensagem.Conteudo);
+        Assert.Contains("Este aviso é sobre Ana e Pedro.", mensagem.Conteudo);
         Assert.Contains("Quadra interditada", mensagem.Conteudo);
         Assert.True(mensagem.Essencial);
         Assert.False(mensagem.Urgente); // o treino é daqui a mais de 24 horas
@@ -301,7 +301,7 @@ public sealed class MensageriaBancoTestes(BancoDeTestes banco) : IAsyncLifetime,
 
         await _app.ComoPlataformaAsync(sp => sp.GetRequiredService<ServicoTemplates>().ReconciliarAsync());
         var template = (await _app.ComoPlataformaAsync(sp => sp.GetRequiredService<ServicoTemplates>().ListarAsync()))
-            .Single(t => t.Gatilho == GatilhoMensagem.TreinoCancelado);
+            .Single(t => t.Gatilho == GatilhoMensagem.TreinoCancelado && t.Tom == TomMensagem.Cordial);
         var edicao = (await _app.ComoPlataformaAsync(sp => sp.GetRequiredService<ServicoTemplates>().ParaEdicaoAsync(template.Id)))!;
         edicao.Situacao = SituacaoAprovacaoTemplate.Aprovado;
         Assert.True((await _app.ComoPlataformaAsync(sp => sp.GetRequiredService<ServicoTemplates>().SalvarAsync(edicao))).Sucesso);

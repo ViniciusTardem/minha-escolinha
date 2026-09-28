@@ -28,6 +28,7 @@ public sealed record DadosEventoMensagem(string Jogo, string Quando, string Loca
 public class EmissorGatilhos(
     IMensageriaRepositorio repositorio,
     IConfiguracaoRepositorio configuracao,
+    IParametros parametros,
     IRelogioBrasil relogio,
     OpcoesWhatsApp opcoes)
 {
@@ -47,7 +48,7 @@ public class EmissorGatilhos(
     public async Task<int> TreinoCanceladoAsync(SessaoTreino sessao, string turma, CancellationToken ct = default)
     {
         var regra = CatalogoGatilhos.Obter(GatilhoMensagem.TreinoCancelado);
-        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var template = await TemplateAsync(regra.Gatilho, await TomDosAvisosAsync(ct), ct);
         var escolinha = await NomeEscolinhaAsync(ct);
         var agora = relogio.Agora();
         var quando = sessao.Inicio.ToString("dddd, dd/MM 'às' HH:mm", PtBr);
@@ -79,7 +80,7 @@ public class EmissorGatilhos(
     public async Task ConviteAsync(ConviteAcesso convite, string token, CancellationToken ct = default)
     {
         var regra = CatalogoGatilhos.Obter(GatilhoMensagem.ConviteAcesso);
-        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var template = await TemplateAsync(regra.Gatilho, await TomDosAvisosAsync(ct), ct);
         var valores = new Dictionary<string, string>
         {
             ["nome"] = PrimeiroNome(convite.Nome),
@@ -165,7 +166,7 @@ public class EmissorGatilhos(
     public async Task<int> PagamentoConfirmadoAsync(Cobranca cobranca, string aluno, CancellationToken ct = default)
     {
         var regra = CatalogoGatilhos.Obter(GatilhoMensagem.PagamentoConfirmado);
-        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var template = await TemplateAsync(regra.Gatilho, await TomDosAvisosAsync(ct), ct);
         var escolinha = await NomeEscolinhaAsync(ct);
         var agora = relogio.Agora();
 
@@ -195,7 +196,7 @@ public class EmissorGatilhos(
         CancellationToken ct = default)
     {
         var regra = CatalogoGatilhos.Obter(GatilhoMensagem.ConvocacaoCriada);
-        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var template = await TemplateAsync(regra.Gatilho, await TomDosAvisosAsync(ct), ct);
         var escolinha = await NomeEscolinhaAsync(ct);
         var agora = relogio.Agora();
 
@@ -226,7 +227,7 @@ public class EmissorGatilhos(
     public async Task<int> LembreteConvocacaoAsync(Convocacao convocacao, DadosEventoMensagem evento, string aluno, CancellationToken ct = default)
     {
         var regra = CatalogoGatilhos.Obter(GatilhoMensagem.ConvocacaoSemResposta);
-        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var template = await TemplateAsync(regra.Gatilho, await TomDosAvisosAsync(ct), ct);
         var escolinha = await NomeEscolinhaAsync(ct);
         var agora = relogio.Agora();
 
@@ -256,7 +257,7 @@ public class EmissorGatilhos(
         CancellationToken ct = default)
     {
         var regra = CatalogoGatilhos.Obter(GatilhoMensagem.EventoAlterado);
-        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var template = await TemplateAsync(regra.Gatilho, await TomDosAvisosAsync(ct), ct);
         var escolinha = await NomeEscolinhaAsync(ct);
         var agora = relogio.Agora();
 
@@ -288,7 +289,7 @@ public class EmissorGatilhos(
         string motivo, CancellationToken ct = default)
     {
         var regra = CatalogoGatilhos.Obter(GatilhoMensagem.EventoCancelado);
-        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var template = await TemplateAsync(regra.Gatilho, await TomDosAvisosAsync(ct), ct);
         var escolinha = await NomeEscolinhaAsync(ct);
         var agora = relogio.Agora();
 
@@ -374,6 +375,10 @@ public class EmissorGatilhos(
     private async Task<TemplateMensagem> TemplateAsync(GatilhoMensagem gatilho, TomMensagem tom, CancellationToken ct) =>
         await repositorio.TemplateDoGatilhoAsync(gatilho, tom, ct)
         ?? TemplatesPadrao.Criar(TemplatesPadrao.Todos.First(p => p.Gatilho == gatilho && p.Tom == tom));
+
+    /// <summary>O tom dos avisos escolhido pela escolinha (P02). As faltas e a régua da mensalidade têm o tom próprio.</summary>
+    private async Task<TomMensagem> TomDosAvisosAsync(CancellationToken ct) =>
+        (await parametros.ObterAsync(ct)).Mensagem.Tom == "Direto" ? TomMensagem.Direto : TomMensagem.Cordial;
 
     private async Task<string> NomeEscolinhaAsync(CancellationToken ct) => (await configuracao.ObterEscolinhaAsync(ct))?.Nome ?? "—";
 

@@ -11,6 +11,8 @@ public static class ChavesParametro
     public const string PresencaRiscoPercentual = "presenca.risco.frequencia_minima";
     public const string PresencaRiscoJanela = "presenca.risco.janela_dias";
     public const string PresencaFaltaJustificadaConta = "presenca.falta_justificada.conta_para_alerta";
+    public const string PresencaRiscoMinimoSessoes = "presenca.risco.minimo_sessoes";
+    public const string PresencaRiscoUsarMetaTurma = "presenca.risco.usar_meta_da_turma";
 
     // Financeiro (BL-M02-07)
     public const string FinanceiroMulta = "financeiro.multa.percentual";
@@ -20,6 +22,7 @@ public static class ChavesParametro
     public const string FinanceiroReguaDiasAntes = "financeiro.regua.dias_antes";
     public const string FinanceiroReguaNoDia = "financeiro.regua.no_dia";
     public const string FinanceiroReguaDiasDepois = "financeiro.regua.dias_depois";
+    public const string FinanceiroPortalTodosResponsaveis = "financeiro.portal.todos_responsaveis_veem";
 
     // Convocação (BL-M02-08)
     public const string ConvocacaoModoDisparo = "convocacao.disparo.modo";
@@ -28,10 +31,15 @@ public static class ChavesParametro
     public const string ConvocacaoSinalizarInadimplencia = "convocacao.inadimplencia.sinalizar";
     public const string ConvocacaoDiasAtrasoSinalizacao = "convocacao.inadimplencia.dias_atraso";
     public const string ConvocacaoBloquearInadimplente = "convocacao.inadimplencia.bloquear";
+    public const string ConvocacaoNovaConfirmacaoAoMudar = "convocacao.alteracao.nova_confirmacao";
+    public const string ConvocacaoProfessorSoPropriaTurma = "convocacao.jogo_conjunto.professor_so_propria_turma";
+    public const string ConvocacaoAvisoMudancaHorasAntes = "convocacao.mudanca_resposta.horas_antes";
 
     // Mensagem (BL-M02-09)
     public const string MensagemJanelaSilencio = "mensagem.silencio.janela";
     public const string MensagemAvisoSaldoCreditos = "mensagem.creditos.aviso_saldo_abaixo_de";
+    public const string MensagemTom = "mensagem.tom";
+    public const string MensagemDescadastroPorPalavra = "mensagem.descadastro.palavra";
 
     // Matrícula
     public const string MatriculaTrialDiasAviso = "matricula.trial.dias_aviso_antes";
@@ -91,6 +99,12 @@ public static class CatalogoParametros
         new(ChavesParametro.PresencaFaltaJustificadaConta, DominioParametro.Presenca, TipoParametro.Booleano, EscopoParametro.Escolinha,
             "Falta justificada conta para o alerta", "Desligado: a falta justificada é contada em separado e não dispara o alerta.",
             "false", null, null, null, true, "Pendência 12.2"),
+        new(ChavesParametro.PresencaRiscoMinimoSessoes, DominioParametro.Presenca, TipoParametro.Inteiro, EscopoParametro.Escolinha,
+            "Mínimo de sessões para o risco", "Com menos sessões marcadas na janela, o aluno ainda não entra no risco de evasão (evita o falso alarme do aluno novo).",
+            "4", 1, 30, "sessões", true, "P39, RF-PRE-005"),
+        new(ChavesParametro.PresencaRiscoUsarMetaTurma, DominioParametro.Presenca, TipoParametro.Booleano, EscopoParametro.Escolinha,
+            "Usar a meta de frequência da turma", "Ligado: na turma com meta de frequência, o risco usa a meta dela no lugar da frequência mínima da escolinha.",
+            "true", null, null, null, true, "P32"),
 
         // ── Financeiro ──
         new(ChavesParametro.FinanceiroMulta, DominioParametro.Financeiro, TipoParametro.Percentual, EscopoParametro.Escolinha,
@@ -114,6 +128,9 @@ public static class CatalogoParametros
         new(ChavesParametro.FinanceiroReguaDiasDepois, DominioParametro.Financeiro, TipoParametro.ListaDias, EscopoParametro.Escolinha,
             "Cobranças após o vencimento", "Dias depois do vencimento em que sai a cobrança, com tom crescente (separe por vírgula).",
             "1,5,10", 1, 60, "dias depois", true, "RF-FIN-004"),
+        new(ChavesParametro.FinanceiroPortalTodosResponsaveis, DominioParametro.Financeiro, TipoParametro.Booleano, EscopoParametro.Escolinha,
+            "Todos os responsáveis veem as mensalidades", "Desligado: no portal, só quem paga ou recebe a cobrança vê as mensalidades do filho. Ligado: todo responsável com vínculo confirmado vê.",
+            "false", null, null, null, true, "P50"),
 
         // ── Convocação ──
         new(ChavesParametro.ConvocacaoModoDisparo, DominioParametro.Convocacao, TipoParametro.Escolha, EscopoParametro.Escolinha,
@@ -134,6 +151,15 @@ public static class CatalogoParametros
         new(ChavesParametro.ConvocacaoBloquearInadimplente, DominioParametro.Convocacao, TipoParametro.Booleano, EscopoParametro.Escolinha,
             "Bloquear convocação de inadimplente", "Sinalizar, não bloquear (R9): vem desligado e só liga por decisão da escolinha.",
             "false", null, null, null, false, "RF-CON-017, R9"),
+        new(ChavesParametro.ConvocacaoNovaConfirmacaoAoMudar, DominioParametro.Convocacao, TipoParametro.Booleano, EscopoParametro.Escolinha,
+            "Nova confirmação ao mudar o horário", "Ligado: mudar a data ou a hora do jogo volta os convocados para \"aguardando\" e manda a convocação de novo.",
+            "true", null, null, null, true, "P45"),
+        new(ChavesParametro.ConvocacaoProfessorSoPropriaTurma, DominioParametro.Convocacao, TipoParametro.Booleano, EscopoParametro.Escolinha,
+            "No jogo de várias turmas, o professor vê só a dele", "Ligado: o professor vê e registra só os convocados das turmas dele. A gestão vê todos.",
+            "true", null, null, null, true, "P47"),
+        new(ChavesParametro.ConvocacaoAvisoMudancaHorasAntes, DominioParametro.Convocacao, TipoParametro.Inteiro, EscopoParametro.Escolinha,
+            "Avisar mudança de resposta perto do jogo", "A resposta que muda a menos destas horas do jogo aparece em destaque para o professor e a gestão.",
+            "24", 1, 168, "horas antes", true, "P51"),
 
         // ── Mensagem ──
         new(ChavesParametro.MensagemJanelaSilencio, DominioParametro.Mensagem, TipoParametro.Janela, EscopoParametro.Escolinha,
@@ -142,6 +168,12 @@ public static class CatalogoParametros
         new(ChavesParametro.MensagemAvisoSaldoCreditos, DominioParametro.Mensagem, TipoParametro.Inteiro, EscopoParametro.Escolinha,
             "Aviso de saldo baixo", "Com o saldo de créditos abaixo deste número, o gestor é avisado.",
             "50", 0, 100000, "créditos", true, "RF-MSG-006"),
+        new(ChavesParametro.MensagemTom, DominioParametro.Mensagem, TipoParametro.Escolha, EscopoParametro.Escolinha,
+            "Tom dos avisos", "Variação de texto dos avisos (treino, jogo, convocação, pagamento, convite). As faltas e a régua da mensalidade têm o tom próprio.",
+            "Cordial", null, null, null, true, "RF-MSG-003, P02", OpcoesTom),
+        new(ChavesParametro.MensagemDescadastroPorPalavra, DominioParametro.Mensagem, TipoParametro.Booleano, EscopoParametro.Escolinha,
+            "Descadastro por palavra", "Ligado: quem responde SAIR, PARAR ou STOP deixa de receber os avisos. A cobrança continua para quem paga.",
+            "true", null, null, null, true, "P36"),
 
         // ── Matrícula ──
         new(ChavesParametro.MatriculaTrialDiasAviso, DominioParametro.Matricula, TipoParametro.Inteiro, EscopoParametro.Escolinha,

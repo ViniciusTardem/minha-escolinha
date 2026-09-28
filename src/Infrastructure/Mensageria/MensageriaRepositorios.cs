@@ -218,7 +218,10 @@ public class MensageriaRepositorio(EscolinhaDbContext contexto) : IMensageriaRep
         contexto.TemplatesMensagem.AsNoTracking().FirstOrDefaultAsync(t => t.Gatilho == gatilho && t.Tom == tom, ct);
 
     public Task<TemplateMensagem?> TemplatePorNomeAsync(string nomeNaMeta, CancellationToken ct = default) =>
-        contexto.TemplatesMensagem.AsNoTracking().FirstOrDefaultAsync(t => t.NomeNaMeta == nomeNaMeta, ct);
+        contexto.TemplatesMensagem.AsNoTracking()
+            .Where(t => t.NomeNaMeta == nomeNaMeta || t.NomeAnterior == nomeNaMeta)
+            .OrderByDescending(t => t.NomeNaMeta == nomeNaMeta)
+            .FirstOrDefaultAsync(ct);
 
     public void AdicionarTemplate(TemplateMensagem template) => contexto.TemplatesMensagem.Add(template);
 

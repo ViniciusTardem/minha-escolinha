@@ -54,14 +54,65 @@ public class CatalogoGatilhosTestes
     [Fact]
     public void Renderizar_troca_os_marcadores_na_ordem_das_variaveis()
     {
-        var template = TemplatesPadrao.Criar(TemplatesPadrao.Todos.Single(t => t.Gatilho == GatilhoMensagem.TreinoCancelado));
+        var template = TemplatesPadrao.Criar(TemplatesPadrao.Todos.Single(t => t.Gatilho == GatilhoMensagem.TreinoCancelado && t.Tom == TomMensagem.Cordial));
         var texto = template.Renderizar(new Dictionary<string, string>
         {
             ["responsavel"] = "Maria", ["escolinha"] = "Escolinha Bola na Rede", ["turma"] = "Sub-9", ["quando"] = "terça, 06/10 às 18:00",
             ["alunos"] = "Pedro"
         });
-        Assert.Equal("Olá, Maria! Escolinha Bola na Rede informa: o treino da turma Sub-9 de terça, 06/10 às 18:00 foi cancelado. " +
-                     "Motivo: —. Aviso para: Pedro.", texto);
+        Assert.Equal("Olá, Maria! Escolinha Bola na Rede informa: o treino da turma Sub-9 marcado para terça, 06/10 às 18:00 foi cancelado. " +
+                     "Motivo: —. Este aviso é sobre Pedro. Qualquer dúvida, fale com a equipe da escolinha.", texto);
+    }
+
+    [Fact]
+    public void Todo_gatilho_tem_as_duas_variacoes_de_tom_e_nenhum_texto_termina_numa_variavel()
+    {
+        // P02: o número é o oficial da plataforma, então as variações ficam prontas para a submissão, e a Meta recusa o
+        // texto que termina numa variável, mesmo seguida só de pontuação.
+        Assert.All(Enum.GetValues<GatilhoMensagem>(), g => Assert.All(Enum.GetValues<TomMensagem>(),
+            tom => Assert.Contains(TemplatesPadrao.Todos, t => t.Gatilho == g && t.Tom == tom)));
+        Assert.All(TemplatesPadrao.Todos, p =>
+        {
+            var depoisDaUltima = p.Corpo[(p.Corpo.LastIndexOf("}}", StringComparison.Ordinal) + 2)..];
+            Assert.True(depoisDaUltima.Any(char.IsLetter), p.NomeNaMeta);
+            Assert.Contains("{{2}}", p.Corpo); // o nome da escolinha sempre no texto
+        });
+    }
+
+    [Fact]
+    public void O_rascunho_que_ninguem_editou_recebe_o_texto_novo_e_o_editado_fica()
+    {
+        var padrao = TemplatesPadrao.Todos.Single(t => t.Gatilho == GatilhoMensagem.TreinoCancelado && t.Tom == TomMensagem.Cordial);
+        var antigo = TemplatesPadrao.Criar(padrao);
+        antigo.Corpo = "Olá, {{1}}! {{2}} informa: texto antigo {{3}} {{4}} {{5}} {{6}} fim.";
+        Assert.True(TemplatesPadrao.AtualizarRascunho(antigo, padrao));
+        Assert.Equal(padrao.Corpo, antigo.Corpo);
+        Assert.False(TemplatesPadrao.AtualizarRascunho(antigo, padrao)); // já igual
+
+        var editado = TemplatesPadrao.Criar(padrao);
+        editado.Corpo = "Texto da equipe {{1}} {{2}} {{3}} {{4}} {{5}} {{6}} fim.";
+        editado.UsuarioAtualizacao_ID = Guid.NewGuid();
+        Assert.False(TemplatesPadrao.AtualizarRascunho(editado, padrao));
+
+        var aprovado = TemplatesPadrao.Criar(padrao);
+        aprovado.Corpo = "Texto aprovado {{1}} {{2}} {{3}} {{4}} {{5}} {{6}} fim.";
+        aprovado.Situacao = SituacaoAprovacaoTemplate.Aprovado;
+        Assert.False(TemplatesPadrao.AtualizarRascunho(aprovado, padrao));
+    }
+
+    [Fact]
+    public void A_versao_anterior_aprovada_continua_valendo_para_o_que_estava_na_fila()
+    {
+        // P55: a equipe trocou para _v2, ainda em análise; a mensagem montada com _v1 sai pela _v1, que segue aprovada.
+        var t = TemplatesPadrao.Criar(TemplatesPadrao.Todos.Single(p => p.NomeNaMeta == "treino_cancelado_v1"));
+        t.NomeNaMeta = "treino_cancelado_v2";
+        t.NomeAnterior = "treino_cancelado_v1";
+        t.Situacao = SituacaoAprovacaoTemplate.EmAnalise;
+        Assert.True(t.AprovadoParaEnvio("treino_cancelado_v1"));
+        Assert.False(t.AprovadoParaEnvio("treino_cancelado_v2"));
+        Assert.False(t.AprovadoParaEnvio("outro_v1"));
+        t.Situacao = SituacaoAprovacaoTemplate.Aprovado;
+        Assert.True(t.AprovadoParaEnvio("treino_cancelado_v2"));
     }
 }
 

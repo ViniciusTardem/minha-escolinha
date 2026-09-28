@@ -226,7 +226,7 @@ public sealed class FinanceiroBancoTestes(BancoDeTestes banco) : IAsyncLifetime,
         Assert.False((await CobrancaAsync(b.Escolinha, b.Pedro, 11)).PrimeiraDaMatricula);
         var lembrete = Assert.Single(await MensagensDaCobrancaAsync(b.Escolinha, outubro.Cobranca_ID));
         Assert.Equal((GatilhoMensagem.MensalidadeAVencer, "A3", "Maria Lima"), (lembrete.Gatilho, lembrete.Etapa, lembrete.DestinatarioNome));
-        Assert.Contains("Bola na Rede informa: a mensalidade de Pedro (R$ 150,00) vence em 10/10/2026", lembrete.Conteudo);
+        Assert.Contains("Bola na Rede lembra que a mensalidade de Pedro, no valor de R$ 150,00, vence em 10/10/2026", lembrete.Conteudo);
         Assert.Contains(naAsaas.Pagamento().UrlFatura!, lembrete.Conteudo);
         Assert.Equal(0, (await RotinaAsync(b.Escolinha)).Avisos); // a mesma rotina de novo não repete
 

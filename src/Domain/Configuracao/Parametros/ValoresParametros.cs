@@ -47,7 +47,9 @@ public sealed class ValoresParametros
         Inteiro(ChavesParametro.PresencaJanelaAntiDuplicidade),
         Decimal(ChavesParametro.PresencaRiscoPercentual),
         Inteiro(ChavesParametro.PresencaRiscoJanela),
-        Booleano(ChavesParametro.PresencaFaltaJustificadaConta));
+        Booleano(ChavesParametro.PresencaFaltaJustificadaConta),
+        Inteiro(ChavesParametro.PresencaRiscoMinimoSessoes),
+        Booleano(ChavesParametro.PresencaRiscoUsarMetaTurma));
 
     public ParametrosFinanceiro Financeiro => new(
         Decimal(ChavesParametro.FinanceiroMulta),
@@ -56,7 +58,8 @@ public sealed class ValoresParametros
         Inteiro(ChavesParametro.FinanceiroEmissaoDiasAntes),
         ListaDias(ChavesParametro.FinanceiroReguaDiasAntes),
         Booleano(ChavesParametro.FinanceiroReguaNoDia),
-        ListaDias(ChavesParametro.FinanceiroReguaDiasDepois));
+        ListaDias(ChavesParametro.FinanceiroReguaDiasDepois),
+        Booleano(ChavesParametro.FinanceiroPortalTodosResponsaveis));
 
     public ParametrosConvocacao Convocacao => new(
         Escolha(ChavesParametro.ConvocacaoModoDisparo) == "Janela",
@@ -64,11 +67,16 @@ public sealed class ValoresParametros
         Inteiro(ChavesParametro.ConvocacaoLembreteHorasAntes),
         Booleano(ChavesParametro.ConvocacaoSinalizarInadimplencia),
         Inteiro(ChavesParametro.ConvocacaoDiasAtrasoSinalizacao),
-        Booleano(ChavesParametro.ConvocacaoBloquearInadimplente));
+        Booleano(ChavesParametro.ConvocacaoBloquearInadimplente),
+        Booleano(ChavesParametro.ConvocacaoNovaConfirmacaoAoMudar),
+        Booleano(ChavesParametro.ConvocacaoProfessorSoPropriaTurma),
+        Inteiro(ChavesParametro.ConvocacaoAvisoMudancaHorasAntes));
 
     public ParametrosMensagem Mensagem => new(
         Janela(ChavesParametro.MensagemJanelaSilencio),
-        Inteiro(ChavesParametro.MensagemAvisoSaldoCreditos));
+        Inteiro(ChavesParametro.MensagemAvisoSaldoCreditos),
+        Escolha(ChavesParametro.MensagemTom),
+        Booleano(ChavesParametro.MensagemDescadastroPorPalavra));
 
     public ParametrosMatricula Matricula => new(
         Inteiro(ChavesParametro.MatriculaTrialDiasAviso),
@@ -95,7 +103,9 @@ public sealed record ParametrosPresenca(
     int JanelaAntiDuplicidadeDias,
     decimal FrequenciaMinimaPercentual,
     int JanelaRiscoDias,
-    bool FaltaJustificadaContaParaAlerta);
+    bool FaltaJustificadaContaParaAlerta,
+    int MinimoSessoesRisco = 4,
+    bool UsarMetaDaTurma = true);
 
 public sealed record ParametrosFinanceiro(
     decimal MultaPercentual,
@@ -104,7 +114,8 @@ public sealed record ParametrosFinanceiro(
     int EmissaoDiasAntesVencimento,
     IReadOnlyList<int> LembretesDiasAntes,
     bool LembreteNoDia,
-    IReadOnlyList<int> CobrancasDiasDepois);
+    IReadOnlyList<int> CobrancasDiasDepois,
+    bool TodosResponsaveisVeemNoPortal = false);
 
 public sealed record ParametrosConvocacao(
     bool SoDentroDaJanela,
@@ -112,9 +123,16 @@ public sealed record ParametrosConvocacao(
     int LembreteHorasAntes,
     bool SinalizarInadimplencia,
     int DiasAtrasoSinalizacao,
-    bool BloquearInadimplente);
+    bool BloquearInadimplente,
+    bool NovaConfirmacaoAoMudarHorario = true,
+    bool ProfessorSoPropriaTurma = true,
+    int AvisoMudancaRespostaHorasAntes = 24);
 
-public sealed record ParametrosMensagem(JanelaHorario JanelaSilencio, int AvisoSaldoCreditosAbaixoDe);
+public sealed record ParametrosMensagem(
+    JanelaHorario JanelaSilencio,
+    int AvisoSaldoCreditosAbaixoDe,
+    string Tom = "Cordial",
+    bool DescadastroPorPalavra = true);
 
 /// <summary>Matrícula e os valores iniciais das turmas novas (a turma guarda o próprio valor, S1).</summary>
 public sealed record ParametrosMatricula(

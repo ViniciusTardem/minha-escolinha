@@ -99,6 +99,10 @@ public class ServicoTemplates(
             return ResultadoOperacao.Erro("Texto novo precisa de nova aprovação: troque o nome na Meta (ex.: _v2) e volte a situação para rascunho.",
                 nameof(TemplateRequisicao.NomeNaMeta));
 
+        // P55: a mensagem guarda o nome do template com que foi montada. Trocada a versão de um aprovado, o nome anterior
+        // continua aceito no envio, para o que já está na fila sair pelo template antigo, que segue aprovado na Meta.
+        if (template.Situacao == SituacaoAprovacaoTemplate.Aprovado && template.NomeNaMeta != r.NomeNaMeta.Trim())
+            template.NomeAnterior = template.NomeNaMeta;
         template.NomeNaMeta = r.NomeNaMeta.Trim();
         template.Corpo = r.Corpo.Trim();
         template.Botoes = string.IsNullOrWhiteSpace(r.Botoes) ? null : string.Join("|", r.Botoes.Split('|').Select(b => b.Trim()));
@@ -109,17 +113,28 @@ public class ServicoTemplates(
         return ResultadoOperacao.Ok($"Template {template.NomeNaMeta} salvo ({TemplateMensagem.Rotulo(template.Situacao)}).");
     }
 
-    /// <summary>Startup: grava os textos padrão que ainda não estão no catálogo (idempotente; nunca sobrescreve).</summary>
+    /// <summary>
+    /// Startup: grava os textos padrão que ainda não estão no catálogo e atualiza o rascunho que nenhuma pessoa editou
+    /// (idempotente; o template editado ou submetido nunca é sobrescrito).
+    /// </summary>
     public async Task<int> ReconciliarAsync(CancellationToken ct = default)
     {
-        var existentes = (await repositorio.ListarTemplatesAsync(ct)).Select(t => (t.Gatilho, t.Tom)).ToHashSet();
-        var novos = 0;
-        foreach (var padrao in TemplatesPadrao.Todos.Where(p => !existentes.Contains((p.Gatilho, p.Tom))))
+        var existentes = (await repositorio.ListarTemplatesAsync(ct)).ToDictionary(t => (t.Gatilho, t.Tom));
+        var mudancas = 0;
+        foreach (var padrao in TemplatesPadrao.Todos)
         {
+            if (existentes.TryGetValue((padrao.Gatilho, padrao.Tom), out var gravado))
+            {
+                if (TemplatesPadrao.AtualizarRascunho(gravado, padrao)
+                    && await repositorio.ObterTemplateAsync(gravado.TemplateMensagem_ID, ct) is { } rastreado
+                    && TemplatesPadrao.AtualizarRascunho(rastreado, padrao))
+                    mudancas++;
+                continue;
+            }
             repositorio.AdicionarTemplate(TemplatesPadrao.Criar(padrao));
-            novos++;
+            mudancas++;
         }
-        if (novos > 0) await repositorio.SalvarAsync(ct);
-        return novos;
+        if (mudancas > 0) await repositorio.SalvarAsync(ct);
+        return mudancas;
     }
 }

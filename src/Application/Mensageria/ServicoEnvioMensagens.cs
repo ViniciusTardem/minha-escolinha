@@ -88,7 +88,7 @@ public class ServicoEnvioMensagens(
         }
 
         var template = await repositorio.TemplatePorNomeAsync(mensagem.Template, ct);
-        if (opcoes.Api && template is not { Situacao: SituacaoAprovacaoTemplate.Aprovado })
+        if (opcoes.Api && template?.AprovadoParaEnvio(mensagem.Template) != true)
         {
             await EncerrarSemEnviarAsync(mensagem, $"O template {mensagem.Template} não está aprovado na Meta.", reter: false, agora, ct);
             return mensagem.Situacao;

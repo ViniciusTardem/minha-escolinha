@@ -303,17 +303,17 @@ public sealed class EventosBancoTestes(BancoDeTestes banco) : IAsyncLifetime, ID
         Assert.All(mensagens, m =>
         {
             Assert.Equal((GatilhoMensagem.ConvocacaoCriada, CanalMensagem.WhatsApp, TipoDestinatario.Responsavel), (m.Gatilho, m.Canal, m.TipoDestinatario));
-            Assert.EndsWith($", no local Ginásio Moringão ({Mapa}). Confirma a presença?", m.Conteudo);
+            Assert.EndsWith($", no local Ginásio Moringão. Como chegar: {Mapa}. Toque em Vai ou Não vai para confirmar a presença.", m.Conteudo);
         });
         Assert.Equal(mensagens.Select(m => m.Mensagem_ID).Order(), _app.Mensageria.Envios.Select(e => e.MensagemId).Order());
 
         // CA-13: a Maria recebe as convocações dos dois filhos, cada uma com o nome do filho, o jogo, o dia e a hora.
         Assert.Equal(
         [
-            $"Olá, Maria! Bola na Rede convoca Ana para o jogo da Sub-13 contra Leões da Vila: sábado, 03/10 às 14:00, no local Ginásio Moringão ({Mapa}). Confirma a presença?",
-            $"Olá, Maria! Bola na Rede convoca Ana para o jogo da Sub-13 contra União Cambé: domingo, 04/10 às 14:00, no local Ginásio Moringão ({Mapa}). Confirma a presença?",
-            $"Olá, Maria! Bola na Rede convoca Pedro para o jogo da Sub-11 contra Estrela do Norte: domingo, 04/10 às 09:00, no local Ginásio Moringão ({Mapa}). Confirma a presença?",
-            $"Olá, Maria! Bola na Rede convoca Pedro para o jogo da Sub-11 contra Tigre FC: sábado, 03/10 às 09:00, no local Ginásio Moringão ({Mapa}). Confirma a presença?"
+            $"Olá, Maria! Bola na Rede convocou Ana para o jogo da Sub-13 contra Leões da Vila, sábado, 03/10 às 14:00, no local Ginásio Moringão. Como chegar: {Mapa}. Toque em Vai ou Não vai para confirmar a presença.",
+            $"Olá, Maria! Bola na Rede convocou Ana para o jogo da Sub-13 contra União Cambé, domingo, 04/10 às 14:00, no local Ginásio Moringão. Como chegar: {Mapa}. Toque em Vai ou Não vai para confirmar a presença.",
+            $"Olá, Maria! Bola na Rede convocou Pedro para o jogo da Sub-11 contra Estrela do Norte, domingo, 04/10 às 09:00, no local Ginásio Moringão. Como chegar: {Mapa}. Toque em Vai ou Não vai para confirmar a presença.",
+            $"Olá, Maria! Bola na Rede convocou Pedro para o jogo da Sub-11 contra Tigre FC, sábado, 03/10 às 09:00, no local Ginásio Moringão. Como chegar: {Mapa}. Toque em Vai ou Não vai para confirmar a presença."
         ], mensagens.Where(m => m.Destinatario_ID == b.Maria).Select(m => m.Conteudo).Order(StringComparer.Ordinal));
         Assert.Equal(2, mensagens.Count(m => m.Destinatario_ID == b.Maria && m.Aluno_ID == b.Ana));
         Assert.Equal(2, mensagens.Count(m => m.Destinatario_ID == b.Joao && m.Aluno_ID == b.Pedro));
@@ -421,10 +421,10 @@ public sealed class EventosBancoTestes(BancoDeTestes banco) : IAsyncLifetime, ID
         var avisos = mensagens.Where(m => m.Gatilho == GatilhoMensagem.EventoCancelado).ToList();
         Assert.Equal(new[] { b.Joao, b.Maria, b.Rita }.Order(), avisos.Select(m => m.Destinatario_ID).Order());
         var avisoMaria = avisos.Single(m => m.Destinatario_ID == b.Maria);
-        Assert.Equal("Atenção, Maria: Bola na Rede informa que o jogo da Sub-11 e Sub-13 contra Tigre FC de sábado, 03/10 às 09:00 foi " +
-                     "cancelado. Motivo: Quadra alagada pela chuva. Aviso para: Ana e Pedro.", avisoMaria.Conteudo);
-        Assert.EndsWith("Aviso para: Pedro.", avisos.Single(m => m.Destinatario_ID == b.Joao).Conteudo);
-        Assert.EndsWith("Aviso para: Bruno.", avisos.Single(m => m.Destinatario_ID == b.Rita).Conteudo);
+        Assert.Equal("Atenção, Maria: Bola na Rede informa que o jogo da Sub-11 e Sub-13 contra Tigre FC, marcado para sábado, 03/10 às 09:00, foi " +
+                     "cancelado. Motivo: Quadra alagada pela chuva. Este aviso é sobre Ana e Pedro. Qualquer dúvida, fale com a equipe da escolinha.", avisoMaria.Conteudo);
+        Assert.EndsWith("Este aviso é sobre Pedro. Qualquer dúvida, fale com a equipe da escolinha.", avisos.Single(m => m.Destinatario_ID == b.Joao).Conteudo);
+        Assert.EndsWith("Este aviso é sobre Bruno. Qualquer dúvida, fale com a equipe da escolinha.", avisos.Single(m => m.Destinatario_ID == b.Rita).Conteudo);
 
         // A convocação que ainda estava na fila não sai; a que já saiu fica no log como estava.
         var convocacoesNaFila = mensagens.Where(m => m.Gatilho == GatilhoMensagem.ConvocacaoCriada && m.Mensagem_ID != convocacaoRita.Mensagem_ID).ToList();
@@ -447,8 +447,8 @@ public sealed class EventosBancoTestes(BancoDeTestes banco) : IAsyncLifetime, ID
         var adiou = await Gestor(b.Escolinha, sp => sp.GetRequiredService<ServicoEventos>().EncerrarAsync(
             new EncerrarEventoRequisicao { Id = domingo, Adiar = true, Motivo = "O adversário pediu outra data" }));
         Assert.Equal("Jogo adiado. 1 convocação(ões) cancelada(s); 1 aviso(s) às famílias na fila.", adiou.Mensagem);
-        Assert.Equal("Atenção, Rita: Bola na Rede informa que o jogo da Sub-11 contra Estrela do Norte de domingo, 04/10 às 09:00 foi adiado " +
-                     "(a nova data será avisada). Motivo: O adversário pediu outra data. Aviso para: Bruno.",
+        Assert.Equal("Atenção, Rita: Bola na Rede informa que o jogo da Sub-11 contra Estrela do Norte, marcado para domingo, 04/10 às 09:00, foi adiado " +
+                     "(a nova data será avisada). Motivo: O adversário pediu outra data. Este aviso é sobre Bruno. Qualquer dúvida, fale com a equipe da escolinha.",
             (await MensagensAsync(b.Escolinha)).Single(m => m.Gatilho == GatilhoMensagem.EventoCancelado && m.Origem_ID == domingo).Conteudo);
         Assert.Equal(SituacaoEvento.Adiado, (await PainelAsync(b.Escolinha, domingo)).Situacao);
     }
@@ -530,8 +530,8 @@ public sealed class EventosBancoTestes(BancoDeTestes banco) : IAsyncLifetime, ID
         var lembretes = (await MensagensAsync(b.Escolinha)).Where(m => m.Gatilho == GatilhoMensagem.ConvocacaoSemResposta).ToList();
         Assert.Equal(new[] { b.Lia, b.Rita }.Order(), lembretes.Select(m => m.Destinatario_ID).Order());
         var lembreteRita = lembretes.Single(m => m.Destinatario_ID == b.Rita);
-        Assert.Equal("Olá, Rita! Bola na Rede ainda espera a resposta da convocação de Bruno para o jogo da Sub-11 contra Tigre FC: " +
-                     "sábado, 03/10 às 09:00. Confirma a presença?", lembreteRita.Conteudo);
+        Assert.Equal("Olá, Rita! Bola na Rede ainda aguarda a resposta da convocação de Bruno para o jogo da Sub-11 contra Tigre FC, " +
+                     "sábado, 03/10 às 09:00. Toque em Vai ou Não vai para confirmar a presença.", lembreteRita.Conteudo);
         Assert.NotNull((await ConvocadoAsync(b.Escolinha, jogo, b.Carla)).LembreteEm);
 
         // A Rita responde pelo botão do lembrete: vale como resposta da convocação.
@@ -588,8 +588,8 @@ public sealed class EventosBancoTestes(BancoDeTestes banco) : IAsyncLifetime, ID
         Assert.Equal("Jogo alterado. 3 aviso(s) às famílias na fila.", (await AlterarAsync(new TimeOnly(10, 30))).Mensagem);
         var primeiros = (await MensagensAsync(b.Escolinha)).Where(m => m.Gatilho == GatilhoMensagem.EventoAlterado).ToList();
         Assert.Equal(new[] { b.Joao, b.Maria, b.Rita }.Order(), primeiros.Select(m => m.Destinatario_ID).Order());
-        Assert.Equal($"Atenção, Rita: Bola na Rede informa que o jogo da Sub-11 contra Tigre FC mudou. Agora: sábado, 03/10 às 10:30, " +
-                     $"no local Ginásio Moringão ({Mapa}). Aviso para: Bruno.", primeiros.Single(m => m.Destinatario_ID == b.Rita).Conteudo);
+        Assert.Equal($"Atenção, Rita: Bola na Rede informa que o jogo da Sub-11 contra Tigre FC mudou. Novo horário: sábado, 03/10 às 10:30, " +
+                     $"no local Ginásio Moringão. Como chegar: {Mapa}. Este aviso é sobre Bruno. Qualquer dúvida, fale com a equipe da escolinha.", primeiros.Single(m => m.Destinatario_ID == b.Rita).Conteudo);
         Assert.Equal(SituacaoConvocacao.Confirmada, (await ConvocadoAsync(b.Escolinha, jogo, b.Bruno)).Situacao);
 
         // Mudou de novo antes de o aviso sair: o anterior, com o horário velho, é recolhido, e só o novo sai.
@@ -599,7 +599,7 @@ public sealed class EventosBancoTestes(BancoDeTestes banco) : IAsyncLifetime, ID
         Assert.Equal(6, avisos.Count);
         Assert.All(avisos.Where(m => primeiros.Any(p => p.Mensagem_ID == m.Mensagem_ID)), m => Assert.Equal(SituacaoMensagem.Suprimida, m.Situacao));
         var novoDaRita = avisos.Single(m => m.Destinatario_ID == b.Rita && m.Situacao == SituacaoMensagem.Pendente);
-        Assert.Contains("Agora: sábado, 03/10 às 11:00", novoDaRita.Conteudo);
+        Assert.Contains("Novo horário: sábado, 03/10 às 11:00", novoDaRita.Conteudo);
         Assert.Equal(SituacaoMensagem.Enviada, await EnviarAsync(b.Escolinha, novoDaRita.Mensagem_ID));
 
         // O registro guarda quem mudou o quê, campo a campo, com o antes e o depois.
