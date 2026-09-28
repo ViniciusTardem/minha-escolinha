@@ -32,7 +32,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 ├── global.json · Directory.Build.props (prefixo MinhaEscolinha) · Directory.Packages.props (versões fixas)
 ├── .config/dotnet-tools.json      (dotnet-ef 9.0.20)
 ├── docs/  PLANO · HERANCA · BACKLOG · DECISOES-EM-ABERTO · especificacao/ · design/
-│          operacao/ (RUNBOOK do servidor, script do banco, roteiro de homologação)
+│          operacao/ (RUNBOOK do servidor, script do banco, roteiro de homologação, revisão dos templates)
 │          metronic/ (referência local do Metronic, FORA do git: 61 MB, licença comercial)
 ├── src/
 │   ├── Domain/          entidades e regras puras (sem pacotes)
@@ -288,7 +288,7 @@ dotnet dev-certs https --trust
 - **WhatsApp** (S2): roda em modo **Simulado** (`/dev/whatsapp`) até haver conta na Meta (P34). Trava de ambiente (`GuardaWhatsApp`):
   - **Simulado** em Production: o canal fica desligado, com aviso no log. As mensagens essenciais ficam retidas, e o portal continua;
   - **Api** exige `IdNumero`, `TokenAcesso`, `SegredoApp` e `TokenVerificacao`. Fora de Production, exige também `WhatsApp:NumerosTeste` e só manda para esses números (os demais são suprimidos, com o motivo). Em Production, exige `WhatsApp:ConfirmarProducao = true`;
-  - só sai template **aprovado** pela Meta (tela Plataforma › Templates);
+  - só sai template **aprovado** pela Meta (tela Plataforma › Templates). A revisão antes da submissão, com as regras da Meta e os exemplos das variáveis, está em `docs/operacao/TEMPLATES-WHATSAPP.md` (P02). O envio procura o template pelo nome gravado na mensagem: trocar a versão na tela descarta o que está na fila com o nome antigo (P55);
   - webhook: `https://<site>/api/v1/webhooks/whatsapp`, com o GET de verificação e o POST assinado. No painel da Meta, assine o campo `messages`.
 - **Asaas** (S4): roda em modo **Simulado** (`/dev/asaas`) até haver conta sandbox (P41). Trava de ambiente (`GuardaAsaas`):
   - **Simulado** em Production: a emissão fica desligada, com aviso no log. As mensalidades continuam previstas, com o motivo;

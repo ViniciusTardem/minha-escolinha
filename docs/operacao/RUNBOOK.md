@@ -78,7 +78,7 @@ A chave de API é **de cada escolinha**, vinculada por ela na tela Conta de rece
 | `WhatsApp__ConfirmarProducao` | `true` em `Production` |
 
 - No painel da Meta: o webhook é `https://<site>/api/v1/webhooks/whatsapp` (GET de verificação e POST assinado), com o campo `messages` assinado.
-- Só sai template **aprovado** pela Meta (tela Plataforma › Templates, da equipe LDNA).
+- Só sai template **aprovado** pela Meta (tela Plataforma › Templates, da equipe LDNA). A revisão dos textos antes da submissão está em [`TEMPLATES-WHATSAPP.md`](TEMPLATES-WHATSAPP.md).
 - `WhatsApp__Modo = Simulado` em `Production`: o canal fica desligado, com aviso no log. As mensagens essenciais ficam retidas, e o portal continua.
 
 ### 4.4 Stripe da LDNA (pacotes de créditos)
@@ -121,10 +121,20 @@ No painel do Stripe: o endpoint `https://<site>/api/v1/webhooks/stripe`, com os 
 
 ### 6.2 WhatsApp com número de teste (P34)
 
-Com a conta WhatsApp Business da LDNA na Cloud API, os templates aprovados e os números de teste na §4.3:
+**A conta na Meta** (uma vez, no portfólio de negócios da LDNA, P14):
+1. No App Dashboard da Meta, criar um app com o caso de uso de WhatsApp ("Connect with customers through WhatsApp").
+2. Em API Setup, usar o número de teste da Meta: o id dele (Phone number ID) vai em `WhatsApp__IdNumero`. Cadastrar ali os celulares que vão receber (a Meta aceita até 5, e cada um confirma por código); os mesmos vão em `WhatsApp__NumerosTeste__0`, `__1`...
+3. Token permanente: em Business Settings, criar um usuário do sistema, dar a ele o app e a conta do WhatsApp, e gerar o token com as permissões `business_management`, `whatsapp_business_messaging` e `whatsapp_business_management`. Ele vai em `WhatsApp__TokenAcesso`. O token temporário da tela API Setup expira em horas: não use.
+4. O segredo do app (App settings › Basic) vai em `WhatsApp__SegredoApp`; ele confere a assinatura de cada webhook.
+5. Subir o site com `WhatsApp__Modo = Api` e as variáveis da §4.3. Depois, na configuração do WhatsApp no app: o endereço de callback `https://<site>/api/v1/webhooks/whatsapp`, o token de verificação igual a `WhatsApp__TokenVerificacao` (a Meta chama o site para conferir) e a assinatura do campo `messages`.
+6. Os templates: criar no WhatsApp Manager os da revisão [`TEMPLATES-WHATSAPP.md`](TEMPLATES-WHATSAPP.md) (ao menos os quatro da prova) e, aprovados, marcar como "Aprovado" em Plataforma › Templates de WhatsApp.
+
+**A prova:**
 1. Convidar uma pessoa com um número de teste e ativar o acesso pelo link que chega no celular.
 2. Responder a uma mensagem e conferir a resposta e o log em Mensagens.
 3. Convocar um aluno cujo responsável tenha o número de teste, tocar em "Vai" no celular e conferir o painel do jogo mudando sozinho.
+
+**Para produção** (só com aprovação humana, spec §2.3): um número de telefone próprio da LDNA registrado na conta (a Meta orienta, no registro, o caso de um número que já está no aplicativo do WhatsApp), com o nome de exibição aprovado pela Meta; o id dele no lugar do número de teste, e `WhatsApp__ConfirmarProducao = true`.
 
 ## 7. Manter no ar
 
