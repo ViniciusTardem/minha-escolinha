@@ -27,6 +27,9 @@ public interface IConsultasEscopo
 
     /// <summary>A ficha de responsável é da pessoa.</summary>
     Task<bool> ProprioResponsavelAsync(Guid pessoaId, Guid responsavelId, CancellationToken ct = default);
+
+    /// <summary>O evento envolve uma turma de que a pessoa é o professor responsável (BL-M07-18).</summary>
+    Task<bool> ProfessorDoEventoAsync(Guid pessoaId, Guid eventoId, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -34,7 +37,9 @@ public interface IConsultasEscopo
 /// <list type="bullet">
 /// <item><b>professor</b>: as turmas de que é o responsável, os alunos matriculados nelas e as sessões dele;</item>
 /// <item><b>responsável</b>: a própria ficha e os filhos com vínculo verificado pelo gestor (S2, BL-M01-06): enquanto o
-/// vínculo está a confirmar, o aluno não está no escopo — bloqueio total.</item>
+/// vínculo está a confirmar, o aluno não está no escopo — bloqueio total;</item>
+/// <item><b>gestor</b>, onde a matriz o deixa parcial (responder convocação: só o registro da resposta que veio por fora,
+/// §7): todo evento da escolinha.</item>
 /// </list>
 /// </summary>
 public sealed class ResolvedorEscopoCadastros(IConsultasEscopo consultas) : IResolvedorEscopo
@@ -42,12 +47,14 @@ public sealed class ResolvedorEscopoCadastros(IConsultasEscopo consultas) : IRes
     public Task<bool> NoEscopoAsync(PapelAtuacao papel, AlvoEscopo alvo, Guid pessoaId, CancellationToken ct = default) =>
         papel switch
         {
+            PapelAtuacao.Gestor => Task.FromResult(alvo.Tipo == TipoAlvoEscopo.Evento),
             PapelAtuacao.Professor => alvo.Tipo switch
             {
                 TipoAlvoEscopo.Turma => consultas.ProfessorDaTurmaAsync(pessoaId, alvo.Id, ct),
                 TipoAlvoEscopo.Aluno => consultas.ProfessorDoAlunoAsync(pessoaId, alvo.Id, ct),
                 TipoAlvoEscopo.Sessao => consultas.ProfessorDaSessaoAsync(pessoaId, alvo.Id, ct),
                 TipoAlvoEscopo.Professor => consultas.ProprioProfessorAsync(pessoaId, alvo.Id, ct),
+                TipoAlvoEscopo.Evento => consultas.ProfessorDoEventoAsync(pessoaId, alvo.Id, ct),
                 _ => Task.FromResult(false)
             },
             PapelAtuacao.Responsavel => alvo.Tipo switch

@@ -1,0 +1,24 @@
+@model FormularioJogoViewModel
+@{
+    ViewData["Title"] = "Alterar jogo";
+    ViewData["Voltar"] = $"/Convocacao/Jogo/{Model.Requisicao.Id}";
+    ViewData["FormularioJogo"] = Model;
+    Layout = "_LayoutQuadra";
+}
+
+@* Alterar o jogo (BL-M07-13): mudar o dia, o horário ou o local avisa as famílias dos convocados (uma mensagem por família,
+   urgente se o jogo é nas próximas 24 horas). As respostas já dadas ficam. *@
+<form id="form-alterar" method="post" asp-action="Alterar" class="kt-card" novalidate>
+    <div class="kt-card-content flex flex-col gap-4">
+        <partial name="_ErrosFormulario" />
+        <partial name="_FormularioJogo" model="Model.Requisicao" />
+        <p class="text-xs text-secondary-foreground">
+            Mudou o dia, o horário ou o local? As famílias dos convocados recebem o aviso pelo WhatsApp. As respostas já dadas continuam valendo.
+        </p>
+    </div>
+</form>
+
+@section BarraAcao {
+    <a class="kt-btn kt-btn-outline" href="/Convocacao/Jogo/@Model.Requisicao.Id">Voltar</a>
+    <button form="form-alterar" class="kt-btn kt-btn-primary" type="submit"><i class="ki-filled ki-check"></i> Salvar</button>
+}

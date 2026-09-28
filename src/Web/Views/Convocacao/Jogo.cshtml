@@ -1,0 +1,31 @@
+@model PainelEvento
+@{
+    ViewData["Title"] = "Confirmações";
+    var semana = ServicoConvocacoes.InicioDaSemana(DateOnly.FromDateTime(Model.Inicio)).ToString("yyyy-MM-dd");
+    var voltar = $"/Convocacao?semana={semana}#jogo-{Model.Id}";
+    ViewData["Voltar"] = voltar;
+    Layout = "_LayoutQuadra";
+}
+
+@* O painel de confirmações (BL-M07-09, CA-12): a resposta do WhatsApp aparece sem atualizar a tela. O servidor avisa pelo
+   SignalR (/hubs/convocacoes) e a tela busca o painel de novo (convocacao.js). *@
+<div data-esc-painel-jogo data-evento="@Model.Id" data-url="/Convocacao/Painel/@Model.Id" aria-live="polite">
+    <partial name="_Painel" model="Model" />
+</div>
+
+@section BarraAcao {
+    @if (Model.PodeAlterar)
+    {
+        <a class="kt-btn kt-btn-outline" href="/Convocacao/Alterar/@Model.Id"><i class="ki-filled ki-pencil"></i> Alterar</a>
+        <a class="kt-btn kt-btn-outline" href="/Convocacao/Encerrar/@Model.Id"><i class="ki-filled ki-cross-circle"></i> Cancelar ou adiar</a>
+    }
+    else
+    {
+        <a class="kt-btn kt-btn-outline" href="@voltar"><i class="ki-filled ki-arrow-left"></i> Voltar aos jogos</a>
+    }
+}
+
+@section Scripts {
+    <script src="~/lib/signalr/signalr.min.js" asp-append-version="true"></script>
+    <script src="~/js/convocacao.js" asp-append-version="true"></script>
+}

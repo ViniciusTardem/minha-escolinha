@@ -9,6 +9,7 @@ using MinhaEscolinha.Domain.Comum;
 using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
 using MinhaEscolinha.Domain.Equipe;
+using MinhaEscolinha.Domain.Eventos;
 using MinhaEscolinha.Domain.Financeiro;
 using MinhaEscolinha.Domain.Integracao;
 using MinhaEscolinha.Domain.Mensageria;
@@ -77,6 +78,10 @@ public class EscolinhaDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<AlertaFaltas> AlertasFaltas => Set<AlertaFaltas>();
     public DbSet<Cobranca> Cobrancas => Set<Cobranca>();
     public DbSet<ClienteAsaas> ClientesAsaas => Set<ClienteAsaas>();
+    public DbSet<Evento> Eventos => Set<Evento>();
+    public DbSet<EventoTurma> EventosTurma => Set<EventoTurma>();
+    public DbSet<Convocacao> Convocacoes => Set<Convocacao>();
+    public DbSet<HistoricoConvocacao> HistoricosConvocacao => Set<HistoricoConvocacao>();
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

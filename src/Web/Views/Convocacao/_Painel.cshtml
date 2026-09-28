@@ -1,0 +1,179 @@
+@model PainelEvento
+@{
+    var c = Model.Contagem;
+    var aberto = Model.Situacao is SituacaoEvento.Agendado or SituacaoEvento.Confirmado;
+    var faltam = Model.MinimoConfirmados - c.Confirmadas;
+    var variasTurmas = Model.Convocados.Select(l => l.Turma).Distinct().Count() > 1;
+}
+@* O conteúdo do painel (também servido sozinho em /Convocacao/Painel/{id}, que a tela busca quando o tempo real avisa). *@
+<div class="flex flex-col gap-4">
+    <div class="kt-card">
+        <div class="kt-card-content flex flex-col gap-2">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+                <div class="flex flex-col gap-0.5 min-w-0">
+                    <span class="text-base font-semibold text-mono wrap-anywhere">@Model.Titulo</span>
+                    <span class="text-sm text-secondary-foreground">
+                        @Formatacao.DiaPorExtenso(DateOnly.FromDateTime(Model.Inicio)) · @Formatacao.Horario(Model.Inicio, Model.Fim)
+                    </span>
+                </div>
+                <selo-status valor="Model.Situacao"></selo-status>
+            </div>
+            <span class="text-sm wrap-anywhere">@Model.Local@(Model.Endereco is null ? "" : $" — {Model.Endereco}")</span>
+            @if (Model.LinkMapa is not null)
+            {
+                <a class="kt-link text-sm self-start" href="@Model.LinkMapa" target="_blank" rel="noopener noreferrer">
+                    <i class="ki-filled ki-geolocation"></i> Ver no mapa
+                </a>
+            }
+            <span class="text-xs text-secondary-foreground">Professor: @Model.Professor</span>
+            @if (Model.Logistica is not null)
+            {
+                <p class="text-sm">@Model.Logistica</p>
+            }
+            @if (Model.Motivo is not null)
+            {
+                <p class="text-sm text-secondary-foreground">Motivo: @Model.Motivo</p>
+            }
+            @if (Model.PodeAlterar && (Model.Situacao == SituacaoEvento.Agendado || Model.Inicio <= Model.AtualizadoEm))
+            {
+                <div class="flex flex-wrap gap-2 pt-1">
+                    @if (Model.Situacao == SituacaoEvento.Agendado)
+                    {
+                        <form method="post" asp-controller="Convocacao" asp-action="Confirmar" asp-route-id="@Model.Id">
+                            <button class="kt-btn kt-btn-outline" type="submit"><i class="ki-filled ki-check"></i> Confirmar jogo</button>
+                        </form>
+                    }
+                    @if (Model.Inicio <= Model.AtualizadoEm)
+                    {
+                        <form method="post" asp-controller="Convocacao" asp-action="Realizar" asp-route-id="@Model.Id"
+                              data-esc-confirmar="Marcar o jogo como realizado? Quem não respondeu fica como sem resposta.">
+                            <button class="kt-btn kt-btn-outline" type="submit"><i class="ki-filled ki-double-check"></i> Marcar realizado</button>
+                        </form>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (Model.Situacao is SituacaoEvento.Cancelado or SituacaoEvento.Adiado)
+    {
+        @* Encerrado, os números não dizem mais nada: fica o que aconteceu com as convocações. *@
+        <div class="kt-alert kt-alert-light kt-alert-info flex items-start gap-3" role="status">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <span class="text-sm">
+                @(c.Canceladas == 0
+                    ? "Nenhuma convocação tinha saído: ninguém precisou ser avisado."
+                    : $"{c.Canceladas} convocação(ões) cancelada(s). As famílias dos convocados foram avisadas pelo WhatsApp.")
+            </span>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-2 gap-3">
+            <div class="kt-card">
+                <div class="kt-card-content flex flex-col gap-0.5">
+                    <span class="text-xs text-secondary-foreground">Vão</span>
+                    <span class="text-2xl font-semibold text-mono">@c.Confirmadas</span>
+                    <span class="text-xs text-secondary-foreground">mínimo @Model.MinimoConfirmados</span>
+                </div>
+            </div>
+            <div class="kt-card">
+                <div class="kt-card-content flex flex-col gap-0.5">
+                    <span class="text-xs text-secondary-foreground">Não vão</span>
+                    <span class="text-2xl font-semibold text-mono">@c.Recusadas</span>
+                </div>
+            </div>
+            <div class="kt-card">
+                <div class="kt-card-content flex flex-col gap-0.5">
+                    <span class="text-xs text-secondary-foreground">Aguardando</span>
+                    <span class="text-2xl font-semibold text-mono">@c.Aguardando</span>
+                </div>
+            </div>
+            <div class="kt-card">
+                <div class="kt-card-content flex flex-col gap-0.5">
+                    <span class="text-xs text-secondary-foreground">Sem resposta</span>
+                    <span class="text-2xl font-semibold text-mono">@c.SemResposta</span>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (aberto && c.Disparadas > 0 && faltam > 0)
+    {
+        <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="status">
+            <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+            <span class="text-sm">Faltam @faltam confirmação(ões) para o mínimo da turma.</span>
+        </div>
+    }
+
+    <div class="kt-card">
+        <div class="kt-card-header py-4">
+            <h2 class="kt-card-title">Convocados</h2>
+            @if (c.Selecionadas > 0)
+            {
+                <span class="text-xs text-secondary-foreground">@c.Selecionadas ainda não enviada(s)</span>
+            }
+        </div>
+        @if (Model.Convocados.Count == 0)
+        {
+            <estado-vazio icone="ki-people" titulo="Ninguém convocado ainda" texto="Escolha os convocados na tela dos jogos da semana e dispare."></estado-vazio>
+        }
+        else
+        {
+            <ul class="esc-linhas">
+                @foreach (var l in Model.Convocados)
+                {
+                    <li class="flex flex-col gap-2 px-4 py-3">
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                            <div class="flex flex-col gap-0.5 min-w-0">
+                                <span class="text-sm font-medium text-mono">@l.Aluno</span>
+                                @if (variasTurmas)
+                                {
+                                    <span class="text-xs text-secondary-foreground">@l.Turma</span>
+                                }
+                            </div>
+                            <selo-status valor="l.Situacao"></selo-status>
+                        </div>
+                        @if (l.RespondidoPor is not null && l.Origem is { } origem)
+                        {
+                            <span class="text-xs text-secondary-foreground">
+                                @l.RespondidoPor · @Formatacao.DataHora(l.RespondidaEm) · @Convocacao.Rotulo(origem)
+                            </span>
+                        }
+                        else if (l.LembreteEm is { } lembrete && l.Situacao == SituacaoConvocacao.Enviada)
+                        {
+                            <span class="text-xs text-secondary-foreground">Lembrete enviado em @Formatacao.DataHora(lembrete)</span>
+                        }
+                        @if (l.OutraResposta is not null)
+                        {
+                            <span class="flex flex-wrap items-center gap-1.5">
+                                <selo-status valor="SinalTela.OutraResposta"></selo-status>
+                                <span class="text-xs text-secondary-foreground">@l.OutraResposta</span>
+                            </span>
+                        }
+                        @if (l.PodeRegistrar)
+                        {
+                            <form method="post" asp-controller="Convocacao" asp-action="Responder" asp-route-id="@Model.Id"
+                                  class="flex flex-wrap items-center justify-between gap-2">
+                                <input type="hidden" name="convocacao" value="@l.ConvocacaoId" />
+                                <span class="text-xs text-secondary-foreground">Resposta por fora</span>
+                                <div class="esc-segmento" role="group" aria-label="@($"Resposta de {l.Aluno}")">
+                                    <button class="esc-segmento-opcao" type="submit" name="vai" value="true"
+                                            aria-pressed="@(l.Situacao == SituacaoConvocacao.Confirmada ? "true" : "false")"
+                                            aria-label="@($"{l.Aluno}: vai")">Vai</button>
+                                    <button class="esc-segmento-opcao" type="submit" name="vai" value="false"
+                                            aria-pressed="@(l.Situacao == SituacaoConvocacao.Recusada ? "true" : "false")"
+                                            aria-label="@($"{l.Aluno}: não vai")">Não vai</button>
+                                </div>
+                            </form>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+
+    <p class="text-xs text-secondary-foreground">
+        Atualiza sozinho quando a família responde pelo WhatsApp. Última leitura às @Model.AtualizadoEm.ToString("HH:mm:ss").
+    </p>
+</div>

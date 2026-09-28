@@ -126,6 +126,7 @@ public class ServicoAgenda(
     IConfiguracaoRepositorio configuracao,
     IEscopoDeLeitura escopo,
     IAutorizacao autorizacao,
+    Eventos.IEventosRepositorio eventos,
     IRelogioBrasil relogio) : IOcupacaoAgenda
 {
     /// <summary>O período máximo de uma consulta (a tela é por mês).</summary>
@@ -182,6 +183,7 @@ public class ServicoAgenda(
             modalidades.Select(m => new OpcaoAgenda(m.Modalidade_ID, m.Nome)).ToList());
     }
 
+    /// <summary>Os treinos e, desde o S5, os eventos do período: a ocupação do professor e do local (BL-M04-08).</summary>
     public async Task<IReadOnlyList<Compromisso>> CompromissosAsync(DateTime de, DateTime ate, Guid? professorId, Guid? localId,
         CancellationToken ct = default)
     {
@@ -191,6 +193,8 @@ public class ServicoAgenda(
             .Where(s => professorId is null || s.Professor_ID == professorId)
             .Where(s => localId is null || s.Local_ID == localId)
             .Select(ServicoSessoes.Compromisso)
+            .Concat(await eventos.CompromissosAsync(de, ate, professorId, localId, ct))
+            .OrderBy(c => c.Inicio)
             .ToList();
     }
 

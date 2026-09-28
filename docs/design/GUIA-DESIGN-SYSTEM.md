@@ -343,6 +343,9 @@ A utility que falta nasce no `npm run css` quando uma View passa a usá-la; o ve
 | `SituacaoCobranca` (S4) | `Prevista` · Neutro; `Emitida` · Info; `Paga` · Sucesso; `PagaEmAtraso` → "Paga em atraso" · Sucesso; `Vencida` · Perigo; `Cancelada` · Neutro; `Isenta` · Neutro | Mensalidades, Divergências, telas de ação, aba Financeiro da ficha |
 | `SinalCobranca` (S4) | `ValorDivergente` → "Valor divergente", `Estorno`, `Chargeback` → "Contestação no cartão", `ExcluidaNaAsaas` → "Excluída na Asaas", `PagaDepoisDeEncerrada` → "Paga depois de encerrada", `ContaAnterior` → "Conta Asaas anterior": todos Alerta. `Nenhum` não aparece | idem, e o cartão do painel (divergências) |
 | `SinalTela`, valores do S4 | `MensalidadeAConfirmar` → "A confirmar" · Alerta; `MensalidadeImpedida` → "Não emitida" · Alerta, com o motivo em texto ao lado; `DebitoRemanescente` → "Débito após o desligamento" · Alerta | Mensalidades, aba Financeiro da ficha, cartão do painel |
+| `SituacaoEvento` (S5) | `Agendado` · Info; `Confirmado` · Info; `Realizado` · Sucesso; `ResultadoHomologado` → "Resultado homologado" · Sucesso; `Cancelado` · Perigo; `Adiado` · Alerta | Jogos da semana, painel do jogo |
+| `SituacaoConvocacao` (S5) | `Selecionada` → "Não enviada" · Neutro; `Enviada` → "Aguardando resposta" · Info; `Confirmada` → "Vai" · Sucesso; `Recusada` → "Não vai" · Perigo; `SemResposta` → "Sem resposta" · Alerta; `Cancelada` · Neutro | Jogos da semana (na linha do aluno), painel do jogo, vitrine do portal |
+| `SinalTela`, valores do S5 | `Inadimplente` → "Mensalidade em atraso" · Perigo; `ConvocacaoBloqueada` → "Convocação bloqueada" · Perigo; `SemCelular` → "Sem WhatsApp" · Alerta; `OutroJogoNoHorario` → "Outro jogo no horário" · Alerta; `OutraResposta` → "Outra resposta" · Alerta | Jogos da semana (sinais da escolha), painel do jogo (a resposta seguinte) |
 
 Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e sem cor. **Máquina nova entra inteira no mapa, na mesma entrega:**
 
@@ -350,14 +353,14 @@ Valor fora do mapa cai em `valor.ToString()` com a variante Neutro: sem acento e
 2. os valores no array `selos` da vitrine (`Views/Design/Index.cshtml`);
 3. na View, só `<selo-status>`.
 
-### 4.3 A tabela do plano (Aluno, Sessão, Mensagem, Presença, risco e Cobrança prontos; as demais planejadas)
+### 4.3 A tabela do plano (todas as máquinas prontas desde o S5)
 
 A tabela da §4.2 do plano:
 - **Aluno e Sessão entraram no mapa no S1, e Mensagem no S2, como planejados.** A "pendente" do plano aparece como "Na fila".
 - O "trial vencido" é o `SinalTela.TrialVencido`, porque o trial vencido continua em trial (§6 da spec).
 - **Presença e o risco de evasão entraram no S3.** A "justificada" aparece como "Falta justificada", e o "não marcado" não tem selo: é a linha sem marcação.
 - **Cobrança entrou no S4, como planejada.** O "divergente" é o `SinalCobranca`, um selo ao lado do da situação, que não muda.
-- As outras máquinas valem quando cada uma nascer.
+- **Evento e Convocação entraram no S5, como planejados.** A convocação ganhou o rascunho, "Não enviada" (Neutro), antes do disparo; a "enviada" aparece como "Aguardando resposta", e a confirmada e a recusada como "Vai" e "Não vai", as palavras dos botões. A inadimplência é o `SinalTela.Inadimplente` (Perigo), e o bloqueio, quando ligado, o `SinalTela.ConvocacaoBloqueada`.
 
 | Máquina | Sucesso | Info | Alerta | Perigo | Neutro |
 |---|---|---|---|---|---|
@@ -396,7 +399,7 @@ Estado que não tem enum de domínio por trás (a conta existe ou não, o saldo 
 <selo-status class="self-start" valor="SinalTela.SaldoCreditosBaixo" texto="@($"abaixo de {Model.AvisoSaldoAbaixoDe}")"></selo-status>
 ```
 
-Na vitrine, só a "convocação · Pedro" do portal é escrita à mão, porque a convocação nasce no S5; na tela real, é `<selo-status>`. A sessão prevista (quadra) e a mensalidade paga e emitida (portal) já usam o selo desde o S4.
+Na vitrine, nenhum selo é escrito à mão: a "convocação · Pedro" do portal usa o `<selo-status>` da convocação aguardando resposta desde o S5, e a sessão prevista (quadra) e a mensalidade paga e emitida (portal), desde o S4.
 
 ---
 
@@ -526,7 +529,7 @@ Renomear qualquer um quebra o recolhimento, a rolagem do menu ou a busca.
 ```
 
 - **Toque (`esc-toque` no `<body>`):** `kt-btn`, `kt-input`, `kt-select` e `kt-textarea` com altura mínima de 48 px e texto de 16 px (o iOS dá zoom em campo com menos de 16 px); `kt-btn-icon` com 48 px de largura; `esc-segmento-opcao` com 48 px. O KTUI puro tem 34 px e texto de 13 px.
-- **Telas reais:** a chamada (`ChamadaController`, S3, §6.29) e, no S5, a convocação (`Convocacao`).
+- **Telas reais:** a chamada (`ChamadaController`, S3, §6.29) e, no S5, a convocação (`Convocacao`, §6.31).
 
 ### 5.4 `_LayoutPortal`: o responsável no celular, sem instalar nada
 
@@ -1171,6 +1174,34 @@ As telas `/Chamada` (o dia) e `/Chamada/Sessao/{id}`, no `_LayoutQuadra`. Cada t
 
 **Simulador da Asaas** (`/dev/asaas` e `/dev/asaas/fatura/{id}`): no padrão do simulador do WhatsApp (§6.28). A lista mostra uma cobrança por item, com o valor e o status; no celular, a coluna do valor desce e alinha à esquerda. A fatura usa o `_LayoutAutenticacao`: o valor, a descrição, o vencimento e o pagador, e os botões Pix, boleto e cartão. Cada ação manda o aviso pelo webhook de verdade, e o toast confirma.
 
+### 6.31 Jogos e convocações, na quadra (S5, `js/convocacao.js`)
+
+Todas no `_LayoutQuadra`, para o professor no celular e a gestão no computador.
+
+**A semana** (`/Convocacao`, `Convocacao/Index.cshtml`): uma tela só para montar o fim de semana (BL-M07-08).
+- **Topo:** a navegação por semana (segunda a domingo), com setas `kt-btn-icon` e `aria-label`.
+- **Jogo novo:** um `<details class="kt-card">` na própria tela (`#novo-jogo`), com o `_FormularioJogo`. "Novo jogo" na barra inferior (`data-esc-abrir-novo`) abre o `details` e rola até ele. O formulário volta aberto quando há erro.
+- **O cartão de cada jogo** (`section.kt-card`, `id="jogo-{id}"`, `data-esc-jogo`):
+  - título (link para o painel), dia, horário e local, e o selo da situação;
+  - "N para disparar" (contado no aparelho, `data-esc-escolhidos`), "N vão (mínimo M)", aguardando e não vão;
+  - os alertas de agenda num `kt-alert-warning`;
+  - a lista de alunos (`esc-linhas`), uma caixa por aluno (`name="selecao"`, valor `{jogo}:{aluno}`). Embaixo do nome, os selos: a situação da convocação (depois do disparo), trial, risco, mensalidade em atraso ou convocação bloqueada, sem WhatsApp e outro jogo no horário, este com o texto do outro jogo. **A turma do aluno só aparece quando o jogo junta turmas** (achado no S5).
+  - A caixa trava depois do disparo: a resposta se registra no painel.
+- **Âncora sob a barra fixa:** o cartão e o `details` levam `scroll-mt-20`. Sem isso, a volta para `#jogo-{id}` esconde o título sob a barra superior (achado no S5).
+- **Barra inferior:** "Salvar escolha" e "Disparar convocações", os dois do mesmo formulário (atributo `form`). O disparo pergunta com o total contado no aparelho ("Disparar 48 convocação(ões)?"). No celular, os rótulos ficam "Salvar" e "Disparar" (`hidden sm:inline` no resto), para caber numa linha. Sem jogo convocável, a barra tem "Novo jogo".
+
+**O formulário do jogo** (`_FormularioJogo`): turmas em caixas (`min-h-12`), dia e horário, duração e local lado a lado (`grid-cols-2`), professor (só para a gestão), adversário e informações para a família. Local e professor vazios são "O da turma". Os alertas de agenda voltam num `kt-alert-warning`, com a caixa "Vi os alertas e quero salvar mesmo assim", e o resumo do erro fica no topo. Na alteração, a turma é texto, e a nota embaixo diz que mudar o dia, o horário ou o local avisa as famílias.
+
+**O painel do jogo** (`/Convocacao/Jogo/{id}`, o parcial `_Painel` também servido em `/Convocacao/Painel/{id}`):
+- o cartão do jogo: título, dia por extenso, horário, local e endereço, "Ver no mapa" (`ki-geolocation`, nova aba), o professor, as informações e o motivo. "Confirmar jogo" e "Marcar realizado" aparecem só quando cabem;
+- os quatro números em `grid-cols-2` (vão, com o mínimo; não vão; aguardando; sem resposta) e o `kt-alert-warning` "Faltam N confirmação(ões)". **No jogo cancelado ou adiado**, os números saem, e fica um `kt-alert-info` com as convocações canceladas (achado no S5);
+- a lista dos convocados: nome, selo, quem respondeu, quando e por onde, o lembrete, a "outra resposta" (selo `SinalTela.OutraResposta` e o texto) e a "Resposta por fora" num controle segmentado (`esc-segmento`, §6.9) com "Vai" e "Não vai", cada botão com `aria-label` e `aria-pressed`;
+- a nota "Atualiza sozinho quando a família responde pelo WhatsApp", com a hora da última leitura.
+- **Tempo real:** o `data-esc-painel-jogo` recebe o HTML novo quando o hub avisa o id do jogo (`esc.fetch` e `esc.reinicializarComponentes()`, §6.13); busca de novo a cada minuto com a aba visível e ao voltar para a aba.
+- **Barra inferior:** "Alterar" e "Cancelar ou adiar"; no jogo encerrado, "Voltar aos jogos".
+
+**Cancelar ou adiar** (`/Convocacao/Encerrar/{id}`): o resumo do jogo, com quantos convocados serão avisados; os dois estados em `kt-radio` (`min-h-12`); o motivo, que vai na mensagem. A ação é `kt-btn-destructive` ("Avisar e encerrar"), com confirmação.
+
 ---
 
 ## 7. Erro de formulário: o padrão do projeto
@@ -1316,9 +1347,9 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 | turmas | `ki-category` | menu (Turmas); passos do Painel; Turmas; fichas do aluno e do professor; portal |
 | agenda | `ki-calendar` | menu (Agenda); Agenda; Turmas e fichas da turma e do professor; lista da chamada sem treino no dia |
 | chamada | `ki-check-squared` | menu (Chamada); "Chamada de hoje" no Painel; "Chamada" na Agenda; "Todos presentes" na chamada; aba Presença da ficha (estado vazio) |
-| jogos | `ki-cup` | menu (Jogos e convocações, em breve); Painel (próximas entregas); aba Jogos do portal; **logo provisório** |
-| convocação | `ki-flag` | só a vitrine (S5) |
-| confirmações | `ki-double-check` | Mensagens (entregue e lida); simulador do WhatsApp; total das pagas (Mensalidades) |
+| jogos | `ki-cup` | menu (Jogos e convocações); semana sem jogo (estado vazio); aba Jogos do portal; **logo provisório** |
+| convocação | `ki-flag` | só a vitrine. Nas telas do S5, o disparo usa o `ki-whatsapp`, o canal da convocação |
+| confirmações | `ki-double-check` | Mensagens (entregue e lida); simulador do WhatsApp; total das pagas (Mensalidades); link "Painel de confirmações" e "Marcar realizado" (S5) |
 | mensagens | `ki-message-text-2` | menu (Mensagens); passos do Painel; Mensagens e detalhe; Templates; ficha do aluno; simulador do WhatsApp |
 | WhatsApp | `ki-whatsapp` | Mensagens; Convites; acesso da ficha; ficha do aluno (destinatário do alerta); simulador do WhatsApp |
 | avisos | `ki-notification-status` | Mensagens (portal); ficha do aluno; portal (aba Avisos e início) |
@@ -1328,8 +1359,8 @@ A cultura da requisição é só pt-BR (`UseRequestLocalization`), e toda data �
 | créditos | `ki-wallet` | menu (Créditos); passos do Painel; Créditos; Mensagens; Plataforma; receber por fora (Mensalidades) |
 | configuração | `ki-setting-2` | só a vitrine |
 | parâmetros | `ki-setting-3` | menu (Parâmetros); passos do Painel |
-| locais | `ki-geolocation` | menu (Locais); passos do Painel; Locais |
-| mapa | `ki-map` | só a vitrine (S5, local do jogo) |
+| locais | `ki-geolocation` | menu (Locais); passos do Painel; Locais; "Ver no mapa" no painel do jogo (S5) |
+| mapa | `ki-map` | só a vitrine. O "Ver no mapa" do jogo usa o ícone do local, `ki-geolocation` |
 | saúde | `ki-heart` | ficha do aluno (saúde) |
 | consentimento | `ki-shield-tick` | ficha do aluno e aluno novo (consentimentos) |
 | acesso | `ki-key` | menu (Convites) e menu da pessoa (Trocar senha); passos do Painel; Convites; ativação; Mensagens |
@@ -1632,7 +1663,7 @@ Comparação entre a seção 4 do plano aprovado (4.1 a 4.8) e o código. Feita 
 | 14 | Seleção com busca (com painel maior no celular) e select dependente (4.4) | construídos no JS e no CSS; nenhuma tela usa, e a vitrine não mostra | Prontos, sem uso |
 | 15 | `_CampoParametro` (4.4) | construído em `Views/Parametros/`, não em `Shared` | Pronto; o tipo `Hora` não tem editor |
 | 16 | Quadra: `_StatusConexao`, `_LinhaChamada`, `_BarraAcaoInferior` (4.4) | não são parciais: selo no `_LayoutQuadra`, classes `esc-linha-chamada*`, seção `BarraAcao` | Forma diferente, mesma função |
-| 17 | Convocação: `_CartaoJogo`, `_SelecaoConvocados`, `_PainelConfirmacoes` (4.4) | não existem; a vitrine do portal mostra a forma do cartão de jogo | Planejado (S5) |
+| 17 | Convocação: `_CartaoJogo`, `_SelecaoConvocados`, `_PainelConfirmacoes` (4.4) | o cartão do jogo com a seleção fica na tela da semana (`Convocacao/Index`), o formulário é o `_FormularioJogo` e o painel é o parcial `_Painel`, que o tempo real busca de novo (§6.31) | Forma diferente, mesma função (S5) |
 | 18 | Portal: `_CartaoFilho`, `_CartaoConvocacao`, `_CartaoCobranca`, `_AbasPortal` (4.4) | não são parciais: abas no layout; os cartões só como markup na vitrine | Planejado (S6) |
 | 19 | Vitrine com "os selos de todas as máquinas" e "as 4 superfícies" (4.4) | selos de todos os enums do mapa central (S0 a S4 e EX-01, por `Enum.GetValues`); quadra, portal e autenticação em páginas próprias; o painel aparece só como miolo (`_LayoutVitrine`, sem sidebar e header, porque a vitrine não exige login); o ícone `ki-timer` não está na vitrine | Parcial, por construção |
 | 20 | Nova escolinha em etapas: dados → modalidade → 1º gestor → **revisão** (4.5) | três etapas, sem revisão | Sem a etapa de revisão |

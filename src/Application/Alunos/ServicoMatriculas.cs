@@ -19,6 +19,7 @@ public class ServicoMatriculas(
     IAutorizacao autorizacao,
     ServicoAlunos alunos,
     Financeiro.EfeitosFinanceirosDoCadastro financeiro,
+    Eventos.EfeitosConvocacaoDoCadastro convocacoes,
     RegistroDeAlteracoes registro,
     IRelogioBrasil relogio,
     IValidator<NovaMatriculaRequisicao> validadorNova,
@@ -72,14 +73,19 @@ public class ServicoMatriculas(
 
         matricula.Encerrar(data, r.Motivo!);
         var canceladas = await financeiro.EncerrarRecorrenciaAsync([matricula.Matricula_ID], data, $"matrícula encerrada ({r.Motivo!.Trim()})", ct);
+        // Sai das convocações por esta turma nos jogos depois do último dia (CA-3).
+        var retiradas = await convocacoes.RetirarAlunoAsync(matricula.Aluno_ID, matricula.Turma_ID, data.AddDays(1),
+            $"Matrícula encerrada em {data:dd/MM/yyyy}.", ct);
         registro.Registrar(ServicoAlunos.Entidade, matricula.Aluno_ID, "Matrícula", $"{matricula.Turma?.Nome} (ativa)",
-            $"Encerrada em {data:dd/MM/yyyy}" + (canceladas > 0 ? $"; {canceladas} mensalidade(s) prevista(s) cancelada(s)" : string.Empty), r.Motivo);
+            $"Encerrada em {data:dd/MM/yyyy}" + (canceladas > 0 ? $"; {canceladas} mensalidade(s) prevista(s) cancelada(s)" : string.Empty) +
+            (retiradas > 0 ? $"; {retiradas} convocação(ões) de jogo retirada(s)" : string.Empty), r.Motivo);
 
         var restantes = (await repositorio.MatriculasDoAlunoAsync(matricula.Aluno_ID, ct)).Count(m => m.Ativa && m.Matricula_ID != matricula.Matricula_ID);
         await repositorio.SalvarAsync(ct);
         financeiro.CadastroMudou();
         return ResultadoOperacao.Ok($"Matrícula em {matricula.Turma?.Nome} encerrada; a vaga foi liberada." +
                                     (canceladas > 0 ? $" {canceladas} mensalidade(s) prevista(s) cancelada(s)." : string.Empty) +
+                                    (retiradas > 0 ? $" {retiradas} convocação(ões) de jogo retirada(s)." : string.Empty) +
                                     (restantes == 0 ? " Não sobrou matrícula ativa: se a saída é da escolinha, use Desligar na ficha (data e motivo)." : string.Empty));
     }
 

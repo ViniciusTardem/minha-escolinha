@@ -1,0 +1,191 @@
+@model SemanaConvocacoesViewModel
+@{
+    var t = Model.Tela;
+    ViewData["Title"] = "Jogos e convocações";
+    ViewData["Voltar"] = "/";
+    ViewData["FormularioJogo"] = Model.Formulario;
+    Layout = "_LayoutQuadra";
+    var semana = t.Inicio.ToString("yyyy-MM-dd");
+    var anterior = t.Inicio.AddDays(-7).ToString("yyyy-MM-dd");
+    var seguinte = t.Inicio.AddDays(7).ToString("yyyy-MM-dd");
+    var comConvocacao = t.Eventos.Where(e => e.PodeConvocar).ToList();
+}
+
+@* A montagem do fim de semana (BL-M07-08, CA-10) numa tela só: o jogo novo, a escolha dos convocados de cada jogo, com os
+   sinais (BL-M07-05, BL-M07-06), e o disparo de tudo de uma vez pela barra inferior (R10: poucos toques). *@
+<div class="flex flex-col gap-4">
+    <div class="flex items-center justify-between gap-2">
+        <a class="kt-btn kt-btn-icon kt-btn-outline" href="?semana=@anterior" aria-label="Semana anterior"><i class="ki-filled ki-arrow-left"></i></a>
+        <span class="text-sm font-semibold text-mono text-center">@t.Inicio.ToString("dd/MM") a @t.Fim.ToString("dd/MM/yyyy")</span>
+        <a class="kt-btn kt-btn-icon kt-btn-outline" href="?semana=@seguinte" aria-label="Semana seguinte"><i class="ki-filled ki-arrow-right"></i></a>
+    </div>
+
+    @if (t.PodeMontar)
+    {
+        <details class="kt-card scroll-mt-20" id="novo-jogo" open="@Model.AbrirNovo">
+            <summary class="kt-card-header py-4 cursor-pointer">
+                <span class="kt-card-title flex items-center gap-2"><i class="ki-filled ki-plus"></i> Novo jogo</span>
+            </summary>
+            <form method="post" asp-action="Novo" class="kt-card-content flex flex-col gap-4" novalidate>
+                <input type="hidden" name="semana" value="@semana" />
+                <partial name="_ErrosFormulario" />
+                <partial name="_FormularioJogo" model="Model.Formulario.Requisicao" />
+                <button class="kt-btn kt-btn-primary justify-center" type="submit"><i class="ki-filled ki-check"></i> Criar jogo</button>
+            </form>
+        </details>
+    }
+
+    @if (t.Eventos.Count == 0)
+    {
+        <div class="kt-card">
+            <estado-vazio icone="ki-cup" titulo="Nenhum jogo nesta semana"
+                          texto="@(t.PodeMontar ? "Monte os jogos em Novo jogo: depois, escolha os convocados de cada um e dispare tudo de uma vez." : "Os jogos das suas turmas aparecem aqui.")">
+            </estado-vazio>
+        </div>
+    }
+    else
+    {
+        <form id="form-convocacao" method="post" asp-action="Selecao" class="flex flex-col gap-4" data-esc-convocacao>
+            <input type="hidden" name="semana" value="@semana" />
+            @foreach (var e in t.Eventos)
+            {
+                // A turma de cada aluno só ajuda a escolher quando o jogo junta mais de uma.
+                var variasTurmas = e.Alunos.Select(a => a.TurmaId).Distinct().Count() > 1;
+                if (e.PodeConvocar)
+                {
+                    <input type="hidden" name="eventos" value="@e.Id" />
+                }
+                <section class="kt-card scroll-mt-20" id="jogo-@e.Id" data-esc-jogo>
+                    <div class="kt-card-header flex-wrap gap-2 py-4">
+                        <div class="flex flex-col gap-0.5 min-w-0">
+                            <a class="kt-card-title hover:text-primary wrap-anywhere" href="/Convocacao/Jogo/@e.Id">@e.Titulo</a>
+                            <span class="text-xs text-secondary-foreground">
+                                @Formatacao.DiaCurto(DateOnly.FromDateTime(e.Inicio)) · @Formatacao.Horario(e.Inicio, e.Fim) · @e.Local
+                            </span>
+                        </div>
+                        <selo-status valor="e.Situacao"></selo-status>
+                    </div>
+                    <div class="kt-card-content flex flex-col gap-3">
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                            <span><span class="font-semibold text-mono" data-esc-escolhidos>@e.Contagem.Selecionadas</span> para disparar</span>
+                            <span><span class="font-semibold text-mono">@e.Contagem.Confirmadas</span> vão (mínimo @e.MinimoConfirmados)</span>
+                            @if (e.Contagem.Aguardando > 0)
+                            {
+                                <span><span class="font-semibold text-mono">@e.Contagem.Aguardando</span> aguardando</span>
+                            }
+                            @if (e.Contagem.Recusadas > 0)
+                            {
+                                <span><span class="font-semibold text-mono">@e.Contagem.Recusadas</span> não vão</span>
+                            }
+                        </div>
+
+                        @if (e.Alertas.Count > 0)
+                        {
+                            <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="status">
+                                <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+                                <ul class="flex flex-col gap-1 text-sm min-w-0">
+                                    @foreach (var a in e.Alertas)
+                                    {
+                                        <li>@a</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                        @if (e.MotivoSemConvocacao is not null)
+                        {
+                            <span class="text-sm text-secondary-foreground">@e.MotivoSemConvocacao</span>
+                        }
+
+                        @if (e.Alunos.Count == 0)
+                        {
+                            <span class="text-sm text-secondary-foreground">Nenhum aluno em trial ou ativo matriculado na turma na data do jogo.</span>
+                        }
+                        else
+                        {
+                            <ul class="esc-linhas">
+                                @foreach (var a in e.Alunos)
+                                {
+                                    var bloqueada = !e.PodeConvocar || !a.Editavel || (a.Bloqueado && !a.Escolhido);
+                                    <li>
+                                        <label class="flex items-start gap-3 py-3 min-h-12 cursor-pointer">
+                                            <input class="kt-checkbox mt-0.5 shrink-0" type="checkbox" name="selecao" value="@($"{e.Id:N}:{a.AlunoId:N}")"
+                                                   checked="@a.Escolhido" disabled="@bloqueada" data-esc-escolha-aluno />
+                                            <span class="flex flex-col gap-1 min-w-0">
+                                                <span class="text-sm font-medium text-mono">@a.Nome</span>
+                                                @if (variasTurmas)
+                                                {
+                                                    <span class="text-xs text-secondary-foreground">@a.Turma</span>
+                                                }
+                                                <span class="flex flex-wrap items-center gap-1.5">
+                                                    @if (a.Situacao is { } situacao && situacao != SituacaoConvocacao.Selecionada)
+                                                    {
+                                                        <selo-status valor="situacao"></selo-status>
+                                                    }
+                                                    @if (a.Trial)
+                                                    {
+                                                        <selo-status valor="SituacaoAluno.Trial"></selo-status>
+                                                    }
+                                                    @if (a.EmRisco)
+                                                    {
+                                                        <selo-status valor="SinalTela.RiscoEvasao" texto="Risco"></selo-status>
+                                                    }
+                                                    @if (a.Bloqueado)
+                                                    {
+                                                        <selo-status valor="SinalTela.ConvocacaoBloqueada"></selo-status>
+                                                    }
+                                                    else if (a.Inadimplente)
+                                                    {
+                                                        <selo-status valor="SinalTela.Inadimplente"></selo-status>
+                                                    }
+                                                    @if (a.SemCelular)
+                                                    {
+                                                        <selo-status valor="SinalTela.SemCelular"></selo-status>
+                                                    }
+                                                    @if (a.Conflitos.Count > 0)
+                                                    {
+                                                        <selo-status valor="SinalTela.OutroJogoNoHorario"></selo-status>
+                                                    }
+                                                </span>
+                                                @foreach (var c in a.Conflitos)
+                                                {
+                                                    <span class="text-xs text-secondary-foreground">@c</span>
+                                                }
+                                            </span>
+                                        </label>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        <a class="kt-link text-sm self-start" href="/Convocacao/Jogo/@e.Id"><i class="ki-filled ki-double-check"></i> Painel de confirmações</a>
+                    </div>
+                </section>
+            }
+        </form>
+    }
+</div>
+
+@section BarraAcao {
+    @if (comConvocacao.Count > 0)
+    {
+        @* No celular, o rótulo curto cabe numa linha só na barra inferior. *@
+        <button form="form-convocacao" class="kt-btn kt-btn-outline" type="submit">
+            <i class="ki-filled ki-check"></i> Salvar<span class="hidden sm:inline"> escolha</span>
+        </button>
+        <button form="form-convocacao" class="kt-btn kt-btn-primary" type="submit" name="disparar" value="true" data-esc-disparar
+                data-esc-confirmar="Disparar as convocações escolhidas? As famílias recebem pelo WhatsApp.">
+            <i class="ki-filled ki-whatsapp"></i> Disparar<span class="hidden sm:inline"> convocações</span>
+        </button>
+    }
+    else if (t.PodeMontar)
+    {
+        <a class="kt-btn kt-btn-primary" href="#novo-jogo" data-esc-abrir-novo><i class="ki-filled ki-plus"></i> Novo jogo</a>
+    }
+    else
+    {
+        <a class="kt-btn kt-btn-outline" href="/"><i class="ki-filled ki-arrow-left"></i> Voltar ao painel</a>
+    }
+}
+
+@section Scripts {
+    <script src="~/js/convocacao.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,58 @@
+@model EncerrarJogoViewModel
+@using Microsoft.AspNetCore.Mvc.ModelBinding
+@{
+    ViewData["Title"] = "Cancelar ou adiar";
+    ViewData["Voltar"] = $"/Convocacao/Jogo/{Model.Jogo.Id}";
+    Layout = "_LayoutQuadra";
+    var r = Model.Requisicao;
+    var j = Model.Jogo;
+    var motivoInvalido = ViewData.ModelState.GetFieldValidationState(nameof(EncerrarEventoRequisicao.Motivo)) == ModelValidationState.Invalid;
+}
+
+@* Cancelar ou adiar o jogo (spec §6, BL-M07-13, CA-14): as famílias dos convocados são avisadas (urgente nas próximas
+   24 horas) e as convocações passam a canceladas. O adiado é final: a nova data é um jogo novo. *@
+<form id="form-encerrar" method="post" asp-action="Encerrar" class="flex flex-col gap-4" novalidate
+      data-esc-confirmar="Avisar as famílias e cancelar as convocações deste jogo?">
+    <input type="hidden" name="Id" value="@r.Id" />
+    <partial name="_ErrosFormulario" />
+
+    <div class="kt-card">
+        <div class="kt-card-content flex flex-col gap-1">
+            <span class="text-base font-semibold text-mono wrap-anywhere">@j.Titulo</span>
+            <span class="text-sm text-secondary-foreground">
+                @Formatacao.DiaCurto(DateOnly.FromDateTime(j.Inicio)) · @Formatacao.Horario(j.Inicio, j.Fim) · @j.Local
+            </span>
+            <span class="text-xs text-secondary-foreground">
+                @(j.Contagem.Disparadas == 0
+                    ? "Nenhuma convocação saiu ainda: ninguém precisa ser avisado."
+                    : $"{j.Contagem.Disparadas} convocado(s): as famílias recebem o aviso pelo WhatsApp.")
+            </span>
+        </div>
+    </div>
+
+    <div class="kt-card">
+        <div class="kt-card-content flex flex-col gap-3">
+            <fieldset class="flex flex-col gap-2">
+                <legend class="kt-form-label mb-1">O que aconteceu</legend>
+                <label class="kt-label min-h-12">
+                    <input class="kt-radio" type="radio" name="Adiar" value="false" checked="@(!r.Adiar)" />
+                    <span>Cancelado</span>
+                </label>
+                <label class="kt-label min-h-12">
+                    <input class="kt-radio" type="radio" name="Adiar" value="true" checked="@r.Adiar" />
+                    <span>Adiado (a nova data vira um jogo novo)</span>
+                </label>
+            </fieldset>
+            <div class="flex flex-col gap-1">
+                <label class="kt-form-label" for="Motivo">Motivo (vai na mensagem às famílias)</label>
+                <textarea class="kt-textarea" id="Motivo" name="Motivo" rows="3" maxlength="@Evento.TamanhoMotivo" required
+                          aria-invalid="@(motivoInvalido ? "true" : null)" placeholder="Ex.: chuva forte, quadra interditada">@r.Motivo</textarea>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section BarraAcao {
+    <a class="kt-btn kt-btn-outline" href="/Convocacao/Jogo/@j.Id">Voltar</a>
+    <button form="form-encerrar" class="kt-btn kt-btn-destructive" type="submit"><i class="ki-filled ki-cross-circle"></i> Avisar e encerrar</button>
+}

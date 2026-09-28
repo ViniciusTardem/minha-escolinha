@@ -133,6 +133,9 @@ public interface IMensageriaRepositorio
     /// <summary>Responsáveis do aluno que recebem notificação (o vínculo diz quem recebe, BL-M03-03).</summary>
     Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisDoAlunoAsync(Guid alunoId, CancellationToken ct = default);
 
+    /// <summary>Responsáveis que recebem notificação de algum destes alunos, um por responsável, com os filhos dele entre eles.</summary>
+    Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisDosAlunosAsync(IReadOnlyCollection<Guid> alunos, CancellationToken ct = default);
+
     /// <summary>Responsáveis financeiros do aluno: os vínculos que recebem cobrança (o pagador sempre recebe, BL-M03-03).</summary>
     Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisFinanceirosDoAlunoAsync(Guid alunoId, CancellationToken ct = default);
 

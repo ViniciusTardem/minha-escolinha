@@ -6,6 +6,7 @@ using MinhaEscolinha.Domain.Acesso;
 using MinhaEscolinha.Domain.Alunos;
 using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Configuracao.Parametros;
+using MinhaEscolinha.Domain.Eventos;
 using MinhaEscolinha.Domain.Financeiro;
 using MinhaEscolinha.Domain.Integracao;
 using MinhaEscolinha.Domain.Mensageria;
@@ -75,7 +76,22 @@ public enum SinalTela
     MensalidadeImpedida,
 
     /// <summary>Desligado com mensalidade em aberto: o débito que sobrou do desligamento (BL-M06-14).</summary>
-    DebitoRemanescente
+    DebitoRemanescente,
+
+    /// <summary>Mensalidade vencida há os dias do parâmetro, na escolha dos convocados (RF-CON-016, quando ligado).</summary>
+    Inadimplente,
+
+    /// <summary>A escolinha bloqueia a convocação de inadimplente (RF-CON-017, desligado por padrão: R9).</summary>
+    ConvocacaoBloqueada,
+
+    /// <summary>Nenhum responsável que recebe notificação tem celular: a convocação não chega pelo WhatsApp.</summary>
+    SemCelular,
+
+    /// <summary>Já convocado para outro jogo no mesmo horário (BL-M07-06): sinaliza, não bloqueia.</summary>
+    OutroJogoNoHorario,
+
+    /// <summary>Chegou outra resposta depois da primeira, ou depois do início do jogo (P03, P19): o professor decide.</summary>
+    OutraResposta
 }
 
 /// <summary>
@@ -128,6 +144,12 @@ public static class ApresentacaoStatus
         SinalTela.MensalidadeAConfirmar => ("A confirmar", VarianteSelo.Alerta),
         SinalTela.MensalidadeImpedida => ("Não emitida", VarianteSelo.Alerta),
         SinalTela.DebitoRemanescente => ("Débito após o desligamento", VarianteSelo.Alerta),
+        SinalTela.Inadimplente => ("Mensalidade em atraso", VarianteSelo.Perigo),
+        SinalTela.ConvocacaoBloqueada => ("Convocação bloqueada", VarianteSelo.Perigo),
+        // Nenhum responsável que recebe notificação tem celular: a convocação não chega pelo WhatsApp.
+        SinalTela.SemCelular => ("Sem WhatsApp", VarianteSelo.Alerta),
+        SinalTela.OutroJogoNoHorario => ("Outro jogo no horário", VarianteSelo.Alerta),
+        SinalTela.OutraResposta => ("Outra resposta", VarianteSelo.Alerta),
 
         SituacaoAluno.Trial => ("Trial", VarianteSelo.Info),
         SituacaoAluno.Ativo => ("Ativo", VarianteSelo.Sucesso),
@@ -201,6 +223,20 @@ public static class ApresentacaoStatus
         SinalCobranca.ExcluidaNaAsaas => ("Excluída na Asaas", VarianteSelo.Alerta),
         SinalCobranca.PagaDepoisDeEncerrada => ("Paga depois de encerrada", VarianteSelo.Alerta),
         SinalCobranca.ContaAnterior => ("Conta Asaas anterior", VarianteSelo.Alerta),
+
+        SituacaoEvento.Agendado => ("Agendado", VarianteSelo.Info),
+        SituacaoEvento.Confirmado => ("Confirmado", VarianteSelo.Info),
+        SituacaoEvento.Realizado => ("Realizado", VarianteSelo.Sucesso),
+        SituacaoEvento.ResultadoHomologado => ("Resultado homologado", VarianteSelo.Sucesso),
+        SituacaoEvento.Cancelado => ("Cancelado", VarianteSelo.Perigo),
+        SituacaoEvento.Adiado => ("Adiado", VarianteSelo.Alerta),
+
+        SituacaoConvocacao.Selecionada => ("Não enviada", VarianteSelo.Neutro),
+        SituacaoConvocacao.Enviada => ("Aguardando resposta", VarianteSelo.Info),
+        SituacaoConvocacao.Confirmada => ("Vai", VarianteSelo.Sucesso),
+        SituacaoConvocacao.Recusada => ("Não vai", VarianteSelo.Perigo),
+        SituacaoConvocacao.SemResposta => ("Sem resposta", VarianteSelo.Alerta),
+        SituacaoConvocacao.Cancelada => ("Cancelada", VarianteSelo.Neutro),
 
         _ => (valor.ToString(), VarianteSelo.Neutro)
     };

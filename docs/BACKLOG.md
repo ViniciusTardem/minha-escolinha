@@ -12,7 +12,7 @@ Registro de progresso exigido pela seção 12.4 da spec. Os 81 entregáveis e os
 
 Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-ABERTO.md).
 
-## Resumo (28/09/2026, fim do S4)
+## Resumo (28/09/2026, fim do S5)
 
 | Fatia | Itens | Concluídos | Parciais | Situação |
 |---|---:|---:|---:|---|
@@ -21,11 +21,11 @@ Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-
 | S1 — Cadastro | 20 | 20 | 0 | **Pronto** e commitado (b6a4c3f). O `BL-M04-06` fechou no S2, com o aviso às famílias, e o `BL-M03-08` no S4, com o fim da recorrência. |
 | S2 — Mensageria e acesso | 14 | 14 | 0 | **Pronto no simulador** e commitado (c642f2f). A prova com um número real espera a conta na Meta (P34). |
 | S3 — Presença e evasão | 6 | 6 | 0 | **Pronto** e commitado (c6bdbc4). A reabertura da chamada sem sinal, pelo service worker, espera um navegador que confie no certificado (P37). |
-| S4 — Financeiro | 8 | 8 | 0 | **Pronto no simulador** (28/09/2026). A prova com a sandbox da Asaas espera a conta da escolinha piloto (P41). |
-| S5 — Eventos e convocações | 10 | 0 | 0 | — |
+| S4 — Financeiro | 8 | 8 | 0 | **Pronto no simulador** e commitado (44df87a). A prova com a sandbox da Asaas espera a conta da escolinha piloto (P41). |
+| S5 — Eventos e convocações | 10 | 10 | 0 | **Pronto no simulador** (28/09/2026). A resposta de uma família real pelo WhatsApp espera a conta na Meta (P34). |
 | S6 — Portal do responsável | 6 | 0 | 0 | — |
 | S7 — Carga inicial | 5 | 0 | 0 | — |
-| **Total** | **81** | **60** | **0** | |
+| **Total** | **81** | **70** | **0** | |
 
 ---
 
@@ -242,20 +242,53 @@ Decisões, desvios e pendências ficam em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-
 - **R1:** a cobrança vai para a conta Asaas da escolinha, e a família escolhe Pix, boleto ou cartão na fatura.
 - **R3:** as notificações da própria Asaas ficam desligadas no cliente, e só o motor fala com a família.
 
-## S5 — Eventos e convocações · 10 itens · A fazer
+## S5 — Eventos e convocações · 10 itens · **Pronto no simulador em 28/09/2026**
 
-| ID | Entregável | Status |
-|---|---|---|
-| `BL-M07-01` | Cadastro do evento | A fazer (tipagem genérica pronta desde o S0) |
-| `BL-M07-03` | Alerta de conflito de agenda do professor | A fazer |
-| `BL-M07-05` | Seleção de convocados | A fazer |
-| `BL-M07-06` | Alerta de aluno em dois jogos conflitantes | A fazer |
-| `BL-M07-07` | Disparo da convocação | A fazer |
-| `BL-M07-08` | Convocação em lote de múltiplos jogos | A fazer |
-| `BL-M07-09` | Confirmação sim/não com painel em tempo real | A fazer |
-| `BL-M07-11` | Lembrete a quem não respondeu | A fazer |
-| `BL-M07-13` | Cancelamento e alteração do evento em um toque | A fazer |
-| `BL-M07-18` | Escopo de acesso por turma | A fazer |
+**Critério de pronto da spec:** o professor monta 4 eventos com 12 convocados cada e dispara tudo em um fluxo só; as respostas chegam pelo WhatsApp e o painel mostra confirmados, recusados e pendentes sem atualizar a tela.
+
+**Situação:** o critério é coberto por teste no banco (`EventosBancoTestes`, pelo professor, com a resposta pelo webhook assinado) e foi demonstrado no navegador com o simulador do WhatsApp. A resposta de uma família real espera a conta na Meta (P34), como no S2.
+
+**Demonstrado no navegador em 28/09/2026, na escolinha A:**
+- **Montagem:** os quatro jogos do fim de semana (Sub-11 e Sub-13, sábado e domingo, no Ginásio Moringão) foram criados na tela da semana. Um jogo às 09:30 no mesmo ginásio e com o mesmo professor mostrou os dois alertas (professor e local) e pediu confirmação; com o horário mudado para 14:00, salvou sem alerta.
+- **Escolha e disparo (CA-10):** doze convocados marcados em cada jogo e salvos como rascunho ("12 para disparar" em cada um). A pergunta do disparo contou 48, e o toast disse "48 convocação(ões) disparada(s) em 4 jogo(s)". As 56 mensagens (quatro convocados têm dois responsáveis) esperaram a janela de silêncio, porque o disparo foi à 01:40. Achado: o toast não dizia isso, e agora diz quando as mensagens saem (D77). Só para a validação, a janela foi mudada pela tela e o horário agendado foi limpo no banco de desenvolvimento, e a varredura as enviou.
+- **Texto (CA-11 e CA-13):** quem responde pelo Anthony (Sub-11) e pelo Benjamin (Sub-13) recebeu quatro convocações separadas, cada uma com o nome do filho, o jogo, o dia e a hora, o local com o link de mapa e os botões "Vai" e "Não vai".
+- **Tempo real (CA-12):** com o painel do jogo aberto, um dos responsáveis pelo Anthony tocou em "Vai" no simulador, e o painel mudou sozinho ("Vão 1"). O outro responsável tocou em "Não vai" depois: a primeira resposta continuou valendo, e a outra apareceu marcada como "Outra resposta" (P03). Uma marca na janela do painel provou que a página não recarregou.
+- **Resposta por fora:** a gestão registrou "Não vai" para o Anthony. O estado mudou, com autoria e a origem "registrado por fora", e a outra resposta sumiu.
+- **Alteração e cancelamento (CA-14):** o jogo da Sub-13 de sábado passou das 14:00 para as 15:00, e os 13 responsáveis pelos 12 convocados receberam o aviso com o horário novo. O jogo da Sub-13 de domingo foi cancelado com o motivo: as 12 convocações passaram a "Cancelada", e os 13 responsáveis receberam o aviso.
+- **Professor** (o login de gestão de B, que é professor em A): o formulário mostrou só a turma desse professor, sem a escolha de professor. O jogo de outra turma deu **404** na página, no painel e na alteração. O jogo montado por esse login ficou no local da turma, com o alerta de disponibilidade confirmado, e a convocação e a resposta por fora funcionaram.
+- **Telas:** semana, jogo novo, painel, alteração, cancelamento e jogo cancelado foram conferidos em 1280, 375 e 320 px, no claro e no escuro, sem rolagem horizontal. Achados, todos corrigidos:
+  - o jogo novo não herdava o local da turma: agora o local vazio é "O da turma", como o professor (D76);
+  - a volta para o cartão do jogo criado escondia o título sob a barra fixa;
+  - cada aluno repetia o nome da turma: agora só aparece no jogo que junta turmas;
+  - o painel do jogo cancelado mostrava os contadores zerados: agora mostra as convocações canceladas;
+  - no celular, os botões da barra inferior quebravam em duas linhas: rótulos curtos abaixo de 640 px.
+- **Revisão durante a validação:** o aviso de alteração usava o segundo como etapa da chave anti-duplicidade, e duas alterações no mesmo segundo perderiam o segundo aviso (D81). O registro da alteração não guardava o local, o professor e as informações (D81). O hub aceitava qualquer pessoa autenticada da escolinha, e agora só a gestão e os professores, com os papéis relidos (D79). As advertências do EF no log, do S1 e do S4, foram resolvidas, e os testes passaram a tratá-las como erro (D86).
+- **Dados de validação:** a janela de silêncio voltou para 21:00 às 07:00 pela tela, com histórico. Os jogos e as convocações ficam no banco de desenvolvimento: quatro jogos da gestão (um cancelado, um alterado) e um do professor, com 49 convocações.
+
+| ID | Entregável | Status | Onde está | Testes |
+|---|---|---|---|---|
+| `BL-M07-01` | Cadastro do evento | Concluído | <ul><li>`Domain/Eventos/Evento.cs`: o evento genérico (tipo pelo perfil da modalidade, R8), com turmas N:N (`EventoTurma`), início e duração (a padrão da modalidade, P01), local, professor, adversário (só se o perfil permite) e informações para a família. A situação segue a §6 (D76).</li><li>`ServicoEventos`: criar, alterar, confirmar, realizar, cancelar e adiar.</li><li>Tela `/Convocacao`, "Novo jogo": a gestão cria para qualquer turma e escolhe o professor; o professor cria para as turmas dele, como ele mesmo. Local e professor vazios são os da turma.</li></ul> | `EventosUnidadeTestes` (adversário e R8; a máquina do evento); `EventosBancoTestes` (o professor monta como ele mesmo, no local da turma) |
+| `BL-M07-03` | Alerta de conflito de agenda do professor | Concluído | `DetectorConflitos.ParaCompromisso` (outro treino ou jogo do professor, fora da disponibilidade, indisponibilidade) e `LocalOcupado` datado (EX-02). O evento entra na ocupação da agenda (`ServicoAgenda.CompromissosAsync`, BL-M04-08). Criar ou alterar pede confirmação, e a confirmação fica registrada (R9, D83). | `EventosUnidadeTestes` (detector); `EventosBancoTestes` (os dois alertas pedem confirmação e ficam registrados) |
+| `BL-M07-05` | Seleção de convocados | Concluído | Na tela da semana, cada jogo lista os alunos em trial ou ativos matriculados na turma na data do jogo (CA-3), com os sinais: trial, risco de evasão (S3), mensalidade em atraso, sem quem receba mensagem e outro jogo no horário. A escolha é gravada como rascunho ("não enviada"), e nada sai antes do disparo (D77). O bloqueio de inadimplente só com o parâmetro ligado (R9). | `EventosBancoTestes` (os sinais; o bloqueio só com o parâmetro; o rascunho não gera mensagem) |
+| `BL-M07-06` | Alerta de aluno em dois jogos conflitantes | Concluído | `RegrasConvocacao.Conflitos` com as convocações ativas do aluno no dia: "Também no jogo contra X, 09:00–10:00", na linha do aluno. Sinaliza, não bloqueia (R9). | `EventosUnidadeTestes` (sobreposição); `EventosBancoTestes` (o sinal nos dois jogos, e a escolha segue) |
+| `BL-M07-07` | Disparo da convocação | Concluído | `ServicoConvocacoes.DispararAsync` e `EmissorGatilhos.ConvocacaoAsync` (gatilho "Convocação", R3): uma mensagem por convocado a cada responsável que recebe notificação, com o nome do filho, o jogo, o dia e a hora, o local e o link de mapa, e os botões "Vai" e "Não vai" (CA-11, D85). Fora da janela de disparo, quando a escolinha pede, a mensagem espera o começo dela (RF-CON-003). O resultado do disparo diz quando as mensagens saem. | `EventosBancoTestes` (CA-10, CA-11 e CA-13; a janela de disparo; a janela de silêncio); `EventosUnidadeTestes` (a janela; o link de mapa) |
+| `BL-M07-08` | Convocação em lote de múltiplos jogos | Concluído | A tela da semana junta os jogos, a escolha de cada um e o disparo de todos, numa gravação só, pela barra inferior (CA-10). | `EventosBancoTestes` (4 jogos × 12 convocados, pelo professor: 48 convocações num fluxo) |
+| `BL-M07-09` | Confirmação sim/não com painel em tempo real | Concluído | <ul><li>O botão volta ao módulo pelo motor (`ReceptorRespostaConvocacao`, também no lembrete). Vale a primeira resposta, e a outra fica visível (P03, D78).</li><li>Painel `/Convocacao/Jogo/{id}`: vão, não vão, aguardando e sem resposta, contra o mínimo de confirmados da turma, e a lista dos convocados.</li><li>Tempo real pelo hub `/hubs/convocacoes`, no padrão do DP (D79).</li><li>Resposta por fora, pela gestão ou pelo professor do jogo, com autoria.</li></ul> | `EventosBancoTestes` (CA-12 pelo webhook assinado, com o painel avisado; P03; registro por fora; a mensagem ainda na fila não sai); `EventosUnidadeTestes` (P03; só a gestão e o professor entram no tempo real) |
+| `BL-M07-11` | Lembrete a quem não respondeu | Concluído | `RotinaConvocacoes`, no job `convocacoes-rotina` (a cada 15 minutos, uma escolinha por vez): o lembrete sai no número de horas antes do jogo definido no parâmetro, uma vez por convocação, e só para quem já tinha recebido a convocação antes desse momento. No início do jogo, a pendente vira "sem resposta" (P19, D80). | `EventosBancoTestes` (uma vez; quem foi convocado depois não recebe; a resposta pelo lembrete vale; sem resposta; a resposta depois do início fica visível) |
+| `BL-M07-13` | Cancelamento e alteração do evento em um toque | Concluído | <ul><li>Cancelar ou adiar, com motivo: as convocações disparadas passam a canceladas, as não disparadas somem, a fila é recolhida, e cada família dos convocados recebe um aviso só, com os filhos dela (CA-14).</li><li>Alterar o dia, o horário, a duração ou o local avisa as famílias. O aviso anterior que ainda estava na fila sai, e as respostas continuam valendo.</li><li>O registro guarda o que mudou, campo a campo (D81).</li></ul> | `EventosBancoTestes` (CA-14 com irmãos no mesmo jogo; adiar; alterar só as informações não avisa; alterar o horário avisa, e duas alterações seguidas deixam só o aviso novo) |
+| `BL-M07-18` | Escopo de acesso por turma | Concluído | O professor vê, monta e acompanha só os jogos das turmas dele: o escopo é a turma do evento (alvo `Evento`). Fora dele, a resposta é 404. Ele registra a resposta por fora só nos jogos dele. A gestão vê tudo (D82). | `EventosBancoTestes` (o professor e a gestão); `EventosUnidadeTestes` (toda action exige a permissão; o responsável não convoca) |
+
+**Critérios de aceite tocados no S5:**
+- **CA-3:** completo. O desligamento, a pausa e a matrícula encerrada tiram o aluno das convocações dos jogos que ainda vão acontecer. A não disparada some, a disparada fica cancelada, com o motivo, e a mensagem na fila não sai. O jogo que já passou fica como estava (D84).
+- **CA-10:** coberto. Quatro jogos com doze convocados cada, disparados num fluxo só, pelo professor (teste e navegador).
+- **CA-11:** coberto. Uma mensagem por convocado a cada responsável, com data, hora, local, link de mapa e a pergunta com os botões.
+- **CA-12:** coberto. A resposta pelo botão do WhatsApp chega pelo webhook, e o painel aberto é avisado e busca os dados de novo, sem recarregar.
+- **CA-13:** coberto. Cada filho convocado gera a própria mensagem, com o nome dele, o jogo, o dia e a hora.
+- **CA-14:** coberto. O jogo cancelado avisa cada família uma vez, com os filhos dela, e as convocações passam a canceladas.
+- **CA-17, CA-19 e CA-20:** repetidos no S5. Toda convocação e todo aviso vão pelo WhatsApp (o portal é cópia), sempre aos responsáveis, e só pelos gatilhos do catálogo, pelo motor.
+- **CA-18:** consumidor `convocacao.*`. A janela de disparo, o lembrete e o bloqueio de inadimplente valem na hora, sem reiniciar.
+- **R8:** o evento é genérico (tipo e recursos pelo perfil da modalidade). O adversário só existe quando o perfil permite.
+- **R9:** os alertas de agenda, os sinais da montagem e o aluno em dois jogos sinalizam; o bloqueio de inadimplente só com o parâmetro ligado.
 
 ## S6 — Portal do responsável · 6 itens · A fazer
 
@@ -297,22 +330,22 @@ Pendências do EX-01: P25 (plano recorrente), P26 (pacotes e preços comerciais)
 |---|---|---|---|
 | CA-1 | 2º filho reaproveita o responsável, sem duplicidade | S1 (e S7) | **Coberto no S1** (`CadastroBancoTestes` e navegador); a importação repete no S7 |
 | CA-2 | Desligamento exige data e motivo e encerra a recorrência | S1 e S4 | **Coberto** (S1: data e motivo, matrículas encerradas; S4: previstas canceladas e débito sinalizado, `FinanceiroBancoTestes`) |
-| CA-3 | Desligado some da chamada e da convocação, fica no histórico | S1, S3 e S5 | S1 e S3 cobertos (sai das listas, da turma e da chamada a partir da data; fica no histórico); a convocação é do S5 |
+| CA-3 | Desligado some da chamada e da convocação, fica no histórico | S1, S3 e S5 | **Coberto** (S1 e S3: sai das listas, da turma e da chamada a partir da data; S5: sai das convocações dos próximos jogos, e a do jogo que passou fica; `EventosBancoTestes`) |
 | CA-4 | "3 faltas no mês" dispara na 3ª falta | S3 | **Coberto no S3** (`PresencaBancoTestes` e `PresencaUnidadeTestes`) |
 | CA-5 | Sem dois alertas dentro da janela anti-duplicidade | S3 | **Coberto no S3** (o alerta dentro da janela fica suprimido, sem mensagem) |
 | CA-6 | Gestor vê na ficha qual alerta saiu, quando e para quem | S3 | **Coberto no S3** (aba Presença da ficha, P09; teste e navegador) |
 | CA-7 | Pagamento confirmado muda o estado e para a régua | S4 | **Coberto no S4** (`FinanceiroBancoTestes` e navegador, com o simulador) |
 | CA-8 | Quem pagou nunca recebe cobrança posterior | S4 | **Coberto no S4** (a régua ignora a paga; o envio confere a cobrança aqui e na Asaas, mesmo com o aviso atrasado) |
 | CA-9 | Parcial ou divergente fica sinalizado, sem conciliar | S4 | **Coberto no S4** (valor diferente, estorno e contestação só sinalizam; a gestão resolve na fila) |
-| CA-10 | 4 eventos × 12 convocados em um fluxo | S5 | A fazer |
-| CA-11 | Uma mensagem por convocado, com data, hora, mapa e pergunta | S5 | A fazer |
-| CA-12 | Resposta no WhatsApp aparece no painel sem atualizar | S5 | A fazer |
-| CA-13 | Dois filhos convocados: mensagens distinguíveis | S5 | A fazer |
-| CA-14 | Evento cancelado avisa todos e cancela as convocações | S5 | A fazer |
+| CA-10 | 4 eventos × 12 convocados em um fluxo | S5 | **Coberto no S5** (`EventosBancoTestes`, pelo professor, e navegador) |
+| CA-11 | Uma mensagem por convocado, com data, hora, mapa e pergunta | S5 | **Coberto no S5** (o texto inteiro conferido no teste; simulador) |
+| CA-12 | Resposta no WhatsApp aparece no painel sem atualizar | S5 | **Coberto no S5** (webhook assinado no teste; no navegador, o painel mudou sem recarregar). Com um número real, espera a P34. |
+| CA-13 | Dois filhos convocados: mensagens distinguíveis | S5 | **Coberto no S5** (uma mensagem por filho, com o nome e o jogo dele) |
+| CA-14 | Evento cancelado avisa todos e cancela as convocações | S5 | **Coberto no S5** (um aviso por família, com os filhos dela; convocações canceladas; a fila recolhida) |
 | CA-15 | Uma conta mostra os dois filhos | S6 | A fazer (P10) |
 | CA-16 | Total do mês e detalhamento por filho | S6 | A fazer |
-| CA-17 | Nada essencial só no app | S2 (e S5, S6) | **Coberto no S2** (toda mensagem vai pelo WhatsApp; o portal é cópia). O S5 e o S6 repetem. |
-| CA-18 | Nenhum parâmetro exige nova entrega | S0 (+ um teste por consumidor em cada fatia) | **Parcial**: catálogo e "vale sem reiniciar" testados; no S1, o consumidor `turma.*` (a turma nova usa o valor alterado); no S2, o `mensagem.*` (janela de silêncio lida na hora do envio); no S3, o `presenca.*` (o limite alterado vale na falta seguinte); no S4, o `financeiro.*` (o dia de vencimento alterado vale na projeção seguinte, e a multa emitida fica a da emissão) |
-| CA-19 | Nenhuma comunicação dirigida ao menor | S2 (e S5, S6) | **Coberto no S2** (destinatário nunca é o aluno: enum e restrição no banco). O S5 e o S6 repetem. |
-| CA-20 | Nenhum envio fora do catálogo de gatilhos | S2 (e S5, S6) | **Coberto no S2** (regra 1:1 por gatilho e teste de arquitetura: só o emissor cria mensagem, só o motor envia) |
+| CA-17 | Nada essencial só no app | S2 (e S5, S6) | **Coberto no S2** (toda mensagem vai pelo WhatsApp; o portal é cópia). **Repetido no S5** (a convocação e a resposta pelo WhatsApp). O S6 repete. |
+| CA-18 | Nenhum parâmetro exige nova entrega | S0 (+ um teste por consumidor em cada fatia) | **Parcial**: catálogo e "vale sem reiniciar" testados; no S1, o consumidor `turma.*` (a turma nova usa o valor alterado); no S2, o `mensagem.*` (janela de silêncio lida na hora do envio); no S3, o `presenca.*` (o limite alterado vale na falta seguinte); no S4, o `financeiro.*` (o dia de vencimento alterado vale na projeção seguinte, e a multa emitida fica a da emissão); no S5, o `convocacao.*` (a janela de disparo e o bloqueio de inadimplente valem no disparo e na escolha seguintes) |
+| CA-19 | Nenhuma comunicação dirigida ao menor | S2 (e S5, S6) | **Coberto no S2** (destinatário nunca é o aluno: enum e restrição no banco). **Repetido no S5** (as 50 convocações do CA-10 vão aos responsáveis). O S6 repete. |
+| CA-20 | Nenhum envio fora do catálogo de gatilhos | S2 (e S5, S6) | **Coberto no S2** (regra 1:1 por gatilho e teste de arquitetura: só o emissor cria mensagem, só o motor envia). **Repetido no S5** (convocação, lembrete, jogo alterado e jogo cancelado pelo emissor; o teste de arquitetura continua valendo) |
 | CA-21 | Chamada sem sinal, registro da quadra prevalece | S3 | **Coberto no S3** no servidor (teste) e na fila do aparelho (navegador). A reabertura da página sem sinal, pelo service worker, espera a validação (P37). |

@@ -6,6 +6,7 @@ using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
+using MinhaEscolinha.Application.Eventos;
 using MinhaEscolinha.Application.Financeiro;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
@@ -88,6 +89,20 @@ public static class DependencyInjection
         services.AddScoped<EfeitosFinanceirosDoCadastro>();
         services.AddScoped<ServicoMensalidades>();
         services.AddScoped<IValidadorOrigemMensagem, ValidadorOrigemCobranca>();
+
+        // S5 — eventos e convocações (M07): o jogo, a montagem do fim de semana, o disparo pelo motor e as respostas pelo botão
+        services.AddScoped<TextosEventos>();
+        services.AddScoped<ServicoEventos>();
+        services.AddScoped<ServicoConvocacoes>();
+        services.AddScoped<RespostasConvocacao>();
+        services.AddScoped<IReceptorResposta, ReceptorRespostaConvocacao>();
+        services.AddScoped<IReceptorResposta, ReceptorRespostaLembreteConvocacao>();
+        services.AddScoped<RotinaConvocacoes>();
+        services.AddScoped<EfeitosConvocacaoDoCadastro>();
+        services.AddScoped<IValidadorOrigemMensagem, ValidadorOrigemConvocacao>();
+        services.AddScoped<IValidadorOrigemMensagem, ValidadorOrigemEvento>();
+        // O tempo real é da web (SignalR); sem ela (testes, jobs), ninguém é avisado.
+        services.TryAddSingleton<INotificadorConvocacoes, NotificadorConvocacoesNulo>();
 
         // Plataforma — a LDNA vende pacotes de créditos às escolinhas (Stripe da LDNA; mensalidade de aluno segue na Asaas)
         services.AddScoped<ServicoPacotesCreditos>();

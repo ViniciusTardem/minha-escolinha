@@ -53,9 +53,10 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
     - `Plataforma` e `Integracao` (Stripe, EX-01; WhatsApp, S2; Asaas, S4);
     - `Mensageria` (M09), do S2: motor, templates, convites (em `Acesso`) e o portal inicial;
     - `Presencas` (M05), do S3: chamada, alerta de faltas e risco de evasão;
-    - `Financeiro` (M06), do S4: mensalidades, régua, conciliação e divergências.
+    - `Financeiro` (M06), do S4: mensalidades, régua, conciliação e divergências;
+    - `Eventos` (M07), do S5: o evento, a convocação, a rotina (lembrete e "sem resposta") e o tempo real (hub em `Web/Hubs`).
     - Na `Infrastructure`, os repositórios do cadastro ficam juntos em `Cadastro/`.
-  - Próximos: a tabela `Evento` e a convocação (S5, sobre o `Eventos` do domínio) e `Carga` (S7).
+  - Próximos: o portal do responsável (S6, na `Web`, sobre os módulos que já existem) e `Carga` (S7).
 
 ---
 
@@ -69,11 +70,11 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - datas `datetime2(3)` no horário de Brasília;
   - tabelas no singular; índices nomeados `IX_`/`UQ_`;
   - configuração EF em `Data/Configuracoes`;
-  - `rowversion` onde há concorrência: saldo de créditos, compra, turma, aluno, mensagem, presença e cobrança;
+  - `rowversion` onde há concorrência: saldo de créditos, compra, turma, aluno, mensagem, presença, cobrança, evento e convocação;
   - `TimeOnly` como `time(0)` (horários de turma e de disponibilidade).
 - **Armadilha do EF com filho novo:** com a chave preenchida, o filho novo achado pelo grafo (a coleção de uma entidade já rastreada) é tratado como existente e gera `UPDATE`, que falha por concorrência. Há duas saídas:
   - a entidade nova ganha `Guid.NewGuid()` na criação e entra por `DbSet.Add` explícito, que é o padrão dos cadastros;
-  - o filho que o domínio acrescenta pela coleção (a linha do tempo e as respostas da mensagem) nasce **sem** chave, e o banco gera (`NEWSEQUENTIALID`, D56).
+  - o filho que o domínio acrescenta pela coleção (a linha do tempo e as respostas da mensagem, as turmas do evento e o histórico da convocação) nasce **sem** chave, e o banco gera (`NEWSEQUENTIALID`, D56).
 
   E o contrário: a entidade que entra por `DbSet.Add` com a chave de um pai rastreado já aparece na coleção dele (correção de relacionamentos do EF). Acrescentá-la de novo à coleção deixa a lista com ela duas vezes; confira com `Contains` antes (D65).
 - **Multi-escolinha (X01):**
@@ -123,7 +124,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 2. ❌ **Nunca chamar sistema externo dentro do request HTTP.** Asaas, WhatsApp e Stripe sempre por job Hangfire com retentativa. **Única exceção (D26):** abrir a sessão de pagamento do Stripe na compra de créditos. A pessoa espera para ir ao pagamento; a compra é gravada antes e a chamada é idempotente.
 3. ❌ **Nunca gravar URL temporária de terceiro.** Grave o identificador e busque de novo.
 4. ✅ **Todo job relê o estado antes de agir.** Entre agendar e executar, tudo pode ter mudado.
-5. ✅ **Quando o evento chega, cancele o que ficou pendente.** Pagamento confirmado para a régua na hora. Convite substituído ou cancelado suprime na hora a mensagem que ainda estava na fila (`EmissorGatilhos.CancelarPendentesAsync`, D51).
+5. ✅ **Quando o evento chega, cancele o que ficou pendente.** Pagamento confirmado para a régua na hora. Convite substituído ou cancelado suprime na hora a mensagem que ainda estava na fila (`EmissorGatilhos.CancelarPendentesAsync`, D51). A convocação respondida recolhe a mensagem do outro responsável e o lembrete; o jogo cancelado ou alterado de novo recolhe o aviso anterior (D78, D81).
 6. ✅ **Webhook: gravar o corpo bruto antes de interpretar**, responder `200` na hora e processar por job.
 7. ✅ **Segredo nunca em arquivo versionado.**
 8. ✅ **Distinguir erro retentável (5xx, timeout, 429) de definitivo.** O `FalhaIntegracao` do DP (`Application/Comum`) entrou com o Stripe (EX-01) e vale para a Asaas e o WhatsApp.
@@ -156,7 +157,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 - **Usuário e contexto:**
   - `IUsuarioAtual.Id` é o `Pessoa_ID`;
   - `IContextoEscolinha` diz a escolinha da requisição e se a pessoa é da plataforma;
-  - `IAutorizacao.Pode(recurso, operacao)` decide o acesso; `PodeAsync(recurso, operacao, alvo)` decide sobre um alvo, com escopo por `IResolvedorEscopo` (`ResolvedorEscopoCadastros`: turma, aluno, sessão e professor; o responsável, só os filhos com vínculo verificado, D53);
+  - `IAutorizacao.Pode(recurso, operacao)` decide o acesso; `PodeAsync(recurso, operacao, alvo)` decide sobre um alvo, com escopo por `IResolvedorEscopo` (`ResolvedorEscopoCadastros`: turma, aluno, sessão, professor e evento, este pelas turmas do jogo, D82; o responsável, só os filhos com vínculo verificado, D53);
   - **listas filtram na consulta** pelas turmas de `IEscopoDeLeitura.TurmasAsync(recurso)`. A ficha confere `PodeAsync` e devolve 404 fora do escopo. O que vem junto (irmãos, outros filhos, marcas financeiras, CPF, valores) passa pelo mesmo escopo (D41);
   - dado de saúde pela `PoliticaSaude` (completo, treino ou nada), aplicada no view model. O registro de alterações nunca guarda o conteúdo (D36).
 - **Dados e integrações:**
@@ -179,10 +180,15 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
     - nasce da projeção (`RotinaCobrancas`), nunca à mão. Quem muda a matrícula ou a situação do aluno chama o `EfeitosFinanceirosDoCadastro`: o fim da recorrência entra na mesma gravação, e a projeção sai depois, num job (D66, D71);
     - toda conversa com a Asaas sai de um job (`JobsFinanceiro`), com a chave da escolinha aberta só para a chamada (`ServicoAcessoAsaas`);
     - o que a Asaas diz de uma cobrança (webhook, varredura ou conferência) passa pela `ConciliacaoCobrancas`, que compara o valor original (D70);
-    - divergência só sinaliza: nenhuma rotina muda a situação de uma cobrança com sinal, e a régua a ignora (D72).
+    - divergência só sinaliza: nenhuma rotina muda a situação de uma cobrança com sinal, e a régua a ignora (D72);
+  - **convocação:**
+    - a escolha é rascunho ("selecionada") até o disparo, que leva todos os jogos da tela numa gravação só (D77);
+    - a resposta pelo botão, pelo portal ou por fora passa pela `Convocacao` (a primeira vale, P03); quem muda o cadastro do aluno chama o `EfeitosConvocacaoDoCadastro` (D84);
+    - a tela aberta é avisada pelo `TempoRealConvocacoesInterceptor` depois da gravação, e busca o painel de novo (D79);
+  - **consulta com mais de uma coleção** declara `AsSplitQuery` ou `AsSingleQuery`, e `First` sem ordem nem filtro vira `Single` (os testes tratam os dois avisos do EF como erro, D86).
 - **Testes:**
   - xUnit + `FakeTimeProvider`;
-  - com banco, `[FatoComBanco]` e a coleção `BancoDeTestes`, com `AmbienteAplicacao.ComoPlataformaAsync`, `NaEscolinhaAsync` e `SemContextoAsync`. O WhatsApp é o `GatewayWhatsAppFalso` e os jobs vão para o `AgendadorMensageriaDeTeste`; a Asaas é o `GatewayAsaasFalso` e os jobs do financeiro vão para o `AgendadorFinanceiroDeTeste`;
+  - com banco, `[FatoComBanco]` e a coleção `BancoDeTestes`, com `AmbienteAplicacao.ComoPlataformaAsync`, `NaEscolinhaAsync` e `SemContextoAsync`. O WhatsApp é o `GatewayWhatsAppFalso` e os jobs vão para o `AgendadorMensageriaDeTeste`; a Asaas é o `GatewayAsaasFalso` e os jobs do financeiro vão para o `AgendadorFinanceiroDeTeste`; o tempo real é o `NotificadorConvocacoesDeTeste` (`AmbienteAplicacao.TempoReal`);
   - toda regra de negócio tem teste, e toda regra de ouro que pode ser verificada no código tem teste em `Arquitetura/RegrasDeOuroTestes.cs`.
 
 ---
@@ -297,12 +303,15 @@ dotnet dev-certs https --trust
   - o login de gestão de B (`gestor.b@bolanarede.test`) também tem o papel Professor em A, para validar o escopo do professor com login real. A ficha de professor "Paula Souza" foi ligada a essa pessoa por SQL;
   - em A, desde o S2: a responsável Ana Almeida tem acesso (login pelo CPF, com o vínculo do Arthur confirmado), e o log tem as mensagens da validação (convite e treino cancelado);
   - em A, desde o S3: uma sessão de domingo, 27/09, na turma "Sub-11 · segunda e quarta", com a falta da Ana Lima, o alerta e a mensagem à responsável;
-  - em A, desde o S4: a conta de recebimento (Sandbox, com o simulador) e as mensalidades de outubro da validação: 50 a confirmar, 1 impedida, 1 paga com divergência aceita e 1 cancelada depois do estorno. As faturas do simulador ficam em `%LOCALAPPDATA%\MinhaEscolinha\simulador-asaas.json`.
+  - em A, desde o S4: a conta de recebimento (Sandbox, com o simulador) e as mensalidades de outubro da validação: 50 a confirmar, 1 impedida, 1 paga com divergência aceita e 1 cancelada depois do estorno. As faturas do simulador ficam em `%LOCALAPPDATA%\MinhaEscolinha\simulador-asaas.json`;
+  - em A, desde o S5: os jogos do fim de semana de 03 e 04/10 (quatro da gestão, um cancelado e um alterado, e um do professor), com 49 convocações, as respostas da validação e os avisos às famílias.
 - **Chamada sem sinal:** o navegador só registra o service worker com certificado confiável. Em desenvolvimento, rode `dotnet dev-certs https --trust`; sem isso, a fila funciona com a página aberta, mas a página não reabre sem sinal (P37).
 - **Jobs recorrentes** (horário de Brasília, registrados no startup):
   - `sessoes-gerar-horizonte`, às 03:15: gera as sessões de treino até o fim do mês seguinte, uma escolinha por vez (D31);
   - `stripe-varredura-compras`, a cada 20 minutos: confere as compras de créditos pendentes. Sai quando o Stripe está desligado (`Stripe:Habilitado = false`);
   - `mensagens-varredura`, a cada 5 minutos, uma escolinha por vez: solta as mensagens retidas quando o saldo volta e reenfileira as que venceram (D45);
   - `mensalidades-rotina`, às 06:30, uma escolinha por vez: projeção, vencidas, régua e emissões (D66). As mensagens da régua esperam o fim da janela de silêncio;
-  - `mensalidades-varredura`, de hora em hora (:40): confere na Asaas as mensalidades em aberto que o webhook não trouxe (D70). Sai quando a Asaas está desligada.
+  - `mensalidades-varredura`, de hora em hora (:40): confere na Asaas as mensalidades em aberto que o webhook não trouxe (D70). Sai quando a Asaas está desligada;
+  - `convocacoes-rotina`, a cada 15 minutos, uma escolinha por vez: lembrete a quem não respondeu e "sem resposta" no início do jogo (D80).
+- **Tempo real:** o hub `/hubs/convocacoes` (SignalR) avisa os painéis de jogo abertos. Só a gestão e os professores entram, e a conexão fecha quando a autenticação expira (D79).
 - **`/dev/design`** (vitrine), **`/dev/massa`** (massa de demonstração: 3 turmas e 60 alunos em 38 famílias na escolinha ativa, uma vez por escolinha, D40), **`/dev/whatsapp`** (o celular das famílias: entregar, ler, falhar, tocar num botão ou responder manda o webhook assinado; só com o modo Simulado) e **`/dev/asaas`** (a conta Asaas de mentira: pagar, pagar outro valor, vencer, estornar e excluir mandam o aviso pelo webhook, com o token da escolinha; a fatura fica em `/dev/asaas/fatura/{id}`; só com o modo Simulado) só existem em Development. Fora dele respondem 404.

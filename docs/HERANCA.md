@@ -93,6 +93,18 @@ O S4 não trouxe dependência nova: NuGet e npm continuam iguais aos do S3. O cl
 | Conciliação e varredura | `ConciliacaoCobrancas`, `VarreduraCobrancas`, `ValidadorOrigemCobranca` | As regras de ouro 4, 5 e 6 do DP. A revalidação na hora do envio usa o validador de origem do S2 (D70). |
 | Gateway e agendador de teste | `GatewayAsaasFalso`, `AgendadorFinanceiroDeTeste` | Seguem o `AgendadorDeTeste` do DP. |
 
+### 2.5 O que o S5 acrescentou (28/09/2026)
+
+O S5 não trouxe dependência nova. O SignalR faz parte do ASP.NET Core, e o cliente `signalr.min.js` já estava em `wwwroot/lib` desde o F0.
+
+| Peça | Onde | Relação com o DP |
+|---|---|---|
+| Tempo real do painel | `Web/Hubs/ConvocacoesHub` (hub e `NotificadorConvocacoesSignalR`); `Infrastructure/Eventos/TempoRealConvocacoesInterceptor`; `wwwroot/js/convocacao.js` | O padrão do `AdmissoesHub` do DP: o servidor só empurra os ids, a tela busca o HTML por GET (a autorização fica na página), o grupo é entrado em `OnConnectedAsync` (a reconexão reentra sozinha) e a conexão fecha quando a autenticação expira. **Novo:** o grupo é por escolinha, e a entrada relê os papéis (só a gestão e os professores, D79). O aviso sai de um interceptor do `SaveChanges`, depois da gravação, como o despacho das mensagens do S2. |
+| Rotina recorrente | `RotinaConvocacoes`, job `convocacoes-rotina` (`Infrastructure/Eventos/JobsConvocacoes`) | O avaliador recorrente do DP, que relê o estado a cada rodada (regra de ouro 4), uma escolinha por vez, como a geração das sessões (D31) e a rotina das mensalidades (D66). |
+| Resposta pelo botão | `ReceptorRespostaConvocacao` e `RespostasConvocacao` | O receptor de resposta do motor do S2 (`BL-M09-07`). |
+| Alertas de agenda do jogo | `DetectorConflitos.ParaCompromisso` e `LocalOcupado` (datado) | O detector do S1 (EX-02), reaproveitado com datas (D83). |
+| Avisos do EF como erro nos testes | `BancoDeTestes` (`ConfigureWarnings`) | Novo (D86). O DP deixa os avisos no log. |
+
 ## 3. Integrações existentes nos projetos locais
 
 Varredura por **conteúdo** em todo `C:\Users\vinic\Documents\Projetos`, em 26/09/2026:

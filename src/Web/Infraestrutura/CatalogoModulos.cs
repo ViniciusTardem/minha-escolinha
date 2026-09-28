@@ -94,7 +94,7 @@ public static class CatalogoModulos
             "Monte os jogos do fim de semana, escolha os convocados e dispare tudo de uma vez. As respostas do WhatsApp aparecem no painel " +
             "sem atualizar a tela.",
             ["Vários jogos num fluxo só", "Confirmação pelo WhatsApp em tempo real", "Lembrete a quem não respondeu", "Cancelamento em um toque"],
-            "S5", SituacaoModulo.Planejado, "/jogos", Recurso.EventosConvocacao),
+            "S5", SituacaoModulo.Disponivel, "/Convocacao", Recurso.EventosConvocacao),
 
         new("mensalidades", "Mensalidades", "ki-dollar", SecaoFinanceiro,
             "Cobrança recorrente pela Asaas, lembretes e conciliação automática.",

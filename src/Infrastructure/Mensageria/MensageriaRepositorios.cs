@@ -137,6 +137,43 @@ public class MensageriaRepositorio(EscolinhaDbContext contexto) : IMensageriaRep
             .ToList();
     }
 
+    public async Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisDosAlunosAsync(IReadOnlyCollection<Guid> alunos,
+        CancellationToken ct = default)
+    {
+        if (alunos.Count == 0) return [];
+        var ids = alunos.Distinct().ToList();
+        var linhas = await contexto.VinculosResponsavel.AsNoTracking()
+            .Where(v => ids.Contains(v.Aluno_ID) && v.RecebeNotificacao)
+            .Select(v => new
+            {
+                v.Responsavel_ID,
+                v.Responsavel!.Nome,
+                v.Responsavel.Telefone,
+                v.Responsavel.Pessoa_ID,
+                v.Verificacao,
+                AlunoId = v.Aluno_ID,
+                AlunoNome = v.Aluno!.Nome
+            }).ToListAsync(ct);
+
+        var pessoas = linhas.Where(l => l.Pessoa_ID is not null).Select(l => l.Pessoa_ID!.Value).Distinct().ToList();
+        var comAcesso = (await contexto.VinculosAtuacao.AsNoTracking()
+                .Where(v => pessoas.Contains(v.Pessoa_ID) && v.Papel == PapelAtuacao.Responsavel && v.Situacao == SituacaoVinculo.Ativo)
+                .Select(v => v.Pessoa_ID).ToListAsync(ct))
+            .ToHashSet();
+
+        return linhas.GroupBy(l => l.Responsavel_ID)
+            .Select(g =>
+            {
+                var r = g.First();
+                return new DestinatarioResponsavel(r.Responsavel_ID, r.Nome, r.Telefone, r.Pessoa_ID,
+                    r.Pessoa_ID is { } pessoa && comAcesso.Contains(pessoa),
+                    g.All(l => l.Verificacao == VerificacaoVinculo.Verificado),
+                    g.DistinctBy(l => l.AlunoId).OrderBy(l => l.AlunoNome).Select(l => (l.AlunoId, l.AlunoNome)).ToList());
+            })
+            .OrderBy(d => d.Nome)
+            .ToList();
+    }
+
     public Task<IReadOnlyList<DestinatarioResponsavel>> ResponsaveisDoAlunoAsync(Guid alunoId, CancellationToken ct = default) =>
         ResponsaveisAsync(alunoId, financeiros: false, ct);
 

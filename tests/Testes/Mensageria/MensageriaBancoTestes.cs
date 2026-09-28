@@ -375,10 +375,11 @@ public sealed class MensageriaBancoTestes(BancoDeTestes banco) : IAsyncLifetime,
         var b = await MontarAsync();
         await CreditarAsync(b.Escolinha, 1);
         var receptor = new ReceptorDeTeste();
-        // A convocação nasce no S5: aqui a mensagem é montada à mão, como o emissor vai montar.
+        // O que se testa é o caminho do botão: a mensagem é montada à mão, com uma origem sem validador (a convocação de
+        // verdade, com o receptor dela, está em EventosBancoTestes).
         var mensagemId = await _app.NaEscolinhaAsync(b.Escolinha, [], async sp =>
         {
-            var mensagem = Mensagem.Nova(CatalogoGatilhos.Obter(GatilhoMensagem.ConvocacaoCriada), CanalMensagem.WhatsApp, "Evento",
+            var mensagem = Mensagem.Nova(CatalogoGatilhos.Obter(GatilhoMensagem.ConvocacaoCriada), CanalMensagem.WhatsApp, "Teste",
                 Guid.NewGuid(), TipoDestinatario.Responsavel, b.Maria, "Maria Lima", "+5543988887777", null, b.Pedro, "convocacao_v1",
                 "[]", "Convocação de Pedro", false, null, sp.GetRequiredService<IRelogioBrasil>().Agora());
             var repositorio = sp.GetRequiredService<IMensageriaRepositorio>();

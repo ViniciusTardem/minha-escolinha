@@ -70,6 +70,10 @@ public sealed class BancoDeTestes : IAsyncLifetime
         GarantirBancoDeTeste();
         await using var contexto = NovoContextoSemEscolinha();
         await contexto.Database.ExecuteSqlRawAsync("""
+            DELETE FROM HistoricoConvocacao;
+            DELETE FROM Convocacao;
+            DELETE FROM EventoTurma;
+            DELETE FROM Evento;
             DELETE FROM ClienteAsaas;
             DELETE FROM Cobranca;
             DELETE FROM AlertaFaltas;
@@ -191,6 +195,9 @@ public sealed class AmbienteAplicacao : IDisposable
     public GatewayAsaasFalso GatewayAsaas { get; } = new();
     public AgendadorFinanceiroDeTeste Financeiro { get; } = new();
 
+    /// <summary>O tempo real das convocações: o teste vê quais eventos foram avisados depois de cada gravação.</summary>
+    public NotificadorConvocacoesDeTeste TempoReal { get; } = new();
+
     private readonly ServiceProvider _servicos;
 
     public AmbienteAplicacao()
@@ -211,10 +218,16 @@ public sealed class AmbienteAplicacao : IDisposable
         services.AddScoped<AuditoriaInterceptor>();
         services.AddScoped<EscolinhaInterceptor>();
         services.AddScoped<MinhaEscolinha.Infrastructure.Mensageria.DespachoMensagensInterceptor>();
+        services.AddScoped<MinhaEscolinha.Infrastructure.Eventos.TempoRealConvocacoesInterceptor>();
         services.AddDbContext<EscolinhaDbContext>((sp, o) => MinhaEscolinha.Infrastructure.DependencyInjection
             .ConfigurarBanco(o, BancoDeTestes.ConnectionString)
+            // Os avisos de consulta do EF viram erro nos testes: a consulta com mais de uma coleção declara a escolha
+            // (AsSplitQuery ou AsSingleQuery), e o First sem ordem nem filtro vira Single (um registro só) ou ganha ordem.
+            .ConfigureWarnings(w => w.Throw(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.MultipleCollectionIncludeWarning,
+                Microsoft.EntityFrameworkCore.Diagnostics.CoreEventId.FirstWithoutOrderByAndFilterWarning))
             .AddInterceptors(sp.GetRequiredService<AuditoriaInterceptor>(), sp.GetRequiredService<EscolinhaInterceptor>(),
-                sp.GetRequiredService<MinhaEscolinha.Infrastructure.Mensageria.DespachoMensagensInterceptor>()));
+                sp.GetRequiredService<MinhaEscolinha.Infrastructure.Mensageria.DespachoMensagensInterceptor>(),
+                sp.GetRequiredService<MinhaEscolinha.Infrastructure.Eventos.TempoRealConvocacoesInterceptor>()));
         services.AddScoped<IExecutorEscolinha, ExecutorEscolinha>();
         services.AddScoped<IAcessoRepositorio, AcessoRepositorio>();
         services.AddScoped<MinhaEscolinha.Application.Configuracao.IConfiguracaoRepositorio, ConfiguracaoRepositorio>();
@@ -237,6 +250,8 @@ public sealed class AmbienteAplicacao : IDisposable
         services.AddSingleton(Asaas);
         services.AddSingleton<MinhaEscolinha.Application.Integracao.Asaas.IGatewayAsaas>(GatewayAsaas);
         services.AddSingleton<MinhaEscolinha.Application.Financeiro.IAgendadorFinanceiro>(Financeiro);
+        services.AddScoped<MinhaEscolinha.Application.Eventos.IEventosRepositorio, MinhaEscolinha.Infrastructure.Eventos.EventosRepositorio>();
+        services.AddSingleton<MinhaEscolinha.Application.Eventos.INotificadorConvocacoes>(TempoReal);
         _servicos = services.BuildServiceProvider();
     }
 

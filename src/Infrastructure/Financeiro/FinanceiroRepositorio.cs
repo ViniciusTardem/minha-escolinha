@@ -112,8 +112,9 @@ public class FinanceiroRepositorio(EscolinhaDbContext contexto) : IFinanceiroRep
     {
         var aConfirmar = await contexto.Cobrancas.CountAsync(c => c.Situacao == SituacaoCobranca.Prevista && c.PrimeiraDaMatricula
                                                                    && c.ConfirmadaEm == null, ct);
+        // Agrupado por constante: um grupo só, ou nenhum (sem vencidas).
         var vencidas = await contexto.Cobrancas.Where(c => c.Situacao == SituacaoCobranca.Vencida)
-            .GroupBy(_ => 1).Select(g => new { Quantidade = g.Count(), Valor = g.Sum(c => c.Valor) }).FirstOrDefaultAsync(ct);
+            .GroupBy(_ => 1).Select(g => new { Quantidade = g.Count(), Valor = g.Sum(c => c.Valor) }).SingleOrDefaultAsync(ct);
         var divergencias = await ContarDivergenciasAsync(ct);
         var impedidas = await contexto.Cobrancas.CountAsync(c => c.Situacao == SituacaoCobranca.Prevista && c.Vencimento <= emitirAte
             && !(c.PrimeiraDaMatricula && c.ConfirmadaEm == null)

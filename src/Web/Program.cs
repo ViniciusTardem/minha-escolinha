@@ -11,6 +11,7 @@ using MinhaEscolinha.Application;
 using MinhaEscolinha.Application.Acesso;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
+using MinhaEscolinha.Application.Eventos;
 using MinhaEscolinha.Application.Integracao.Stripe;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Domain.Comum;
@@ -18,11 +19,13 @@ using MinhaEscolinha.Infrastructure;
 using MinhaEscolinha.Infrastructure.Cadastro;
 using MinhaEscolinha.Infrastructure.Data.Contexto;
 using MinhaEscolinha.Infrastructure.Data.Seed;
+using MinhaEscolinha.Infrastructure.Eventos;
 using MinhaEscolinha.Infrastructure.Financeiro;
 using MinhaEscolinha.Infrastructure.Mensageria;
 using MinhaEscolinha.Infrastructure.Plataforma;
 using MinhaEscolinha.Infrastructure.Seguranca;
 using MinhaEscolinha.Web.Filters;
+using MinhaEscolinha.Web.Hubs;
 using MinhaEscolinha.Web.Infraestrutura;
 using MinhaEscolinha.Web.Middleware;
 using Serilog;
@@ -140,6 +143,8 @@ try
     });
 
     builder.Services.AddSignalR();
+    // Tempo real do painel de confirmações (S5): substitui o notificador nulo da Application.
+    builder.Services.AddSingleton<INotificadorConvocacoes, NotificadorConvocacoesSignalR>();
 
     builder.Services.AddRateLimiter(opcoes =>
     {
@@ -186,6 +191,8 @@ try
         JobsMensageria.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
         // Mensalidades: a rotina diária (projeção, régua, emissão) e a varredura de hora em hora na Asaas (S4)
         JobsFinanceiro.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
+        // Convocações: o lembrete a quem não respondeu e o "sem resposta" no início do jogo, de 15 em 15 minutos (S5)
+        JobsConvocacoes.RegistrarRecorrentes(escopo.ServiceProvider.GetRequiredService<IRecurringJobManager>());
     }
 
     // ── Pipeline ──
@@ -225,6 +232,9 @@ try
 
     app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = Saude.EscreverRespostaAsync })
         .AllowAnonymous();
+
+    // Como no DP: a conexão fecha quando a autenticação do cookie expira.
+    app.MapHub<ConvocacoesHub>(ConvocacoesHub.Rota, opcoes => opcoes.CloseOnAuthenticationExpiration = true);
 
     app.MapHangfireDashboardWithAuthorizationPolicy(Politicas.Jobs, "/jobs", new DashboardOptions
     {

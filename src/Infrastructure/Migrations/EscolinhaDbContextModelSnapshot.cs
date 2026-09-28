@@ -1266,6 +1266,257 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.ToTable("Professor", (string)null);
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Eventos.Convocacao", b =>
+                {
+                    b.Property<Guid>("Convocacao_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Aluno_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("EnviadaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Evento_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("LembreteEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("MotivoCancelamento")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int?>("Origem")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OutraResposta")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("RespondidaEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("RespondidoPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid?>("RespondidoPor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("Turma_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Versao")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Convocacao_ID")
+                        .HasName("PK_Convocacao");
+
+                    b.HasIndex("Aluno_ID");
+
+                    b.HasIndex("Evento_ID");
+
+                    b.HasIndex("Turma_ID");
+
+                    b.HasIndex("Escolinha_ID", "Aluno_ID")
+                        .HasDatabaseName("IX_Convocacao_Escolinha_Aluno");
+
+                    b.HasIndex("Escolinha_ID", "Evento_ID", "Aluno_ID")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_Convocacao_Escolinha_Evento_Aluno");
+
+                    b.ToTable("Convocacao", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Convocacao_Origem", "[Origem] IS NULL OR [Origem] IN (10, 20, 30)");
+
+                            t.HasCheckConstraint("CK_Convocacao_Situacao", "[Situacao] IN (5, 10, 20, 30, 40, 50)");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Eventos.Evento", b =>
+                {
+                    b.Property<Guid>("Evento_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<string>("Adversario")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime?>("DataAtualizacao")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<int>("DuracaoMinutos")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EncerradoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("EncerradoPorNome")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("Inicio")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Local_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Logistica")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("Modalidade_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Motivo")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid>("Professor_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("UsuarioAtualizacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UsuarioCadastro_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Versao")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Evento_ID")
+                        .HasName("PK_Evento");
+
+                    b.HasIndex("Local_ID");
+
+                    b.HasIndex("Modalidade_ID");
+
+                    b.HasIndex("Professor_ID");
+
+                    b.HasIndex("Escolinha_ID", "Inicio")
+                        .HasDatabaseName("IX_Evento_Escolinha_Inicio");
+
+                    b.HasIndex("Escolinha_ID", "Professor_ID", "Inicio")
+                        .HasDatabaseName("IX_Evento_Escolinha_Professor_Inicio");
+
+                    b.ToTable("Evento", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Evento_Duracao", "[DuracaoMinutos] BETWEEN 15 AND 600");
+
+                            t.HasCheckConstraint("CK_Evento_Situacao", "[Situacao] IN (10, 20, 30, 40, 50, 60)");
+
+                            t.HasCheckConstraint("CK_Evento_Tipo", "[Tipo] IN (10)");
+                        });
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Eventos.EventoTurma", b =>
+                {
+                    b.Property<Guid>("EventoTurma_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Evento_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("Turma_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("EventoTurma_ID")
+                        .HasName("PK_EventoTurma");
+
+                    b.HasIndex("Evento_ID");
+
+                    b.HasIndex("Turma_ID");
+
+                    b.HasIndex("Escolinha_ID", "Turma_ID")
+                        .HasDatabaseName("IX_EventoTurma_Escolinha_Turma");
+
+                    b.HasIndex("Escolinha_ID", "Evento_ID", "Turma_ID")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_EventoTurma_Escolinha_Evento_Turma");
+
+                    b.ToTable("EventoTurma", (string)null);
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Eventos.HistoricoConvocacao", b =>
+                {
+                    b.Property<Guid>("HistoricoConvocacao_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<Guid>("Convocacao_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Detalhe")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime>("Em")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("int");
+
+                    b.HasKey("HistoricoConvocacao_ID")
+                        .HasName("PK_HistoricoConvocacao");
+
+                    b.HasIndex("Convocacao_ID");
+
+                    b.HasIndex("Escolinha_ID", "Convocacao_ID", "Em")
+                        .HasDatabaseName("IX_HistoricoConvocacao_Escolinha_Convocacao");
+
+                    b.ToTable("HistoricoConvocacao", (string)null);
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Financeiro.ClienteAsaas", b =>
                 {
                     b.Property<Guid>("ClienteAsaas_ID")
@@ -3039,6 +3290,109 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         .HasConstraintName("FK_Professor_Pessoa");
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Eventos.Convocacao", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Aluno", null)
+                        .WithMany()
+                        .HasForeignKey("Aluno_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Convocacao_Aluno");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Convocacao_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Eventos.Evento", null)
+                        .WithMany()
+                        .HasForeignKey("Evento_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Convocacao_Evento");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Turma", null)
+                        .WithMany()
+                        .HasForeignKey("Turma_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Convocacao_Turma");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Eventos.Evento", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Evento_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Local", null)
+                        .WithMany()
+                        .HasForeignKey("Local_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Evento_Local");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Modalidade", null)
+                        .WithMany()
+                        .HasForeignKey("Modalidade_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Evento_Modalidade");
+
+                    b.HasOne("MinhaEscolinha.Domain.Equipe.Professor", null)
+                        .WithMany()
+                        .HasForeignKey("Professor_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_Evento_Professor");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Eventos.EventoTurma", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_EventoTurma_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Eventos.Evento", null)
+                        .WithMany("Turmas")
+                        .HasForeignKey("Evento_ID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_EventoTurma_Evento");
+
+                    b.HasOne("MinhaEscolinha.Domain.Turmas.Turma", null)
+                        .WithMany()
+                        .HasForeignKey("Turma_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_EventoTurma_Turma");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Eventos.HistoricoConvocacao", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Eventos.Convocacao", null)
+                        .WithMany("Historico")
+                        .HasForeignKey("Convocacao_ID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_HistoricoConvocacao_Convocacao");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_HistoricoConvocacao_Escolinha");
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Financeiro.ClienteAsaas", b =>
                 {
                     b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
@@ -3400,6 +3754,16 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Navigation("Disponibilidade");
 
                     b.Navigation("Indisponibilidades");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Eventos.Convocacao", b =>
+                {
+                    b.Navigation("Historico");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Eventos.Evento", b =>
+                {
+                    b.Navigation("Turmas");
                 });
 
             modelBuilder.Entity("MinhaEscolinha.Domain.Mensageria.Mensagem", b =>

@@ -2,12 +2,19 @@ using System.Globalization;
 using System.Text.Json;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
+using MinhaEscolinha.Domain.Eventos;
 using MinhaEscolinha.Domain.Financeiro;
 using MinhaEscolinha.Domain.Mensageria;
 using MinhaEscolinha.Domain.Presencas;
 using MinhaEscolinha.Domain.Turmas;
 
 namespace MinhaEscolinha.Application.Mensageria;
+
+/// <summary>O evento como as mensagens o descrevem (quem chama monta: conhece as turmas e o local).</summary>
+/// <param name="Jogo">"jogo da Sub-11 contra o Tigre" (minúsculo: entra no meio da frase).</param>
+/// <param name="Quando">"sábado, 03/10 às 09:00".</param>
+/// <param name="Mapa">O link de mapa do local (CA-11).</param>
+public sealed record DadosEventoMensagem(string Jogo, string Quando, string Local, string Mapa, DateTime Inicio);
 
 /// <summary>
 /// A porta dos módulos para o motor único (BL-M09-01, R3): cada método é um gatilho do catálogo. Resolve quem recebe
@@ -30,6 +37,8 @@ public class EmissorGatilhos(
     public const string OrigemConvite = "Convite";
     public const string OrigemAlertaFaltas = "AlertaFaltas";
     public const string OrigemCobranca = "Cobranca";
+    public const string OrigemConvocacao = "Convocacao";
+    public const string OrigemEvento = "Evento";
 
     /// <summary>
     /// Treino cancelado (§8.3): os responsáveis que recebem notificação, dos alunos que treinam na turma, um aviso por
@@ -178,6 +187,132 @@ public class EmissorGatilhos(
     }
 
     /// <summary>
+    /// Convocação criada (§8.3, BL-M07-07): os responsáveis do convocado que recebem notificação, uma mensagem por convocado
+    /// (CA-11), com o nome do filho (CA-13), a data, a hora, o local com o link de mapa e os botões Vai/Não vai. Essencial:
+    /// sem crédito, fica retida. Fora da janela de disparo, quando a escolinha pede, sai no começo da próxima (RF-CON-003).
+    /// </summary>
+    public async Task<int> ConvocacaoAsync(Convocacao convocacao, DadosEventoMensagem evento, string aluno, DateTime? agendarPara,
+        CancellationToken ct = default)
+    {
+        var regra = CatalogoGatilhos.Obter(GatilhoMensagem.ConvocacaoCriada);
+        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var escolinha = await NomeEscolinhaAsync(ct);
+        var agora = relogio.Agora();
+
+        var criadas = 0;
+        foreach (var d in await repositorio.ResponsaveisDoAlunoAsync(convocacao.Aluno_ID, ct))
+        {
+            var valores = new Dictionary<string, string>
+            {
+                ["responsavel"] = PrimeiroNome(d.Nome),
+                ["escolinha"] = escolinha,
+                ["aluno"] = PrimeiroNome(aluno),
+                ["jogo"] = evento.Jogo,
+                ["quando"] = evento.Quando,
+                ["local"] = evento.Local,
+                ["mapa"] = evento.Mapa
+            };
+            criadas += await CriarAsync(regra, template, OrigemConvocacao, convocacao.Convocacao_ID, TipoDestinatario.Responsavel,
+                d.ResponsavelId, d.Nome, d.Telefone, d.AcessoAtivo && d.TodosVerificados ? d.PessoaId : null, convocacao.Aluno_ID,
+                valores, false, evento.Inicio, agora, ct, agendarPara: agendarPara);
+        }
+        return criadas;
+    }
+
+    /// <summary>
+    /// Convocação sem resposta (§8.3, BL-M07-11): o lembrete aos responsáveis do convocado que ainda não respondeu, na
+    /// janela configurada antes do evento. Uma vez por convocação.
+    /// </summary>
+    public async Task<int> LembreteConvocacaoAsync(Convocacao convocacao, DadosEventoMensagem evento, string aluno, CancellationToken ct = default)
+    {
+        var regra = CatalogoGatilhos.Obter(GatilhoMensagem.ConvocacaoSemResposta);
+        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var escolinha = await NomeEscolinhaAsync(ct);
+        var agora = relogio.Agora();
+
+        var criadas = 0;
+        foreach (var d in await repositorio.ResponsaveisDoAlunoAsync(convocacao.Aluno_ID, ct))
+        {
+            var valores = new Dictionary<string, string>
+            {
+                ["responsavel"] = PrimeiroNome(d.Nome),
+                ["escolinha"] = escolinha,
+                ["aluno"] = PrimeiroNome(aluno),
+                ["jogo"] = evento.Jogo,
+                ["quando"] = evento.Quando
+            };
+            criadas += await CriarAsync(regra, template, OrigemConvocacao, convocacao.Convocacao_ID, TipoDestinatario.Responsavel,
+                d.ResponsavelId, d.Nome, d.Telefone, d.AcessoAtivo && d.TodosVerificados ? d.PessoaId : null, convocacao.Aluno_ID,
+                valores, false, evento.Inicio, agora, ct);
+        }
+        return criadas;
+    }
+
+    /// <summary>
+    /// Evento alterado (§8.3, BL-M07-13): mudou o quando ou o onde. Um aviso por responsável dos convocados (P13), com os
+    /// nomes dos filhos dele. Urgente se o evento é nas próximas 24 horas. Cada alteração é uma etapa própria.
+    /// </summary>
+    public async Task<int> EventoAlteradoAsync(Guid eventoId, DadosEventoMensagem evento, IReadOnlyCollection<Guid> convocados, string etapa,
+        CancellationToken ct = default)
+    {
+        var regra = CatalogoGatilhos.Obter(GatilhoMensagem.EventoAlterado);
+        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var escolinha = await NomeEscolinhaAsync(ct);
+        var agora = relogio.Agora();
+
+        var criadas = 0;
+        foreach (var d in await repositorio.ResponsaveisDosAlunosAsync(convocados, ct))
+        {
+            var valores = new Dictionary<string, string>
+            {
+                ["responsavel"] = PrimeiroNome(d.Nome),
+                ["escolinha"] = escolinha,
+                ["jogo"] = evento.Jogo,
+                ["quando"] = evento.Quando,
+                ["local"] = evento.Local,
+                ["mapa"] = evento.Mapa,
+                ["alunos"] = Juntar(d.Alunos.Select(a => PrimeiroNome(a.Nome)))
+            };
+            criadas += await CriarAsync(regra, template, OrigemEvento, eventoId, TipoDestinatario.Responsavel, d.ResponsavelId, d.Nome,
+                d.Telefone, d.AcessoAtivo && d.TodosVerificados ? d.PessoaId : null, d.Alunos.Count == 1 ? d.Alunos[0].Id : null,
+                valores, true, evento.Inicio, agora, ct, etapa);
+        }
+        return criadas;
+    }
+
+    /// <summary>
+    /// Evento cancelado ou adiado (§8.3, BL-M07-13, CA-14): um aviso por responsável dos convocados, com os nomes dos
+    /// filhos e o motivo. Urgente se o evento era nas próximas 24 horas.
+    /// </summary>
+    public async Task<int> EventoCanceladoAsync(Guid eventoId, DadosEventoMensagem evento, IReadOnlyCollection<Guid> convocados, bool adiado,
+        string motivo, CancellationToken ct = default)
+    {
+        var regra = CatalogoGatilhos.Obter(GatilhoMensagem.EventoCancelado);
+        var template = await TemplateAsync(regra.Gatilho, TomMensagem.Cordial, ct);
+        var escolinha = await NomeEscolinhaAsync(ct);
+        var agora = relogio.Agora();
+
+        var criadas = 0;
+        foreach (var d in await repositorio.ResponsaveisDosAlunosAsync(convocados, ct))
+        {
+            var valores = new Dictionary<string, string>
+            {
+                ["responsavel"] = PrimeiroNome(d.Nome),
+                ["escolinha"] = escolinha,
+                ["jogo"] = evento.Jogo,
+                ["quando"] = evento.Quando,
+                ["situacao"] = adiado ? "adiado (a nova data será avisada)" : "cancelado",
+                ["motivo"] = motivo,
+                ["alunos"] = Juntar(d.Alunos.Select(a => PrimeiroNome(a.Nome)))
+            };
+            criadas += await CriarAsync(regra, template, OrigemEvento, eventoId, TipoDestinatario.Responsavel, d.ResponsavelId, d.Nome,
+                d.Telefone, d.AcessoAtivo && d.TodosVerificados ? d.PessoaId : null, d.Alunos.Count == 1 ? d.Alunos[0].Id : null,
+                valores, true, evento.Inicio, agora, ct);
+        }
+        return criadas;
+    }
+
+    /// <summary>
     /// A origem deixou de valer (regra de ouro 5: quando o evento chega, cancele o que ficou pendente): o WhatsApp que ainda
     /// está na fila é suprimido na hora, e o aviso do portal que ninguém abriu sai do portal, com o motivo, na mesma gravação
     /// de quem chama. Fica de fora a mensagem com envio em andamento ou com crédito já reservado (tentativa que volta à
@@ -201,10 +336,11 @@ public class EmissorGatilhos(
         return recolhidas;
     }
 
+    /// <param name="agendarPara">O WhatsApp só sai a partir desta hora (a janela de disparo da convocação).</param>
     private async Task<int> CriarAsync(RegraGatilho regra, TemplateMensagem template, string tipoOrigem, Guid origemId,
         TipoDestinatario tipoDestinatario, Guid destinatarioId, string nome, string? telefone, Guid? pessoaPortal, Guid? alunoId,
         IReadOnlyDictionary<string, string> valores, bool urgente, DateTime? referencia, DateTime agora, CancellationToken ct,
-        string? etapa = null)
+        string? etapa = null, DateTime? agendarPara = null)
     {
         var parametros = template.ValoresEmOrdem(valores);
         var conteudo = RenderizadorTemplate.Renderizar(template.Corpo, parametros);
@@ -215,8 +351,11 @@ public class EmissorGatilhos(
             && !await repositorio.ChaveEmUsoAsync(
                 Mensagem.MontarChave(regra.Gatilho, origemId, tipoDestinatario, destinatarioId, CanalMensagem.WhatsApp, etapa), ct))
         {
-            repositorio.AdicionarMensagem(Mensagem.Nova(regra, CanalMensagem.WhatsApp, tipoOrigem, origemId, tipoDestinatario, destinatarioId,
-                nome, telefone, pessoaPortal, alunoId, template.NomeNaMeta, variaveis, conteudo, urgente, referencia, agora, etapa));
+            var whatsApp = Mensagem.Nova(regra, CanalMensagem.WhatsApp, tipoOrigem, origemId, tipoDestinatario, destinatarioId,
+                nome, telefone, pessoaPortal, alunoId, template.NomeNaMeta, variaveis, conteudo, urgente, referencia, agora, etapa);
+            if (agendarPara is { } quando && quando > agora)
+                whatsApp.Agendar(quando, $"Janela de disparo: sai às {quando:HH:mm} de {quando:dd/MM}.", agora);
+            repositorio.AdicionarMensagem(whatsApp);
             criadas++;
         }
 

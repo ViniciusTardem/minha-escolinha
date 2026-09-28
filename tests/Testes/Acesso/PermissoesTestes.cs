@@ -180,6 +180,10 @@ public class AutorizacaoTestes
         public Dictionary<Guid, List<Guid>> TurmasDoProfessor { get; } = [];
         public Dictionary<Guid, List<Guid>> AlunosDoProfessor { get; } = [];
         public Dictionary<Guid, List<Guid>> VerificadosDoResponsavel { get; } = [];
+        public Dictionary<Guid, List<Guid>> EventosDoProfessor { get; } = [];
+
+        public Task<bool> ProfessorDoEventoAsync(Guid pessoaId, Guid eventoId, CancellationToken ct = default) =>
+            Task.FromResult(EventosDoProfessor.GetValueOrDefault(pessoaId)?.Contains(eventoId) == true);
 
         public Task<bool> ProfessorDaTurmaAsync(Guid pessoaId, Guid turmaId, CancellationToken ct = default) =>
             Task.FromResult(TurmasDoProfessor.GetValueOrDefault(pessoaId)?.Contains(turmaId) == true);

@@ -180,8 +180,10 @@ public class AlunosRepositorio(EscolinhaDbContext contexto) : IAlunosRepositorio
         }
 
         var total = await consulta.CountAsync(ct);
+        // Uma consulta só: a página é pequena, e cada aluno tem poucas turmas e um ou dois responsáveis.
         var linhas = await consulta.OrderBy(a => a.NomeBusca)
             .Skip((pagina - 1) * tamanho).Take(tamanho)
+            .AsSingleQuery()
             .Select(a => new
             {
                 a.Aluno_ID, a.Nome, a.DataNascimento, a.Categoria, a.Situacao, a.TrialAte,
@@ -366,6 +368,10 @@ public class ConsultasEscopo(EscolinhaDbContext contexto) : IConsultasEscopo
 
     public Task<bool> ProprioProfessorAsync(Guid pessoaId, Guid professorId, CancellationToken ct = default) =>
         contexto.Professores.AnyAsync(p => p.Professor_ID == professorId && p.Pessoa_ID == pessoaId, ct);
+
+    public Task<bool> ProfessorDoEventoAsync(Guid pessoaId, Guid eventoId, CancellationToken ct = default) =>
+        contexto.EventosTurma.AnyAsync(et => et.Evento_ID == eventoId
+                                             && contexto.Turmas.Any(t => t.Turma_ID == et.Turma_ID && t.Professor!.Pessoa_ID == pessoaId), ct);
 
     public async Task<IReadOnlyList<Guid>> TurmasDoProfessorAsync(Guid pessoaId, CancellationToken ct = default) =>
         await contexto.Turmas.Where(t => t.Professor!.Pessoa_ID == pessoaId).Select(t => t.Turma_ID).ToListAsync(ct);

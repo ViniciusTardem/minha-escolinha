@@ -29,4 +29,15 @@ public class Endereco
         var partes = new[] { rua, Bairro, cidade }.Where(p => !string.IsNullOrWhiteSpace(p));
         return string.Join(" — ", partes);
     }
+
+    /// <summary>
+    /// O link de mapa da convocação (CA-11): uma busca no Google Maps pelo endereço (ou pelo nome do lugar, sem endereço).
+    /// É um link montado aqui, e não uma URL de terceiro guardada (regra de ouro 3). <c>null</c> sem nada para buscar.
+    /// </summary>
+    public string? LinkMapa(string? nomeDoLugar)
+    {
+        var busca = Resumo().Replace(" — ", ", ");
+        if (string.IsNullOrWhiteSpace(Logradouro)) busca = string.Join(", ", new[] { nomeDoLugar, busca }.Where(p => !string.IsNullOrWhiteSpace(p)));
+        return string.IsNullOrWhiteSpace(busca) ? null : $"https://www.google.com/maps/search/?api=1&query={Uri.EscapeDataString(busca)}";
+    }
 }

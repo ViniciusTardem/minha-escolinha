@@ -11,8 +11,9 @@ namespace MinhaEscolinha.Infrastructure.Configuracao;
 /// <summary>Configuração da escolinha do contexto — tudo passa pelo filtro global (nada aqui ignora o filtro).</summary>
 public class ConfiguracaoRepositorio(EscolinhaDbContext contexto) : IConfiguracaoRepositorio
 {
+    /// <summary>A escolinha do contexto (o filtro global deixa só ela).</summary>
     public Task<Escolinha?> ObterEscolinhaAsync(CancellationToken ct = default) =>
-        contexto.Escolinhas.FirstOrDefaultAsync(ct);
+        contexto.Escolinhas.SingleOrDefaultAsync(ct);
 
     public void AdicionarEscolinha(Escolinha escolinha) => contexto.Escolinhas.Add(escolinha);
 
@@ -32,13 +33,15 @@ public class ConfiguracaoRepositorio(EscolinhaDbContext contexto) : IConfiguraca
 
     public void AdicionarParametro(ParametroEscolinha parametro) => contexto.Parametros.Add(parametro);
 
+    /// <summary>Uma por escolinha (índice único).</summary>
     public Task<ContaAsaasEscolinha?> ObterContaAsaasAsync(CancellationToken ct = default) =>
-        contexto.ContasAsaas.FirstOrDefaultAsync(ct);
+        contexto.ContasAsaas.SingleOrDefaultAsync(ct);
 
     public void AdicionarContaAsaas(ContaAsaasEscolinha conta) => contexto.ContasAsaas.Add(conta);
 
+    /// <summary>Uma por escolinha (índice único).</summary>
     public Task<ContaCreditos?> ObterContaCreditosAsync(CancellationToken ct = default) =>
-        contexto.ContasCreditos.FirstOrDefaultAsync(ct);
+        contexto.ContasCreditos.SingleOrDefaultAsync(ct);
 
     public void AdicionarContaCreditos(ContaCreditos conta) => contexto.ContasCreditos.Add(conta);
 

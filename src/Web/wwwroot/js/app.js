@@ -29,11 +29,13 @@
     }
   }
 
-  // ── Confirmação antes de enviar: <form data-esc-confirmar="Texto da pergunta"> ──
+  // ── Confirmação antes de enviar: <form data-esc-confirmar="Texto da pergunta">. O botão que envia pode ter a própria
+  //    pergunta (dois botões no mesmo formulário, um só pergunta): ela vale no lugar da do formulário. ──
   document.addEventListener("submit", function (evento) {
     var form = evento.target;
     if (!(form instanceof HTMLFormElement)) return;
-    var pergunta = form.getAttribute("data-esc-confirmar");
+    var botao = evento.submitter;
+    var pergunta = (botao && botao.getAttribute("data-esc-confirmar")) || form.getAttribute("data-esc-confirmar");
     if (pergunta && !window.confirm(pergunta)) {
       evento.preventDefault();
       return;

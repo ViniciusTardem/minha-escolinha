@@ -1,0 +1,113 @@
+@model EventoRequisicao
+@using Microsoft.AspNetCore.Mvc.ModelBinding
+@{
+    var f = (FormularioJogoViewModel)ViewData["FormularioJogo"]!;
+    var o = f.Opcoes;
+    var turmasInvalidas = ViewData.ModelState.GetFieldValidationState(nameof(EventoRequisicao.Turmas)) == ModelValidationState.Invalid;
+    var nomesDasTurmas = o.Turmas.Where(t => Model.Turmas.Contains(t.Id)).Select(t => t.Nome).ToList();
+}
+@* O jogo (BL-M07-01): turma, dia, horário, duração (para os alertas de agenda, P01), local, adversário (quando a
+   modalidade tem, R8) e as informações para a família. Os alertas de agenda voltam aqui para confirmar (R9). *@
+@if (f.Alertas is { Count: > 0 } alertas)
+{
+    <div class="kt-alert kt-alert-light kt-alert-warning flex items-start gap-3" role="status">
+        <i class="ki-filled ki-information-2 text-lg shrink-0"></i>
+        <div class="flex flex-col gap-2 text-sm min-w-0">
+            <span class="font-medium">Confira a agenda antes de salvar</span>
+            <ul class="flex flex-col gap-1">
+                @foreach (var a in alertas)
+                {
+                    <li>@a.Descricao</li>
+                }
+            </ul>
+            <label class="kt-label">
+                <input class="kt-checkbox" type="checkbox" name="ConfirmarAlertas" value="true" />
+                <span>Vi os alertas e quero salvar mesmo assim</span>
+            </label>
+        </div>
+    </div>
+}
+
+@if (f.Alteracao)
+{
+    <input type="hidden" asp-for="Id" />
+    <div class="flex flex-col gap-1">
+        <span class="kt-form-label">Turma</span>
+        <span class="text-sm text-mono">@(nomesDasTurmas.Count > 0 ? string.Join(", ", nomesDasTurmas) : "—")</span>
+        <span class="text-xs text-secondary-foreground">Para outra turma, cancele este jogo e monte outro.</span>
+    </div>
+}
+else
+{
+    <fieldset class="flex flex-col gap-2">
+        <legend class="kt-form-label mb-1">Turma</legend>
+        @if (o.Turmas.Count == 0)
+        {
+            <span class="text-sm text-secondary-foreground">Nenhuma turma ativa com jogo para você montar.</span>
+        }
+        @foreach (var t in o.Turmas)
+        {
+            <label class="kt-label min-h-12">
+                <input class="kt-checkbox" type="checkbox" name="Turmas" value="@t.Id" checked="@Model.Turmas.Contains(t.Id)"
+                       aria-invalid="@(turmasInvalidas ? "true" : null)" />
+                <span>@t.Nome</span>
+            </label>
+        }
+    </fieldset>
+}
+
+<div class="grid grid-cols-2 gap-3">
+    <div class="flex flex-col gap-1 min-w-0">
+        <label class="kt-form-label" asp-for="Data">Dia</label>
+        <input class="kt-input" asp-for="Data" type="date" />
+    </div>
+    <div class="flex flex-col gap-1 min-w-0">
+        <label class="kt-form-label" asp-for="Hora">Horário</label>
+        <input class="kt-input" asp-for="Hora" type="time" />
+    </div>
+</div>
+
+<div class="grid grid-cols-2 gap-3">
+    <div class="flex flex-col gap-1 min-w-0">
+        <label class="kt-form-label" asp-for="DuracaoMinutos">Duração (min)</label>
+        <input class="kt-input" asp-for="DuracaoMinutos" type="number" min="@Evento.DuracaoMinima" max="@Evento.DuracaoMaxima" step="5" inputmode="numeric" />
+    </div>
+    <div class="flex flex-col gap-1 min-w-0">
+        <label class="kt-form-label" asp-for="LocalId">Local</label>
+        <select class="kt-select" asp-for="LocalId">
+            @if (!f.Alteracao)
+            {
+                <option value="">O da turma</option>
+            }
+            @foreach (var l in o.Locais)
+            {
+                <option value="@l.Id" selected="@(l.Id == Model.LocalId)">@l.Nome</option>
+            }
+        </select>
+    </div>
+</div>
+
+@if (o.PodeEscolherProfessor)
+{
+    <div class="flex flex-col gap-1">
+        <label class="kt-form-label" asp-for="ProfessorId">Professor responsável</label>
+        <select class="kt-select" asp-for="ProfessorId">
+            <option value="">O da turma</option>
+            @foreach (var p in o.Professores)
+            {
+                <option value="@p.Id" selected="@(p.Id == Model.ProfessorId)">@p.Nome</option>
+            }
+        </select>
+    </div>
+}
+
+<div class="flex flex-col gap-1">
+    <label class="kt-form-label" asp-for="Adversario">Adversário (opcional)</label>
+    <input class="kt-input" asp-for="Adversario" maxlength="@Evento.TamanhoAdversario" autocomplete="off" placeholder="Ex.: Tigre FC" />
+</div>
+
+<div class="flex flex-col gap-1">
+    <label class="kt-form-label" asp-for="Logistica">Informações para a família (opcional)</label>
+    <textarea class="kt-textarea" asp-for="Logistica" rows="2" maxlength="@Evento.TamanhoLogistica"
+              placeholder="Ex.: chegar 30 min antes, uniforme azul"></textarea>
+</div>

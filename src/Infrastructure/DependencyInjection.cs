@@ -8,6 +8,7 @@ using MinhaEscolinha.Application.Alunos;
 using MinhaEscolinha.Application.Comum;
 using MinhaEscolinha.Application.Configuracao;
 using MinhaEscolinha.Application.Equipe;
+using MinhaEscolinha.Application.Eventos;
 using MinhaEscolinha.Application.Financeiro;
 using MinhaEscolinha.Application.Mensageria;
 using MinhaEscolinha.Application.Plataforma;
@@ -19,6 +20,7 @@ using MinhaEscolinha.Infrastructure.Comum;
 using MinhaEscolinha.Infrastructure.Configuracao;
 using MinhaEscolinha.Infrastructure.Data.Contexto;
 using MinhaEscolinha.Infrastructure.Data.Interceptadores;
+using MinhaEscolinha.Infrastructure.Eventos;
 using MinhaEscolinha.Infrastructure.Financeiro;
 using MinhaEscolinha.Infrastructure.Hangfire;
 using MinhaEscolinha.Infrastructure.Integracao.Asaas;
@@ -57,10 +59,11 @@ public static class DependencyInjection
         services.AddScoped<AuditoriaInterceptor>();
         services.AddScoped<EscolinhaInterceptor>();
         services.AddScoped<DespachoMensagensInterceptor>();
-        // A ordem importa: o despacho do outbox lê a escolinha que o interceptor de escolinha carimbou.
+        services.AddScoped<TempoRealConvocacoesInterceptor>();
+        // A ordem importa: o despacho do outbox e o tempo real leem a escolinha que o interceptor de escolinha carimbou.
         services.AddDbContext<EscolinhaDbContext>((sp, opcoes) => ConfigurarBanco(opcoes, connectionString)
             .AddInterceptors(sp.GetRequiredService<AuditoriaInterceptor>(), sp.GetRequiredService<EscolinhaInterceptor>(),
-                sp.GetRequiredService<DespachoMensagensInterceptor>()));
+                sp.GetRequiredService<DespachoMensagensInterceptor>(), sp.GetRequiredService<TempoRealConvocacoesInterceptor>()));
 
         services.AddScoped<IExecutorEscolinha, ExecutorEscolinha>();
         services.AddScoped<IAcessoRepositorio, AcessoRepositorio>();
@@ -89,6 +92,10 @@ public static class DependencyInjection
         services.AddScoped<IAgendadorFinanceiro, AgendadorFinanceiroHangfire>();
         services.AddScoped<JobsFinanceiro>();
         services.AddAsaas(configuracao, ambiente, aviso);
+
+        // S5 — eventos e convocações
+        services.AddScoped<IEventosRepositorio, EventosRepositorio>();
+        services.AddScoped<JobsConvocacoes>();
 
         // Plataforma: pacotes de créditos vendidos pelo Stripe da LDNA
         services.AddScoped<IPlataformaRepositorio, PlataformaRepositorio>();

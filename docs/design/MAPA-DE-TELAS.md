@@ -54,7 +54,7 @@ A tabela da §4.5 do plano, com o status de hoje.
 | S2 | Mensagens (log de entrega + linha do tempo), Templates (categoria, tom, aprovação), Convites em lote, fila de verificação de vínculos; ativação do convite; portal inicial (filhos confirmados e avisos); `/dev/whatsapp` (caixa de entrada por número, com os botões do template) | gestor · Painel; equipe LDNA · Painel (Templates); convidado · Autenticação; responsável · Portal | `account/notifications`, `account/members/import-members` | **Pronto** (27/09/2026), no simulador. O sino não foi construído: as pendências ficam no Painel (D55) |
 | S3 | **Hoje → Chamada** (P/F/J num toque, sem sinal, "Concluir chamada" na barra inferior); selo de risco nas listas; aba Presença na ficha, com os alertas (CA-6) | professor · **Quadra**; gestor · Painel | — (tela própria) | **Pronto** (27/09/2026). A reabertura sem sinal espera o certificado confiável (P37) |
 | S4 | Financeiro › Pagamentos (agrupado por situação, com as ações isentar, cancelar e reenviar); Divergências (resolução manual com autoria); aba Financeiro na ficha; `/dev/asaas` | gestor · Painel | `account/billing/*` | **Pronto** (28/09/2026), no simulador. Com as ações confirmar, receber por fora e tentar de novo, e o cartão no Painel |
-| S5 | **Montar fim de semana** (jogos → convocados por jogo, com alertas → revisar → disparar tudo); **Painel de confirmações** em tempo real (registrar resposta por fora; cancelar, adiar ou alterar em um toque) | professor · **Quadra** (e Painel) | `network/user-cards/*` | Em breve (`/jogos`) |
+| S5 | **Montar fim de semana** (jogos → convocados por jogo, com alertas → revisar → disparar tudo); **Painel de confirmações** em tempo real (registrar resposta por fora; cancelar, adiar ou alterar em um toque) | professor · **Quadra** (e Painel) | `network/user-cards/*` | **Pronto** (28/09/2026), no simulador. A semana junta a montagem e o disparo numa tela; o painel atualiza pelo hub |
 | S6 | Portal: Início (filhos, pendências, próximos jogos), Jogos (Sim/Não por filho), Pagamentos (total do mês + detalhamento por filho, pagar pela fatura Asaas ou pelo Pix copia-e-cola), Presenças (só leitura), Avisos | responsável · **Portal** | `store-client/checkout/*` (só a forma) | Começado no S2: Início (filhos confirmados) e Avisos prontos; Jogos e Pagamentos "em breve" |
 | S7 | Importação: enviar planilha → mapear → validar e classificar → **conferência** (novos, reaproveitados, vínculos, bloqueados; saúde mascarada) → confirmar; modelo `.xlsx` para baixar | gestor ou equipe · Painel | `account/members/import-members` | Em breve (`/importacao`) |
 
@@ -198,7 +198,7 @@ O **Painel** ganhou, no S2, o passo "Convites de acesso" e as pendências da ges
 | Ativação do convite | `GET /Convite/{token}`; `POST /Convite/{token}/Identificar` e `/Convite/{token}/Ativar` | `[AllowAnonymous]`, com o limite de tentativas do login | Autenticação | 1º o CPF (nada aparece antes); depois o e-mail opcional e a senha, ou a senha da conta que já existe. Convite usado, vencido ou cancelado mostra "Convite indisponível" | M01-05 |
 | Portal: Início | `GET /Portal` | `[SomenteAutenticado]`, escopo do responsável | Portal | os filhos com vínculo confirmado; enquanto houver vínculo pendente, só o aviso, sem nomes; avisos novos | M01-06, M12-11 |
 | Portal: Avisos | `GET /Portal/Avisos` | idem | Portal | os avisos do motor (os mesmos do WhatsApp); abrir marca como lido | M09-02, M09-07 |
-| Portal: em breve | `GET /Portal/EmBreve?aba=jogos` e `?aba=pagamentos` | idem | Portal | até o S5 e o S6 | — |
+| Portal: em breve | `GET /Portal/EmBreve?aba=jogos` e `?aba=pagamentos` | idem | Portal | até o S6 (a resposta pelo portal é o BL-M10-07) | — |
 | Simulador do WhatsApp | `GET /dev/whatsapp`; `POST /dev/whatsapp/{id}/entregar`, `/ler`, `/falhar`, `/botao/{indice}`, `/responder`; `POST /dev/whatsapp/limpar` | `[SomenteAutenticado]` | Painel | só em Development com `WhatsApp:Modo = Simulado`; cada ação manda o webhook assinado ao endpoint de verdade | M09-02, M09-07 |
 | Webhook do WhatsApp | `GET` (verificação da Meta) e `POST /api/v1/webhooks/whatsapp` | `[AllowAnonymous]` (assinatura `X-Hub-Signature-256`) | API | grava o corpo bruto e responde 200; o job interpreta. 400 com assinatura inválida, 503 com o WhatsApp desligado | M09-07 |
 
@@ -260,17 +260,42 @@ O **Painel** ganhou o cartão "Mensalidades", com as primeiras a confirmar, as i
 
 ---
 
+## 3D. S5: telas prontas (28/09/2026)
+
+### 3D.1 Quadra (`ConvocacaoController`, `_LayoutQuadra`)
+
+Tudo exige `EventosConvocacao` (gestão: tudo; professor: os jogos das turmas dele, D82). Fora do escopo, 404. As ações pedem `Alterar` e voltam, com PRG e toast, para a tela de origem.
+
+| Tela | Rota | Acesso | Observações | BL |
+|---|---|---|---|---|
+| Jogos da semana | `GET /Convocacao` (`semana`) | `EventosConvocacao` | a semana (segunda a domingo), o jogo novo na própria tela e um cartão por jogo, com a escolha dos convocados e os sinais; "Salvar escolha" e "Disparar convocações" na barra inferior | M07-05, M07-06, M07-08 |
+| Jogo novo | `POST /Convocacao/Novo` | `Alterar` | volta para `#jogo-{id}`; com alerta de agenda, volta ao formulário aberto, com a confirmação | M07-01, M07-03 |
+| Salvar ou disparar | `POST /Convocacao/Selecao` (`eventos`, `selecao`, `disparar`) | `Alterar` | a escolha é rascunho; o disparo leva todos os jogos da tela e diz quando as mensagens saem | M07-07, M07-08 |
+| Painel do jogo | `GET /Convocacao/Jogo/{id}` | `EventosConvocacao` | os números, os convocados e a resposta por fora; atualiza pelo hub | M07-09 |
+| Parcial do painel | `GET /Convocacao/Painel/{id}` | idem | o HTML que a tela busca quando o hub avisa | M07-09 |
+| Resposta por fora | `POST /Convocacao/Responder/{id}` (`convocacao`, `vai`) | `ResponderConvocacao`, `Alterar` | a gestão em qualquer jogo; o professor, nos dele | M07-09 |
+| Alterar | `GET /Convocacao/Alterar/{id}` e `POST /Convocacao/Alterar` | `Alterar` | mudar o dia, o horário, a duração ou o local avisa as famílias | M07-13 |
+| Cancelar ou adiar | `GET /Convocacao/Encerrar/{id}` (`adiar`) e `POST /Convocacao/Encerrar` | `Alterar` | motivo obrigatório; aviso a cada família e as convocações canceladas | M07-13 |
+| Confirmar e realizar | `POST /Convocacao/Confirmar/{id}`; `POST /Convocacao/Realizar/{id}` | `Alterar` | realizar só depois do início; quem não respondeu fica "sem resposta" | M07-01 |
+
+### 3D.2 Tempo real
+
+| Peça | Rota | Acesso | Observações | BL |
+|---|---|---|---|---|
+| Hub das convocações | `/hubs/convocacoes` (SignalR) | autenticado; só a gestão e os professores entram no grupo da escolinha | avisa os ids dos jogos que mudaram; a conexão fecha quando a autenticação expira (D79) | M07-09 |
+
+---
+
 ## 4. Páginas "em breve" (catálogo de módulos)
 
 A rota `{chave}` (registrada antes da rota padrão) só aceita as chaves dos módulos com situação `Planejado` no `CatalogoModulos`. A página mostra o que o módulo vai fazer, a fatia e a lista de recursos.
 
 | Rota | Módulo | Seção do menu | Fatia | Aparece no menu para (recurso, leitura) | Ícone |
 |---|---|---|---|---|---|
-| `/jogos` | Jogos e convocações | Operação | S5 | `EventosConvocacao`: gestor e professor | `ki-cup` |
 | `/importacao` | Importação | Escolinha | S7 | `ConfiguracaoEscolinha`: gestor | `ki-file-up` |
 
 - **A página não confere o recurso** (não mostra dado nenhum): qualquer pessoa logada a abre pela URL. Quem filtra é o menu.
-- **Desde o S1**, Turmas, Alunos, Responsáveis e Agenda (Operação) e Professores e Locais de treino (Escolinha) são módulos prontos no `CatalogoModulos` e saíram desta lista. **Desde o S2**, também Mensagens e Convites de acesso (Comunicação), e Templates (Plataforma). **Desde o S3**, a Chamada (Operação). **Desde o S4**, as Mensalidades (Financeiro).
+- **Desde o S1**, Turmas, Alunos, Responsáveis e Agenda (Operação) e Professores e Locais de treino (Escolinha) são módulos prontos no `CatalogoModulos` e saíram desta lista. **Desde o S2**, também Mensagens e Convites de acesso (Comunicação), e Templates (Plataforma). **Desde o S3**, a Chamada (Operação). **Desde o S4**, as Mensalidades (Financeiro). **Desde o S5**, Jogos e convocações (Operação, `/Convocacao`).
 - **Quem é só Responsável não vê o painel:** desde o S2, o painel o leva ao portal (D54).
 - **Quando o módulo ficar pronto:** no `CatalogoModulos`, troque a `Situacao` para `Disponivel` e aponte a `Url` para o controller real. A chave sai da rota `{chave}` sozinha, e o menu, a busca rápida e o Painel acompanham.
 
@@ -318,11 +343,11 @@ O que cada fatia encontra pronto no design system e o que ainda precisa ser cons
 - **Não construído:** o menu de ações ⋮ e o modal com motivo. As ações da linha são ícones com `aria-label`, e cancelar, isentar, receber e resolver são páginas próprias, com o motivo no formulário, como no S1.
 - **O sinal de inadimplência** (§4.3) nasce com a convocação, no S5 (`convocacao.inadimplencia.*`).
 
-### S5 — Eventos e convocações (professor · Quadra e Painel)
+### S5 — Eventos e convocações (professor · Quadra e Painel) — **pronto em 28/09/2026** (§3D)
 
-- **Onde entra:** o controller `Convocacao`, com o `_LayoutQuadra` (e telas no painel); `/jogos` deixa de ser "em breve".
-- **A construir** (plano, 4.4): `_CartaoJogo`, `_SelecaoConvocados` (contador e sinais de conflito, risco e inadimplência) e `_PainelConfirmacoes` (contadores contra o mínimo de confirmados, em tempo real); os selos Convocação e Evento (§4.3).
-- **Tempo real:** o SignalR já é servido (`lib/signalr`); carregue pela seção `Scripts` da tela.
+- **Construído com o que já existia:** o `_LayoutQuadra` com a barra inferior (S3), o controle segmentado para a resposta por fora (§6.9), o `<selo-status>` com as duas máquinas novas e cinco sinais (§4.2), o `esc.fetch` para buscar o painel de novo (§6.13) e o `lib/signalr`, servido desde o F0.
+- **Construído no S5** (guia §6.31): a tela da semana (montagem e disparo), o `_FormularioJogo`, o parcial `_Painel` e as telas de alterar e de cancelar ou adiar. Novas regras: a âncora sob a barra fixa leva `scroll-mt-20`; a turma na linha do aluno só quando o jogo junta turmas; os rótulos longos da barra inferior encurtam no celular.
+- **Forma diferente do plano:** o plano previa as parciais `_CartaoJogo`, `_SelecaoConvocados` e `_PainelConfirmacoes` e um fluxo "jogos → convocados → revisar → disparar". Ficou uma tela só, com um cartão por jogo, a escolha como rascunho e o disparo de tudo pela barra inferior: menos toques na quadra (R10).
 
 ### S6 — Portal do responsável (responsável · Portal)
 

@@ -60,7 +60,8 @@ public class ServicoAlunos(
     IValidator<SaudeAlunoRequisicao> validadorSaude,
     IValidator<MudarSituacaoRequisicao> validadorSituacao,
     Presencas.IRiscoEvasao risco,
-    Financeiro.EfeitosFinanceirosDoCadastro financeiro)
+    Financeiro.EfeitosFinanceirosDoCadastro financeiro,
+    Eventos.EfeitosConvocacaoDoCadastro convocacoes)
 {
     public const string Entidade = nameof(Aluno);
     private static readonly CultureInfo PtBr = new("pt-BR");
@@ -365,6 +366,13 @@ public class ServicoAlunos(
             var canceladas = await financeiro.EncerrarRecorrenciaAsync(ativas.Select(m => m.Matricula_ID).ToList(), data,
                 $"desligamento ({r.Motivo!.Trim()})", ct);
             if (canceladas > 0) detalhe += $" {canceladas} mensalidade(s) prevista(s) cancelada(s).";
+        }
+        if (r.Para is SituacaoAluno.Desistente or SituacaoAluno.Inativo)
+        {
+            // Sai das convocações dos jogos que ainda vão acontecer (CA-3); o jogo que passou fica no histórico.
+            var retiradas = await convocacoes.RetirarAlunoAsync(aluno.Aluno_ID, null, data,
+                r.Para == SituacaoAluno.Desistente ? "Aluno desligado." : "Aluno em pausa.", ct);
+            if (retiradas > 0) detalhe += $" {retiradas} convocação(ões) de jogo retirada(s).";
         }
         else if (turmaRematricula is not null)
         {

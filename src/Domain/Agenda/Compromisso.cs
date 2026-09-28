@@ -121,6 +121,46 @@ public static class DetectorConflitos
                 $"{horario.Descricao()}: {local} já recebe a turma {outra.Turma} ({outra.Horario.Descricao()}).");
     }
 
+    /// <summary>
+    /// Alertas de um compromisso datado (o evento do S5, BL-M07-03, RF-CON-018): outro compromisso do professor no mesmo
+    /// horário (treino ou evento), fora da disponibilidade declarada, dentro de uma indisponibilidade pontual.
+    /// </summary>
+    /// <param name="doProfessor">Os outros compromissos do professor no período (o próprio evento fica de fora).</param>
+    public static IReadOnlyList<ConflitoAgenda> ParaCompromisso(Professor professor, DateTime inicio, DateTime fim,
+        IEnumerable<Compromisso> doProfessor)
+    {
+        var conflitos = doProfessor
+            .Where(c => !c.Cancelado && c.Sobrepoe(inicio, fim))
+            .OrderBy(c => c.Inicio)
+            .Select(c => new ConflitoAgenda(TipoConflito.ProfessorOcupado,
+                $"{professor.Nome} já tem {Descrever(c)} de {c.Inicio.ToString("dd/MM HH:mm", PtBr)} a {c.Fim:HH:mm}."))
+            .ToList();
+
+        var dia = inicio.DayOfWeek;
+        if (professor.TemDisponibilidadeDeclarada
+            && !professor.Disponibilidade.Any(f => f.Cobre(dia, TimeOnly.FromDateTime(inicio), TimeOnly.FromDateTime(fim))))
+            conflitos.Add(new ConflitoAgenda(TipoConflito.ForaDaDisponibilidade,
+                $"{inicio.ToString("dd/MM HH:mm", PtBr)}: fora da disponibilidade de {professor.Nome} ({DescreverDisponibilidade(professor, dia)})."));
+
+        conflitos.AddRange(Indisponibilidades(professor, [(inicio, fim)]));
+        return conflitos;
+    }
+
+    /// <summary>Outros compromissos no mesmo local e horário (P31, EX-02: sinaliza, não bloqueia).</summary>
+    /// <param name="noLocal">Os outros compromissos do local no período (o próprio evento fica de fora).</param>
+    public static IEnumerable<ConflitoAgenda> LocalOcupado(string local, DateTime inicio, DateTime fim, IEnumerable<Compromisso> noLocal) =>
+        noLocal
+            .Where(c => !c.Cancelado && c.Sobrepoe(inicio, fim))
+            .OrderBy(c => c.Inicio)
+            .Select(c => new ConflitoAgenda(TipoConflito.LocalOcupado,
+                $"{local} já recebe {Descrever(c)} de {c.Inicio.ToString("dd/MM HH:mm", PtBr)} a {c.Fim:HH:mm}."));
+
+    /// <summary>"o treino da Sub-11 · terça", "o jogo da Sub-13 contra o Tigre".</summary>
+    private static string Descrever(Compromisso c) =>
+        c.Tipo == TipoCompromisso.Treino || c.Titulo.Length == 0
+            ? $"o treino da {c.Titulo}"
+            : $"o {char.ToLower(c.Titulo[0], PtBr)}{c.Titulo[1..]}";
+
     /// <summary>Os compromissos da lista que se sobrepõem a outro do mesmo professor (os cancelados não contam).</summary>
     public static IReadOnlySet<Guid> SobrepostosPorProfessor(IEnumerable<Compromisso> compromissos) =>
         Sobrepostos(compromissos, c => c.ProfessorId);
