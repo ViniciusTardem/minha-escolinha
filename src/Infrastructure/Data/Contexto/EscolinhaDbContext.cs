@@ -29,8 +29,9 @@ namespace MinhaEscolinha.Infrastructure.Data.Contexto;
 /// da lista permitida (teste de arquitetura em <c>RegrasDeOuroTestes</c>).
 /// </para>
 /// <para>
-/// EF Core 9: cada entidade tem UM filtro, e <c>IgnoreQueryFilters()</c> ignora todos. Se entrar outro filtro (ex.:
-/// exclusão lógica), ele precisa ser combinado neste mesmo, na mesma expressão.
+/// O EF Core 10 aceita filtros nomeados, mas o projeto mantém um filtro anônimo único por entidade (X01):
+/// <c>IgnoreQueryFilters()</c> sem argumento ignora todos. Se entrar outro filtro (ex.: exclusão lógica), ele
+/// precisa ser combinado neste mesmo, na mesma expressão.
 /// </para>
 /// </summary>
 public class EscolinhaDbContext : DbContext, IDataProtectionKeyContext

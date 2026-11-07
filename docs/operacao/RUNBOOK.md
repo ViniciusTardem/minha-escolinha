@@ -1,13 +1,13 @@
 # Runbook — Minha Escolinha
 
 > Como publicar, configurar, ligar as integrações e manter o sistema no ar. Para quem opera o servidor.
-> Última atualização: 28/09/2026, depois do S7 (os 81 entregáveis do piloto prontos). Portado do runbook do AlternativaDepartamentoPessoal.
+> Última atualização: 07/11/2026 (subida para o .NET 10, D113; sem variável, job ou trava nova). Antes: 28/09/2026, depois do S7 (os 81 entregáveis do piloto prontos). Portado do runbook do AlternativaDepartamentoPessoal.
 
 ---
 
 ## 1. O que vai para o servidor
 
-- **Um site** ASP.NET Core 9 (`src/Web`), publicado *self-contained* para Windows x64: não depende de runtime instalado.
+- **Um site** ASP.NET Core 10 (`src/Web`), publicado *self-contained* para Windows x64: não depende de runtime instalado.
 - **Um banco próprio,** `escolinhaesporte` (SQL Server 2019 ou mais novo: o EF gera SQL do nível de compatibilidade 150). As tabelas, inclusive as do Hangfire, são criadas pela aplicação na primeira subida (migrations automáticas).
 - **Jobs em segundo plano** (Hangfire) rodam **dentro do site**: sessões de treino, mensagens, mensalidades, convocações, compras de créditos e a guarda dos webhooks (§7).
 - **Integrações:** WhatsApp (Cloud API da Meta), Asaas (mensalidades, na conta de cada escolinha) e Stripe (a LDNA vende créditos às escolinhas). Todas nascem em modo **Simulado**: nada sai para fora até a configuração da §4.
@@ -21,8 +21,8 @@
 ## 3. Publicar
 
 ```powershell
-# Na máquina de build. Instale ANTES o último patch do SDK .NET 9 (o 9.0.100 embarca um runtime antigo).
-# O .NET 9 sai de suporte em 10/11/2026 (P24): antes disso, suba o projeto para o .NET 10.
+# Na máquina de build. Instale ANTES o último patch do SDK .NET 10: o self-contained embarca o runtime que o SDK conhece.
+# Republique a cada Patch Tuesday (correção de segurança do runtime). O projeto está no .NET 10 LTS desde a D113 (suporte até 10/11/2028).
 dotnet publish src/Web -c Release -r win-x64 --self-contained true -o C:\publish\minha-escolinha
 ```
 
@@ -186,3 +186,5 @@ O e-mail serve para duas coisas: o link de nova senha de quem entra com e-mail, 
 ## 9. Voltar uma versão
 
 Publicar a versão anterior por cima. **Atenção às migrations:** a versão nova pode ter alterado o banco, e voltar o código sem voltar o banco pode falhar. Por isso o backup antes de cada publicação (§3).
+
+A subida para o .NET 10 (D113) não trouxe migration: voltar para a versão anterior (.NET 9) é seguro quanto ao banco. O backup da §3 continua valendo.

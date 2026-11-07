@@ -46,7 +46,7 @@ As 12 regras (R1 a R12) estão em [`CLAUDE.md`](CLAUDE.md), seção 4.
 
 ## Tecnologia
 
-- .NET 9, ASP.NET Core MVC com Razor, Entity Framework Core
+- .NET 10, ASP.NET Core MVC com Razor, Entity Framework Core
 - SQL Server 2019 Express
 - Hangfire (jobs), SignalR (tempo real)
 - Metronic 9, KTUI e Tailwind 4
@@ -67,7 +67,7 @@ Cada escolinha é isolada das outras por um filtro global no banco (multi-escoli
 
 ## Como rodar
 
-Pré-requisitos: SDK do .NET 9, SQL Server (Express serve) e Node.js.
+Pré-requisitos: SDK do .NET 10, SQL Server (Express serve) e Node.js.
 
 ```powershell
 # Segredos locais (nunca em arquivo versionado)
@@ -101,7 +101,7 @@ Todos os comandos, inclusive os de cada integração, estão em [`CLAUDE.md`](CL
 
 ## Avisos
 
-- O suporte do .NET 9 termina em 10/11/2026. Veja a decisão D109 em `docs/DECISOES-EM-ABERTO.md`.
+- O projeto está no .NET 10 LTS (suporte até 10/11/2028); o suporte do 9 acaba em 10/11/2026. Veja a D113 em `docs/DECISOES-EM-ABERTO.md`. A verificação da subida (build, testes, publish) ainda roda na máquina do responsável.
 - Em produção, o app exige o certificado do Data Protection. Sem ele, não sobe.
 - Cobrança real e WhatsApp real para números que não são de teste só com aprovação explícita.
 

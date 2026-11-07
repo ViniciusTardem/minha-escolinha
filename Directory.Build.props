@@ -13,8 +13,8 @@
     <RootNamespace>$(ProdutoPrefixo).$(MSBuildProjectName)</RootNamespace>
     <AssemblyName>$(ProdutoPrefixo).$(MSBuildProjectName)</AssemblyName>
 
-    <!-- .NET 9: o servidor de produção só tem o runtime 9 por enquanto (DECISOES D02). -->
-    <TargetFramework>net9.0</TargetFramework>
+    <!-- .NET 10 (LTS): migração aprovada, revertendo a D109 (DECISOES D113). -->
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>

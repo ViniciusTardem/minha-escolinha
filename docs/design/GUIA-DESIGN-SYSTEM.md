@@ -2,7 +2,7 @@
 
 > **Fonte da verdade visual do projeto.** Leia a §0 antes de escrever qualquer markup. O mapa das telas por fatia está em [`MAPA-DE-TELAS.md`](MAPA-DE-TELAS.md); o resumo das regras, no §6 do [`CLAUDE.md`](../../CLAUDE.md).
 >
-> **Stack:** ASP.NET Core MVC (.NET 9) + Razor · Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons (só `ki-filled`).
+> **Stack:** ASP.NET Core MVC (.NET 10) + Razor · Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons (só `ki-filled`).
 > **Prefixo do projeto:** `esc-` (classes), `data-esc-` (atributos), `window.esc` (JS), `esc:*` (eventos).
 >
 > **Como foi verificado (28/09/2026, fatia S4 pronta):** toda classe citada aqui foi conferida no CSS que o navegador recebe (`keenicons-filled.css`, `styles.css`, `css/esc.css` e `custom.css`, em `src/Web/wwwroot`), e todo comportamento, no código. O que ainda não existe está marcado como **planejado** e listado na §14.
