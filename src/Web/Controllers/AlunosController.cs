@@ -18,7 +18,7 @@ namespace MinhaEscolinha.Web.Controllers;
 /// </summary>
 [Permissao(Recurso.CadastroAlunosResponsaveis)]
 public class AlunosController(ServicoAlunos servico, ServicoTurmas turmas, ServicoResponsaveis responsaveis, IParametros parametros,
-    ServicoPresenca presenca, Application.Financeiro.ServicoMensalidades mensalidades, IRelogioBrasil relogio) : Controller
+    ServicoPresenca presenca, Application.Financeiro.ServicoMensalidades mensalidades, IRelogioBrasil relogio, ServicoTermos termos) : Controller
 {
     private const string Modulo = "alunos";
 
@@ -42,6 +42,7 @@ public class AlunosController(ServicoAlunos servico, ServicoTurmas turmas, Servi
         // Só para quem vê o financeiro (o gestor, BL-M06-24): para os demais a aba nem existe.
         ViewData["Financeiro"] = await mensalidades.DoAlunoAsync(id, ct);
         ViewData["FinanceiroAlterar"] = mensalidades.PodeAlterar;
+        ViewData["Termos"] = await termos.DaFichaAsync(id, ct);
         return View(ficha);
     }
 

@@ -8,7 +8,10 @@ public enum CanalMensagem
     WhatsApp = 10,
 
     /// <summary>Aviso no portal, para quem ativou o acesso (modo parcial, BL-M12-11). Não gasta crédito.</summary>
-    Portal = 20
+    Portal = 20,
+
+    /// <summary>E-mail, só nos gatilhos marcados para ele (os termos de consentimento, D111). Não gasta crédito.</summary>
+    Email = 30
 }
 
 /// <summary>
@@ -74,6 +77,7 @@ public class Mensagem : IEntidadeDaEscolinha
     public const int TamanhoTipoOrigem = 40;
     public const int TamanhoNome = 150;
     public const int TamanhoTelefone = 20;
+    public const int TamanhoEmail = 150;
     public const int TamanhoTemplate = 120;
     public const int TamanhoConteudo = 2000;
     public const int TamanhoVariaveis = 4000;
@@ -105,6 +109,9 @@ public class Mensagem : IEntidadeDaEscolinha
 
     /// <summary>E.164, no momento da criação (WhatsApp).</summary>
     public string? Telefone { get; private set; }
+
+    /// <summary>O endereço, no momento da criação (canal E-mail).</summary>
+    public string? Email { get; private set; }
 
     /// <summary>A pessoa com acesso que vê o aviso no portal (canal Portal).</summary>
     public Guid? Pessoa_ID { get; private set; }
@@ -175,11 +182,16 @@ public class Mensagem : IEntidadeDaEscolinha
     /// </summary>
     public static Mensagem Nova(RegraGatilho regra, CanalMensagem canal, string tipoOrigem, Guid origemId,
         TipoDestinatario tipoDestinatario, Guid destinatarioId, string destinatarioNome, string? telefone, Guid? pessoaId, Guid? alunoId,
-        string template, string variaveis, string conteudo, bool urgente, DateTime? referencia, DateTime agora, string? etapa = null)
+        string template, string variaveis, string conteudo, bool urgente, DateTime? referencia, DateTime agora, string? etapa = null,
+        string? email = null)
     {
         if (etapa is { Length: > TamanhoEtapa }) throw new ArgumentException("Etapa longa demais.", nameof(etapa));
         if (canal == CanalMensagem.WhatsApp && string.IsNullOrWhiteSpace(telefone))
             throw new ArgumentException("Mensagem de WhatsApp sem telefone.", nameof(telefone));
+        if (canal == CanalMensagem.Email && string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Mensagem de e-mail sem endereço.", nameof(email));
+        if ((canal == CanalMensagem.Email) != regra.SoPorEmail)
+            throw new InvalidOperationException($"O gatilho {regra.Gatilho} não sai pelo canal {canal}.");
         if (canal == CanalMensagem.Portal && pessoaId is null)
             throw new ArgumentException("Aviso de portal sem a pessoa que vai ver.", nameof(pessoaId));
         if (canal == CanalMensagem.Portal && !regra.AvisoNoPortal)
@@ -198,6 +210,7 @@ public class Mensagem : IEntidadeDaEscolinha
             Destinatario_ID = destinatarioId,
             DestinatarioNome = TextoHelper.Truncar(destinatarioNome, TamanhoNome) ?? string.Empty,
             Telefone = canal == CanalMensagem.WhatsApp ? telefone : null,
+            Email = canal == CanalMensagem.Email ? TextoHelper.Truncar(email, TamanhoEmail) : null,
             Pessoa_ID = pessoaId,
             Aluno_ID = alunoId,
             Template = TextoHelper.Truncar(template, TamanhoTemplate) ?? string.Empty,

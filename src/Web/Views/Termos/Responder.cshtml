@@ -1,0 +1,65 @@
+@model TermosViewModel
+@{
+    ViewData["Title"] = "Termos de consentimento";
+    Layout = "_LayoutAutenticacao";
+
+    void Escolha(string campo, bool? valor, string rotuloSim, string rotuloNao)
+    {
+        var invalido = ViewData.ModelState[campo]?.Errors.Count > 0 ? "true" : null;
+        <fieldset class="flex flex-col gap-2.5" aria-invalid="@invalido">
+            <legend class="sr-only">Sua resposta</legend>
+            <label class="kt-label">
+                <input class="kt-radio kt-radio-sm" type="radio" name="@campo" value="true" checked="@(valor == true)" />
+                <span class="text-sm text-foreground">@rotuloSim</span>
+            </label>
+            <label class="kt-label">
+                <input class="kt-radio kt-radio-sm" type="radio" name="@campo" value="false" checked="@(valor == false)" />
+                <span class="text-sm text-foreground">@rotuloNao</span>
+            </label>
+        </fieldset>
+    }
+}
+
+@* D111: cada termo tem a sua resposta (R6): aceitar um não obriga a aceitar o outro. *@
+<div class="kt-card max-w-[640px] w-full">
+    <form method="post" asp-controller="Termos" asp-action="Responder" asp-route-token="@Model.Token" class="kt-card-content flex flex-col gap-6 p-6 sm:p-10" novalidate>
+        <div class="flex flex-col gap-2">
+            <h1 class="text-lg font-medium text-mono leading-none">Termos de consentimento</h1>
+            <p class="text-sm text-secondary-foreground">
+                Olá, @Model.Termos.Responsavel! @Model.Termos.Escolinha pede a sua resposta aos termos de @Model.Termos.Aluno.
+                Leia cada um e responda. Você pode aceitar um e não o outro.
+            </p>
+        </div>
+
+        <partial name="_ErrosFormulario" />
+        <input type="hidden" name="Cpf" value="@Model.Resposta.Cpf" />
+
+        @foreach (var termo in Model.Termos.Termos)
+        {
+            var dados = termo.Finalidade == FinalidadeConsentimento.TratamentoDados;
+            <section class="flex flex-col gap-3 border-t border-border pt-5">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 class="text-base font-semibold text-mono">@termo.Titulo</h2>
+                    <span class="text-xs text-muted-foreground">texto @termo.Versao</span>
+                </div>
+                <div class="flex flex-col gap-2 text-sm text-secondary-foreground">
+                    @foreach (var paragrafo in termo.Texto.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    {
+                        <p>@paragrafo</p>
+                    }
+                </div>
+                @if (dados)
+                {
+                    Escolha("Dados", Model.Resposta.Dados, "Aceito o tratamento de dados", "Não aceito o tratamento de dados");
+                }
+                else
+                {
+                    Escolha("Imagem", Model.Resposta.Imagem, "Autorizo o uso de imagem", "Não autorizo o uso de imagem");
+                }
+            </section>
+        }
+
+        <button class="kt-btn kt-btn-primary esc-toque flex justify-center" type="submit">Enviar a resposta</button>
+        <p class="text-xs text-muted-foreground">Depois de enviar, este link deixa de valer. Para mudar a resposta, fale com a escolinha.</p>
+    </form>
+</div>

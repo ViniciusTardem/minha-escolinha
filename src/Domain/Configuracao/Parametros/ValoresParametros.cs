@@ -84,7 +84,8 @@ public sealed class ValoresParametros
             ? decimal.Parse(mensalidade, NumberStyles.Number, CultureInfo.InvariantCulture)
             : null,
         Inteiro(ChavesParametro.TurmaCapacidade),
-        Inteiro(ChavesParametro.TurmaMinimoConfirmados));
+        Inteiro(ChavesParametro.TurmaMinimoConfirmados),
+        Inteiro(ChavesParametro.MatriculaTermosValidadeDias));
 
     private string TextoObrigatorio(string chave) =>
         Texto(chave) ?? throw new InvalidOperationException($"Parâmetro {chave} sem valor e sem padrão.");
@@ -139,4 +140,5 @@ public sealed record ParametrosMatricula(
     int TrialDiasAvisoAntes,
     decimal? MensalidadeInicial,
     int CapacidadeInicial,
-    int MinimoConfirmadosInicial);
+    int MinimoConfirmadosInicial,
+    int TermosValidadeDias = 15);

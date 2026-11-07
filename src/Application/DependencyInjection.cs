@@ -71,6 +71,13 @@ public static class DependencyInjection
         services.AddScoped<ServicoVerificacaoVinculos>();
         services.AddScoped<ServicoAtivacaoConvite>();
         services.AddScoped<ServicoRecuperacaoSenha>();
+
+        // Os termos de consentimento pelo link do responsável (D111)
+        services.AddScoped<EmissaoTermos>();
+        services.AddScoped<ServicoTermos>();
+        services.AddScoped<ServicoRespostaTermos>();
+        services.AddScoped<RespostaTermosNaEscolinha>();
+        services.AddScoped<IValidadorOrigemMensagem, ValidadorOrigemTermos>();
         services.AddScoped<AtivacaoNaEscolinha>();
         services.AddScoped<ServicoPortal>();
 

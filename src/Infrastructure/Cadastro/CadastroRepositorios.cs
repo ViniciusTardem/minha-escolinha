@@ -339,6 +339,15 @@ public class AlunosRepositorio(EscolinhaDbContext contexto) : IAlunosRepositorio
 
     public void AdicionarConsentimento(ConsentimentoAluno consentimento) => contexto.Consentimentos.Add(consentimento);
 
+    public async Task<IReadOnlyList<PedidoTermos>> PedidosTermosDoAlunoAsync(Guid alunoId, CancellationToken ct = default) =>
+        await contexto.PedidosTermos.Include(p => p.Responsavel).Where(p => p.Aluno_ID == alunoId)
+            .OrderByDescending(p => p.CriadoEm).ThenBy(p => p.Situacao).ToListAsync(ct); // no mesmo instante, o que ainda vale vem antes
+
+    public Task<PedidoTermos?> ObterPedidoTermosAsync(Guid id, CancellationToken ct = default) =>
+        contexto.PedidosTermos.Include(p => p.Responsavel).FirstOrDefaultAsync(p => p.PedidoTermos_ID == id, ct);
+
+    public void AdicionarPedidoTermos(PedidoTermos pedido) => contexto.PedidosTermos.Add(pedido);
+
     public Task SalvarAsync(CancellationToken ct = default) => Conflitos.SalvarAsync(contexto, ct);
 
     private async Task<IReadOnlyList<ResponsavelEncontrado>> Encontrados(IQueryable<Responsavel> consulta, CancellationToken ct)

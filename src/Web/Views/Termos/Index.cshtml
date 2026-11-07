@@ -1,0 +1,27 @@
+@model TermosViewModel
+@{
+    ViewData["Title"] = "Termos de consentimento";
+    Layout = "_LayoutAutenticacao";
+}
+
+@* D111: antes do CPF conferido, só o nome da escolinha aparece. *@
+<div class="kt-card max-w-[420px] w-full">
+    <form method="post" asp-controller="Termos" asp-action="Identificar" asp-route-token="@Model.Token" class="kt-card-content flex flex-col gap-5 p-8 sm:p-10" novalidate>
+        <div class="text-center mb-2.5">
+            <h1 class="text-lg font-medium text-mono leading-none mb-2.5">Termos de consentimento</h1>
+            <p class="text-sm text-secondary-foreground">@Model.Termos.Escolinha pede a sua resposta aos termos do seu filho. Para a sua segurança, informe o seu CPF, o mesmo do cadastro na escolinha.</p>
+        </div>
+
+        <partial name="_ErrosFormulario" />
+
+        <div class="flex flex-col gap-1">
+            <label class="kt-form-label font-normal text-mono" for="Cpf">CPF</label>
+            <input class="kt-input" id="Cpf" name="Cpf" value="@Model.Resposta.Cpf" inputmode="numeric" autocomplete="off" maxlength="14"
+                   placeholder="000.000.000-00" required autofocus
+                   aria-invalid="@(ViewData.ModelState["Cpf"]?.Errors.Count > 0 ? "true" : null)" />
+        </div>
+
+        <button class="kt-btn kt-btn-primary flex justify-center grow" type="submit">Continuar</button>
+        <p class="text-xs text-muted-foreground text-center">Nenhum dado aparece antes de o CPF ser conferido. O link vale uma vez só.</p>
+    </form>
+</div>

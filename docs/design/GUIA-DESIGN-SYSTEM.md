@@ -377,6 +377,8 @@ A tabela da §4.2 do plano:
 
 - A coluna "secondary / mono" do plano é o `Neutro` (`kt-badge-secondary`). O `VarianteSelo` não tem Mono.
 - "Remarcada" (sessão, D100) e "Resultado registrado" (evento com placar, D103) entraram em uso em 28/09/2026 (P11).
+- Pedido dos termos (D111): `SituacaoPedidoTermos` → "Aguardando resposta" · Info, "Respondido" · Sucesso, "Substituído" · Neutro; o link vencido é o sinal "Link vencido" · Alerta.
+- **Radio sem escolha:** um grupo de radio sem nenhuma opção marcada fica `:indeterminate`, e o KTUI pinta esse estado como marcado. O `custom.css` devolve o visual de desmarcado (seção "Radio sem escolha"). Use grupo sem opção inicial só onde a pessoa precisa escolher de propósito, como na página dos termos.
 
 ### 4.4 Etiqueta não é status
 

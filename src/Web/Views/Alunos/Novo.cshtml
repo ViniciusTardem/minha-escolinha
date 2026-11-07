@@ -213,6 +213,14 @@
                             </div>
                         </fieldset>
                     }
+                    @* D111: o que ficar "ainda não coletado" vai para o 1º responsável aceitar pelo link. *@
+                    <label class="kt-label items-start">
+                        <input class="kt-checkbox kt-checkbox-sm mt-0.5" asp-for="EnviarTermos" type="checkbox" />
+                        <span class="flex flex-col gap-0.5">
+                            <span class="text-sm text-foreground">Enviar os termos ainda não coletados para o 1º responsável aceitar pelo link</span>
+                            <span class="text-xs text-secondary-foreground">Vai por e-mail, se o cadastro tiver. Sem e-mail, o link fica na ficha do aluno para você repassar. A ficha mostra quando o responsável responder.</span>
+                        </span>
+                    </label>
                 </section>
             </div>
             <div class="kt-card-footer justify-end gap-2.5">

@@ -69,6 +69,7 @@ public class EscolinhaDbContext : DbContext, IDataProtectionKeyContext
     public DbSet<VinculoAlunoResponsavel> VinculosResponsavel => Set<VinculoAlunoResponsavel>();
     public DbSet<Matricula> Matriculas => Set<Matricula>();
     public DbSet<ConsentimentoAluno> Consentimentos => Set<ConsentimentoAluno>();
+    public DbSet<PedidoTermos> PedidosTermos => Set<PedidoTermos>();
     public DbSet<Mensagem> Mensagens => Set<Mensagem>();
     public DbSet<EventoMensagem> EventosMensagem => Set<EventoMensagem>();
     public DbSet<RespostaMensagem> RespostasMensagem => Set<RespostaMensagem>();

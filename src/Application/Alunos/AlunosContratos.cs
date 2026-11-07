@@ -64,6 +64,13 @@ public interface IAlunosRepositorio
     Task<ConsentimentoAluno?> ObterConsentimentoAsync(Guid id, CancellationToken ct = default);
     void AdicionarConsentimento(ConsentimentoAluno consentimento);
 
+    /// <summary>Os pedidos de aceite dos termos do aluno (D111), do mais novo ao mais antigo (no mesmo instante, o que ainda vale antes), com o responsável.</summary>
+    Task<IReadOnlyList<PedidoTermos>> PedidosTermosDoAlunoAsync(Guid alunoId, CancellationToken ct = default);
+
+    Task<PedidoTermos?> ObterPedidoTermosAsync(Guid id, CancellationToken ct = default);
+
+    void AdicionarPedidoTermos(PedidoTermos pedido);
+
     Task SalvarAsync(CancellationToken ct = default);
 }
 
@@ -196,6 +203,9 @@ public class NovoAlunoRequisicao : IComEndereco
     public string? ContatoEmergenciaParentesco { get; set; }
 
     public List<ConsentimentoRequisicao> Consentimentos { get; set; } = [];
+
+    /// <summary>Os termos não coletados vão para o 1º responsável aceitar pelo link (e-mail, ou a gestão repassa, D111).</summary>
+    public bool EnviarTermos { get; set; } = true;
 
     /// <summary>O formulário vazio: dois responsáveis (o 1º pagador) e as duas finalidades de consentimento.</summary>
     public static NovoAlunoRequisicao Vazia(DateOnly hoje) => new NovoAlunoRequisicao { DataInicio = hoje }.Completar();

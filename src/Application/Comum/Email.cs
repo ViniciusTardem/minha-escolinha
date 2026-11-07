@@ -1,8 +1,8 @@
 namespace MinhaEscolinha.Application.Comum;
 
 /// <summary>
-/// O e-mail do sistema, no padrão do AlternativaDepartamentoPessoal: só para a recuperação de acesso (spec §5: o e-mail do
-/// responsável é para a recuperação, não é canal de notificação — R3 e o motor único não passam por aqui).
+/// O e-mail do sistema, no padrão do AlternativaDepartamentoPessoal: o link de nova senha (fora do motor: é da própria
+/// pessoa, não é aviso) e os termos de consentimento (D111), que saem pelo motor único como um gatilho do catálogo (R3).
 /// </summary>
 public interface IEnvioEmail
 {
@@ -42,6 +42,9 @@ public class OpcoesEmail
     public bool Smtp => string.Equals(Modo, ModoSmtp, StringComparison.OrdinalIgnoreCase);
 
     public string LinkNovaSenha(string token) => $"{UrlPublica.TrimEnd('/')}/Conta/NovaSenha/{token}";
+
+    /// <summary>A página pública de aceite dos termos (D111).</summary>
+    public string LinkTermos(string token) => $"{UrlPublica.TrimEnd('/')}/Termos/{token}";
 }
 
 /// <summary>O e-mail de nova senha sai por job (regra de ouro 2: nada externo dentro do request).</summary>

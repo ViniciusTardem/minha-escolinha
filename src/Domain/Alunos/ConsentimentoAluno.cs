@@ -21,7 +21,10 @@ public enum OrigemConsentimento
     Portal = 30,
 
     /// <summary>Declaração do gestor na carga inicial (S7).</summary>
-    Importacao = 40
+    Importacao = 40,
+
+    /// <summary>O próprio responsável respondeu pelo link de aceite (D111), com o CPF conferido.</summary>
+    LinkDoResponsavel = 50
 }
 
 /// <summary>O estado de uma finalidade para um aluno, lido do último registro.</summary>
@@ -120,6 +123,7 @@ public static class TermosConsentimento
         OrigemConsentimento.DeclaracaoAoGestor => "Autorização registrada pelo gestor",
         OrigemConsentimento.Portal => "Portal do responsável",
         OrigemConsentimento.Importacao => "Carga inicial",
+        OrigemConsentimento.LinkDoResponsavel => "Aceite pelo link do responsável",
         _ => origem.ToString()
     };
 }

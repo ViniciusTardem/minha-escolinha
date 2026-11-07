@@ -15,7 +15,9 @@ public class MensagemConfiguracao : IEntityTypeConfiguration<Mensagem>
         {
             // Destinatário é responsável ou professor: nunca o aluno (R4), também no banco.
             t.HasCheckConstraint("CK_Mensagem_TipoDestinatario", "[TipoDestinatario] IN (10, 20)");
-            t.HasCheckConstraint("CK_Mensagem_Canal", "[Canal] IN (10, 20)");
+            t.HasCheckConstraint("CK_Mensagem_Canal", "[Canal] IN (10, 20, 30)");
+            // O e-mail (D111) sempre com o endereço.
+            t.HasCheckConstraint("CK_Mensagem_Email", "[Canal] <> 30 OR [Email] IS NOT NULL");
             t.HasCheckConstraint("CK_Mensagem_Creditos", "[CreditosConsumidos] >= 0");
         });
 
@@ -33,6 +35,7 @@ public class MensagemConfiguracao : IEntityTypeConfiguration<Mensagem>
         builder.Property(m => m.Etapa).HasMaxLength(Mensagem.TamanhoEtapa).IsUnicode(false);
         builder.Property(m => m.DestinatarioNome).HasMaxLength(Mensagem.TamanhoNome).IsRequired();
         builder.Property(m => m.Telefone).HasMaxLength(Mensagem.TamanhoTelefone).IsUnicode(false);
+        builder.Property(m => m.Email).HasMaxLength(Mensagem.TamanhoEmail);
         builder.Property(m => m.Template).HasMaxLength(Mensagem.TamanhoTemplate).IsUnicode(false).IsRequired();
         builder.Property(m => m.Variaveis).HasMaxLength(Mensagem.TamanhoVariaveis).IsRequired();
         builder.Property(m => m.Conteudo).HasMaxLength(Mensagem.TamanhoConteudo).IsRequired();

@@ -55,6 +55,8 @@ public enum VarianteSelo
 /// </summary>
 public enum SinalTela
 {
+    /// <summary>O link dos termos venceu sem resposta (D111).</summary>
+    LinkTermosVencido,
     ContaRecebimentoVinculada,
     ContaRecebimentoAusente,
     SaldoCreditosBaixo,
@@ -174,6 +176,11 @@ public static class ApresentacaoStatus
         SituacaoSessao.Remarcada => ("Remarcada", VarianteSelo.Alerta),
 
         EstadoConsentimento.Pendente => ("Pendente", VarianteSelo.Alerta),
+
+        SituacaoPedidoTermos.Aguardando => ("Aguardando resposta", VarianteSelo.Info),
+        SituacaoPedidoTermos.Respondido => ("Respondido", VarianteSelo.Sucesso),
+        SituacaoPedidoTermos.Cancelado => ("Substituído", VarianteSelo.Neutro),
+        SinalTela.LinkTermosVencido => ("Link vencido", VarianteSelo.Alerta),
         EstadoConsentimento.Concedido => ("Autorizado", VarianteSelo.Sucesso),
         EstadoConsentimento.Recusado => ("Recusado", VarianteSelo.Neutro),
         EstadoConsentimento.Revogado => ("Revogado", VarianteSelo.Neutro),

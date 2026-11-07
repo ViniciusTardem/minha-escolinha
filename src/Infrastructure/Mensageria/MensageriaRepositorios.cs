@@ -23,13 +23,13 @@ public class MensageriaRepositorio(EscolinhaDbContext contexto) : IMensageriaRep
     public async Task<IReadOnlyList<Mensagem>> CancelaveisDaOrigemAsync(string tipoOrigem, Guid origemId, CancellationToken ct = default) =>
         await contexto.Mensagens
             .Where(m => m.TipoOrigem == tipoOrigem && m.Origem_ID == origemId
-                        && ((m.Canal == CanalMensagem.WhatsApp && (m.Situacao == SituacaoMensagem.Pendente || m.Situacao == SituacaoMensagem.Retida))
+                        && ((m.Canal != CanalMensagem.Portal && (m.Situacao == SituacaoMensagem.Pendente || m.Situacao == SituacaoMensagem.Retida))
                             || (m.Canal == CanalMensagem.Portal && m.Situacao == SituacaoMensagem.Enviada && m.LidaEm == null)))
             .ToListAsync(ct);
 
     public Task<bool> AlgumaSaiuDaOrigemAsync(string tipoOrigem, Guid origemId, CancellationToken ct = default) =>
         contexto.Mensagens.AnyAsync(m => m.TipoOrigem == tipoOrigem && m.Origem_ID == origemId
-                                         && ((m.Canal == CanalMensagem.WhatsApp && (m.Situacao == SituacaoMensagem.Enviada
+                                         && ((m.Canal != CanalMensagem.Portal && (m.Situacao == SituacaoMensagem.Enviada
                                                   || m.Situacao == SituacaoMensagem.Entregue || m.Situacao == SituacaoMensagem.Lida))
                                              || (m.Canal == CanalMensagem.Portal && m.LidaEm != null)), ct);
 
@@ -51,7 +51,7 @@ public class MensageriaRepositorio(EscolinhaDbContext contexto) : IMensageriaRep
 
     public async Task<IReadOnlyList<Guid>> ProntasParaEnviarAsync(DateTime agora, int limite, CancellationToken ct = default) =>
         await contexto.Mensagens.AsNoTracking()
-            .Where(m => m.Canal == CanalMensagem.WhatsApp && m.Situacao == SituacaoMensagem.Pendente
+            .Where(m => m.Canal != CanalMensagem.Portal && m.Situacao == SituacaoMensagem.Pendente
                         && (m.AgendadaPara == null || m.AgendadaPara <= agora)
                         && (m.ReservadaAte == null || m.ReservadaAte < agora))
             .OrderBy(m => m.CriadaEm).Take(limite).Select(m => m.Mensagem_ID).ToListAsync(ct);

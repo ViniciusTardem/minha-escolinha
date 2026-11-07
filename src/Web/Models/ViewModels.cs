@@ -121,3 +121,7 @@ public record ConferenciaViewModel(ConferenciaLote Conferencia, string? Ver)
         _ => Conferencia.Plano.Linhas
     };
 }
+
+/// <summary>A página pública dos termos (D111): o link, o que o pedido mostra e o que a pessoa já respondeu.</summary>
+public record TermosViewModel(string Token, MinhaEscolinha.Application.Alunos.TermosParaResponder Termos,
+    MinhaEscolinha.Application.Alunos.RespostaTermosRequisicao Resposta);

@@ -50,6 +50,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 - **Módulos:** a mesma pasta aparece nas camadas.
   - Hoje:
     - `Comum`, `Acesso` (M01, com a recuperação de senha por e-mail ou link da gestão, D107), `Configuracao` (M02), `Eventos` e `Auditoria`;
+    - em `Alunos`, os termos de consentimento pelo link do responsável (`TermosConsentimento.cs`, D111): o pedido, o e-mail pelo motor e a página pública `/Termos/{token}`;
     - `Turmas` (M04), `Alunos` (M03) e `Equipe` (M08), do S1; `Agenda`, só no domínio: compromisso datado e conflitos;
     - `Plataforma` e `Integracao` (Stripe, EX-01; WhatsApp, S2; Asaas, S4);
     - `Mensageria` (M09), do S2: motor, templates e convites (em `Acesso`);
@@ -85,7 +86,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   - o filtro global de escolinha é fechado por padrão: sem contexto, a consulta devolve zero linhas. No EF Core 9 cada entidade tem **um** filtro e `IgnoreQueryFilters()` ignora todos; outro filtro futuro (ex.: exclusão lógica) entra na mesma expressão;
   - o `EscolinhaInterceptor` carimba a escolinha no insert e lança exceção em gravação sem contexto, em outra escolinha ou trocando `Escolinha_ID`;
   - na requisição, o contexto vem do `ContextoEscolinhaMiddleware`; em plataforma, jobs e startup, do `IExecutorEscolinha`, que abre um escopo com o contexto definido;
-  - `IgnoreQueryFilters()` só em `AcessoRepositorio.cs` e `ConsultasPlataforma.cs`. Um teste falha em qualquer outro arquivo. Aumentar a lista é decisão registrada, nunca atalho;
+  - `IgnoreQueryFilters()` só em `AcessoRepositorio.cs` (que também acha o convite e o pedido dos termos pelo hash do link) e `ConsultasPlataforma.cs`. Um teste falha em qualquer outro arquivo. Aumentar a lista é decisão registrada, nunca atalho;
   - globais de propósito, fora do filtro: a identidade (`Pessoa`, `Credencial`), o webhook bruto (`WebhookRecebido`, que guarda a escolinha do aviso da Asaas numa coluna comum; o corpo do encerrado sai depois de 90 dias, D96), os templates da plataforma (`TemplateMensagem`, D48), o índice `RastreioWhatsApp`, que guarda só o id da Meta, a escolinha e a mensagem (D50), e o pedido de nova senha (`RecuperacaoSenha`, que guarda só o hash do segredo, D107).
 - **Credenciais só em user-secrets** (dev) ou variável de ambiente (produção). O login `sa` do SQL local só vale para desenvolvimento.
 
@@ -173,6 +174,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
     - o módulo chama um método do `EmissorGatilhos`, um por gatilho do catálogo;
     - a mensagem é gravada na mesma transação da mudança de negócio, e o despacho sai depois do commit (D45);
     - o texto vem do template, com o nome da escolinha como sujeito (D48);
+    - o canal é o WhatsApp (e o aviso no portal); o gatilho marcado `SoPorEmail` (os termos de consentimento, D111) sai só pelo canal E-mail, sem template da Meta nem crédito;
   - CPF (login ou digitado) nunca vai inteiro para o log: fica `***.456.789-**` (D52);
   - **presença:**
     - toda marcação passa pelo `ServicoChamada.SincronizarAsync`, online ou da fila do aparelho;
@@ -325,8 +327,9 @@ dotnet dev-certs https --trust
   - em A, desde o S5: os jogos do fim de semana de 03 e 04/10 (quatro da gestão, um cancelado e um alterado, e um do professor), com 49 convocações, as respostas da validação e os avisos às famílias;
   - em A, desde o S6: a responsável Sabrina Pacheco tem acesso (login pelo CPF), com os vínculos do Anthony, do Benjamin e do Raul confirmados, e as mensalidades de outubro do Benjamin (em aberto, com o Pix) e do Raul (paga) emitidas;
   - em A, desde o S7: 4 alunos de uma planilha de validação (a Sophia entrou no cadastro da Sabrina), com as mensalidades de outubro a confirmar, e dois envios na Importação (um importado, um descartado);
-  - em A, desde a validação da P37: a presença do Caio Wagner na sessão de 28/09, às 19:00, da turma "Sub-13 · noite", marcada sem sinal.
-- **E-mail:** serve só para o link de nova senha (D107); não é canal de aviso (R3). Trava de ambiente (`GuardaEmail`): `CaixaLocal` em Production desliga o e-mail, com aviso (a gestão gera o link na ficha); `Smtp` exige `SmtpHost` e `Remetente` e, fora de Production, `RedirecionarPara`.
+  - em A, desde a validação da P37: a presença do Caio Wagner na sessão de 28/09, às 19:00, da turma "Sub-13 · noite", marcada sem sinal;
+  - em A, desde a validação da D111 (29/09): os termos da Ana Lima respondidos pela Maria Lima pelo link (dados aceito, imagem não aceita) e um link dos termos do Caio Lima aguardando resposta; os e-mails ficam na caixa local (`%LOCALAPPDATA%\MinhaEscolinha\emails`).
+- **E-mail:** serve para o link de nova senha (D107, fora do motor) e para o link dos termos de consentimento (D111, pelo motor, gatilho só por e-mail). Não é canal dos outros avisos. Trava de ambiente (`GuardaEmail`): `CaixaLocal` em Production desliga o e-mail, com aviso (a gestão gera o link na ficha); `Smtp` exige `SmtpHost` e `Remetente` e, fora de Production, `RedirecionarPara`.
 - **Importação (S7):** o lote aberto guarda a planilha cifrada com o Data Protection, como a chave Asaas. Perder o certificado em produção torna o lote aberto ilegível: é só enviar a planilha de novo.
 - **Chamada sem sinal:** o navegador só registra o service worker com certificado confiável. Em desenvolvimento, rode `dotnet dev-certs https --trust`; sem isso, a fila funciona com a página aberta, mas a página não reabre sem sinal (P37). Para validar sem confiar o certificado, abra pelo Playwright um Chrome separado com `--ignore-certificate-errors` (`browserType().launch({ channel: 'chrome', args: [...] })`), feche-o no fim e confira que não sobrou processo. Falta o teste num Android e num iPhone, no servidor com HTTPS.
 - **Jobs recorrentes** (horário de Brasília, registrados no startup):

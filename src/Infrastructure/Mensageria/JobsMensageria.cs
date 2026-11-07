@@ -145,7 +145,7 @@ public class DespachoMensagensInterceptor(IAgendadorMensageria agendador) : Save
         if (contexto is null) return;
         // Chamado depois do interceptor de escolinha (a ordem de registro): a escolinha já está carimbada.
         foreach (var entrada in contexto.ChangeTracker.Entries<Mensagem>())
-            if (entrada.State == EntityState.Added && entrada.Entity is { Canal: CanalMensagem.WhatsApp, Situacao: SituacaoMensagem.Pendente })
+            if (entrada.State == EntityState.Added && entrada.Entity is { Canal: CanalMensagem.WhatsApp or CanalMensagem.Email, Situacao: SituacaoMensagem.Pendente })
                 _novas.Add((entrada.Entity.Escolinha_ID, entrada.Entity.Mensagem_ID));
     }
 

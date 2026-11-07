@@ -18,6 +18,8 @@
 - [ ] "Esqueci a senha" com um login de e-mail → o e-mail chega (com `Email__RedirecionarPara` fora de Production) → o link cria a senha nova e não vale uma segunda vez (D107).
 - [ ] Na ficha de um responsável que entra pelo CPF, "Link de nova senha" → o link aparece uma vez → a pessoa cria a senha e entra.
 - [ ] Quem atua em duas escolinhas troca pelo menu da pessoa, num toque (BL-M01-02).
+- [ ] Cadastrar um aluno com o 1º responsável com e-mail e os termos "ainda não coletado" → o e-mail chega → o link pede o CPF → aceitar um termo e recusar o outro → a ficha mostra "Respondido" com as duas respostas → o link não abre mais (D111).
+- [ ] Um responsável sem e-mail: a ficha mostra o link para copiar; "Enviar de novo" invalida o anterior.
 
 ## 2. Configuração da escolinha (S0)
 

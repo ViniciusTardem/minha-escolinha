@@ -726,6 +726,16 @@ progress.esc-ocupacao::-moz-progress-bar { background-color: var(--primary); bor
 }
 
 /* ============================================
+   RADIO SEM ESCOLHA
+   ============================================ */
+/* Um grupo de radio sem nenhuma opção marcada fica :indeterminate, e o KTUI pinta esse estado como marcado. Onde a
+   pessoa precisa escolher de propósito (os termos pelo link, D111), nada aparece escolhido antes do toque. */
+.kt-radio:indeterminate:not(:checked) {
+    border-color: var(--input);
+    background-color: var(--background);
+}
+
+/* ============================================
    VITRINE DO DESIGN SYSTEM (/dev/design)
    ============================================ */
 .esc-amostra-cor {

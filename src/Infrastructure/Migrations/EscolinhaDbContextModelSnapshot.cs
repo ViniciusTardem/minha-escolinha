@@ -545,6 +545,105 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.PedidoTermos", b =>
+                {
+                    b.Property<Guid>("PedidoTermos_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+                    b.Property<bool?>("AceitouDados")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("AceitouImagem")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("Aluno_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CanceladoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("CriadoPorNome")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("EnviadoPara")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<Guid>("Escolinha_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ExpiraEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("MotivoCancelamento")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("PedeDados")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PedeImagem")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RespondidoDoIp")
+                        .HasMaxLength(45)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(45)");
+
+                    b.Property<DateTime?>("RespondidoEm")
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<Guid>("Responsavel_ID")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Situacao")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
+
+                    b.Property<string>("TokenProtegido")
+                        .HasMaxLength(1000)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<byte[]>("Versao")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("PedidoTermos_ID")
+                        .HasName("PK_PedidoTermos");
+
+                    b.HasIndex("Aluno_ID");
+
+                    b.HasIndex("Responsavel_ID");
+
+                    b.HasIndex("TokenHash")
+                        .HasDatabaseName("IX_PedidoTermos_TokenHash");
+
+                    b.HasIndex("Escolinha_ID", "TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_PedidoTermos_Escolinha_TokenHash");
+
+                    b.HasIndex("Escolinha_ID", "Aluno_ID", "CriadoEm")
+                        .HasDatabaseName("IX_PedidoTermos_Escolinha_Aluno_CriadoEm");
+
+                    b.ToTable("PedidoTermos", (string)null);
+                });
+
             modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.Responsavel", b =>
                 {
                     b.Property<Guid>("Responsavel_ID")
@@ -2195,6 +2294,10 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Property<Guid>("Destinatario_ID")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
                     b.Property<DateTime?>("EntregueEm")
                         .HasColumnType("datetime2(3)");
 
@@ -2313,9 +2416,11 @@ namespace MinhaEscolinha.Infrastructure.Migrations
 
                     b.ToTable("Mensagem", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Mensagem_Canal", "[Canal] IN (10, 20)");
+                            t.HasCheckConstraint("CK_Mensagem_Canal", "[Canal] IN (10, 20, 30)");
 
                             t.HasCheckConstraint("CK_Mensagem_Creditos", "[CreditosConsumidos] >= 0");
+
+                            t.HasCheckConstraint("CK_Mensagem_Email", "[Canal] <> 30 OR [Email] IS NOT NULL");
 
                             t.HasCheckConstraint("CK_Mensagem_TipoDestinatario", "[TipoDestinatario] IN (10, 20)");
                         });
@@ -3383,6 +3488,32 @@ namespace MinhaEscolinha.Infrastructure.Migrations
                     b.Navigation("Aluno");
 
                     b.Navigation("Turma");
+                });
+
+            modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.PedidoTermos", b =>
+                {
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Aluno", null)
+                        .WithMany()
+                        .HasForeignKey("Aluno_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_PedidoTermos_Aluno");
+
+                    b.HasOne("MinhaEscolinha.Domain.Configuracao.Escolinha", null)
+                        .WithMany()
+                        .HasForeignKey("Escolinha_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_PedidoTermos_Escolinha");
+
+                    b.HasOne("MinhaEscolinha.Domain.Alunos.Responsavel", "Responsavel")
+                        .WithMany()
+                        .HasForeignKey("Responsavel_ID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_PedidoTermos_Responsavel");
+
+                    b.Navigation("Responsavel");
                 });
 
             modelBuilder.Entity("MinhaEscolinha.Domain.Alunos.Responsavel", b =>

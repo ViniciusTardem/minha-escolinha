@@ -21,7 +21,8 @@ public interface IValidadorOrigemMensagem
 }
 
 /// <summary>
-/// O lado de trabalho do motor único (BL-M09-01): manda uma mensagem de WhatsApp da fila, no escopo da escolinha dela.
+/// O lado de trabalho do motor único (BL-M09-01): manda uma mensagem de WhatsApp (ou de e-mail, nos gatilhos só por
+/// e-mail, D111) da fila, no escopo da escolinha dela.
 /// Cada passo relê o estado (regra de ouro 4):
 /// <list type="number">
 /// <item>agendada para depois → reagenda;</item>
@@ -37,6 +38,8 @@ public class ServicoEnvioMensagens(
     IConfiguracaoRepositorio configuracao,
     IParametros parametros,
     IGatewayWhatsApp gateway,
+    IEnvioEmail email,
+    OpcoesEmail opcoesEmail,
     IAgendadorMensageria agendador,
     IEnumerable<IValidadorOrigemMensagem> validadores,
     OpcoesWhatsApp opcoes,
@@ -57,7 +60,7 @@ public class ServicoEnvioMensagens(
     {
         var mensagem = await repositorio.ObterMensagemAsync(mensagemId, ct);
         if (mensagem is null) return null;
-        if (mensagem.Canal != CanalMensagem.WhatsApp || mensagem.Situacao != SituacaoMensagem.Pendente) return mensagem.Situacao;
+        if (mensagem.Canal == CanalMensagem.Portal || mensagem.Situacao != SituacaoMensagem.Pendente) return mensagem.Situacao;
 
         var agora = relogio.Agora();
         if (mensagem.ReservadaPorOutro(agora)) return mensagem.Situacao;
@@ -73,6 +76,8 @@ public class ServicoEnvioMensagens(
             await EncerrarSemEnviarAsync(mensagem, motivo, reter: false, agora, ct);
             return mensagem.Situacao;
         }
+
+        if (mensagem.Canal == CanalMensagem.Email) return await EnviarEmailAsync(mensagem, agora, ct);
 
         if (!opcoes.Habilitado)
         {
@@ -154,6 +159,65 @@ public class ServicoEnvioMensagens(
             await repositorio.SalvarAsync(ct);
             return mensagem.Situacao;
         }
+    }
+
+    public const string MotivoEmailDesligado = "E-mail desligado nesta instalação: a gestão copia o link na ficha do aluno.";
+
+    /// <summary>
+    /// O e-mail dos termos (D111): sem crédito e sem janela de silêncio (não toca o celular de ninguém). A falha do SMTP
+    /// volta à fila (o Hangfire tenta de novo) até o limite de tentativas; depois, a mensagem falha e a gestão vê o motivo.
+    /// </summary>
+    private async Task<SituacaoMensagem?> EnviarEmailAsync(Mensagem mensagem, DateTime agora, CancellationToken ct)
+    {
+        if (!opcoesEmail.Habilitado)
+        {
+            await EncerrarSemEnviarAsync(mensagem, MotivoEmailDesligado, reter: false, agora, ct);
+            return mensagem.Situacao;
+        }
+        mensagem.ReservarEnvio(agora.Add(DuracaoReserva));
+        await repositorio.SalvarAsync(ct);
+
+        var (assunto, corpo) = CorpoEmailTermos(mensagem);
+        try
+        {
+            await email.EnviarAsync(mensagem.Email!, assunto, corpo, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            if (mensagem.Tentativas + 1 < MaxTentativas)
+            {
+                mensagem.RegistrarTentativa(ex.Message, relogio.Agora());
+                await repositorio.SalvarAsync(ct);
+                throw;
+            }
+            logger.LogWarning("E-mail {Mensagem} não enviado: {Erro}", mensagem.Mensagem_ID, ex.Message);
+            mensagem.Falhar(ex.Message, relogio.Agora());
+            await repositorio.SalvarAsync(ct);
+            return mensagem.Situacao;
+        }
+
+        mensagem.MarcarEnviada(null, relogio.Agora());
+        // O link é o segredo: fica só na caixa de quem recebeu (a gestão tem o dela na ficha enquanto o link vale).
+        var parametros = JsonSerializer.Deserialize<List<string>>(mensagem.Variaveis) ?? [];
+        if (parametros.Count > 4) mensagem.MascararTrecho(parametros[4], opcoesEmail.LinkTermos("••••••"));
+        await repositorio.SalvarAsync(ct);
+        logger.LogInformation("E-mail {Mensagem} ({Gatilho}) enviado por {Canal}.", mensagem.Mensagem_ID, mensagem.Gatilho, email.Descricao);
+        return mensagem.Situacao;
+    }
+
+    /// <summary>O assunto e o HTML do e-mail dos termos, das variáveis guardadas (nome, escolinha, aluno, termos, link, validade).</summary>
+    public static (string Assunto, string Html) CorpoEmailTermos(Mensagem mensagem)
+    {
+        var p = JsonSerializer.Deserialize<List<string>>(mensagem.Variaveis) ?? [];
+        string V(int i) => System.Net.WebUtility.HtmlEncode(i < p.Count ? p[i] : string.Empty);
+        return ($"{(p.Count > 1 ? p[1] : "Minha Escolinha")}: termos de consentimento de {(p.Count > 2 ? p[2] : "seu filho")}",
+            $"""
+             <p>Olá, {V(0)}!</p>
+             <p>{V(1)} pede a sua resposta aos termos de {V(3)} de {V(2)}. Cada termo tem a sua resposta: você pode aceitar um e não o outro.</p>
+             <p><a href="{V(4)}">Ler e responder aos termos</a></p>
+             <p>O link vale uma vez só, até {V(5)}. Por segurança, a página pede o CPF do responsável.</p>
+             <p>Se não reconhece este pedido, ignore este e-mail.</p>
+             """);
     }
 
     /// <summary>A mensagem que fala de um compromisso que já passou perdeu o sentido; senão, pergunta à origem.</summary>

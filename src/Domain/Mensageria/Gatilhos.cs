@@ -37,7 +37,10 @@ public enum GatilhoMensagem
     EventoCancelado = 85,
 
     /// <summary>Convite de acesso ao responsável ou ao professor (S2).</summary>
-    ConviteAcesso = 90
+    ConviteAcesso = 90,
+
+    /// <summary>Os termos de consentimento para o 1º responsável aceitar pelo link (D111): só por e-mail.</summary>
+    TermosConsentimento = 95
 }
 
 /// <summary>Quem recebe, como a §8.3 diz. Nunca o aluno (R4): o aluno nem tem telefone no cadastro.</summary>
@@ -48,7 +51,8 @@ public enum DestinatarioGatilho
     ResponsavelFinanceiro = 30,
     ResponsaveisDosConvocados = 40,
     ResponsaveisPendentes = 50,
-    Convidado = 60
+    Convidado = 60,
+    PrimeiroResponsavel = 70
 }
 
 /// <summary>As categorias de template aceitas pela política do WhatsApp (spec §8.2).</summary>
@@ -63,6 +67,7 @@ public enum CategoriaTemplate
 /// <param name="Essencial">Retida na fila quando os créditos acabam, em vez de suprimida (spec §8.2: cobrança, convocação, cancelamento).</param>
 /// <param name="PodeSerUrgente">Escapa da janela de silêncio quando o compromisso é nas próximas 24 horas (spec §8.2).</param>
 /// <param name="AvisoNoPortal">Também vira aviso no portal para quem ativou o acesso (modo parcial, BL-M12-11).</param>
+/// <param name="SoPorEmail">Sai só por e-mail, sem template da Meta nem WhatsApp (os termos de consentimento, D111).</param>
 public sealed record RegraGatilho(
     GatilhoMensagem Gatilho,
     string Nome,
@@ -74,7 +79,8 @@ public sealed record RegraGatilho(
     CategoriaTemplate Categoria,
     bool Essencial,
     bool PodeSerUrgente,
-    bool AvisoNoPortal)
+    bool AvisoNoPortal,
+    bool SoPorEmail = false)
 {
     public string RotuloDestinatario => Destinatario switch
     {
@@ -84,6 +90,7 @@ public sealed record RegraGatilho(
         DestinatarioGatilho.ResponsaveisDosConvocados => "Responsáveis dos convocados",
         DestinatarioGatilho.ResponsaveisPendentes => "Responsáveis que não responderam",
         DestinatarioGatilho.Convidado => "Responsável ou professor convidado",
+        DestinatarioGatilho.PrimeiroResponsavel => "1º responsável do aluno",
         _ => Destinatario.ToString()
     };
 }
@@ -114,7 +121,10 @@ public static class CatalogoGatilhos
         new(GatilhoMensagem.EventoCancelado, "Jogo cancelado", "Evento cancelado", DestinatarioGatilho.ResponsaveisDosConvocados,
             "Imediato (urgente)", false, "S5", CategoriaTemplate.Utilidade, true, true, true),
         new(GatilhoMensagem.ConviteAcesso, "Convite de acesso", "Convite de acesso", DestinatarioGatilho.Convidado,
-            "No convite", false, "S2", CategoriaTemplate.Utilidade, false, false, false)
+            "No convite", false, "S2", CategoriaTemplate.Utilidade, false, false, false),
+        new(GatilhoMensagem.TermosConsentimento, "Termos de consentimento", "Aluno cadastrado ou termos reenviados",
+            DestinatarioGatilho.PrimeiroResponsavel, "No cadastro do aluno ou no reenvio", false, "Melhoria (D111)", CategoriaTemplate.Utilidade,
+            false, false, false, SoPorEmail: true)
     ];
 
     private static readonly Dictionary<GatilhoMensagem, RegraGatilho> PorGatilho = Todas.ToDictionary(r => r.Gatilho);

@@ -94,9 +94,9 @@ A chave de API é **de cada escolinha**, vinculada por ela na tela Conta de rece
 
 No painel do Stripe: o endpoint `https://<site>/api/v1/webhooks/stripe`, com os 4 eventos de Checkout que a tela Plataforma › Pacotes de créditos lista. Recomendado um sandbox próprio para a Minha Escolinha (P27).
 
-### 4.5 E-mail (só a recuperação de senha)
+### 4.5 E-mail (nova senha e termos de consentimento)
 
-O e-mail serve só para o link de nova senha de quem entra com e-mail. Não é canal de aviso: os avisos são do WhatsApp e do portal (R3). Quem entra só pelo CPF recebe o link da gestão, na ficha, e isso funciona sem e-mail.
+O e-mail serve para duas coisas: o link de nova senha de quem entra com e-mail, e o link dos termos de consentimento para o 1º responsável aceitar (D111), que sai pelo motor de mensagens. Não é canal dos outros avisos: esses são do WhatsApp e do portal. Sem e-mail (caixa local em `Production`, ou responsável sem e-mail no cadastro), os dois funcionam pela gestão: o link de nova senha e o dos termos ficam na ficha, para a gestão repassar.
 
 | Variável | Para quê |
 |---|---|
@@ -179,6 +179,7 @@ O e-mail serve só para o link de nova senha de quem entra com e-mail. Não é c
 | Pagamento não concilia | Webhook da Asaas: `Asaas__UrlPublica` https, a fila penalizada no painel da Asaas (§6.1), a varredura de hora em hora. A mensalidade com valor diferente fica na fila de Divergências, de propósito. |
 | Painel do jogo não atualiza sozinho | Um proxy que bloqueia WebSocket faz o SignalR cair para long polling (funciona, mais lento); a tela também busca de novo a cada minuto. |
 | Chamada não abre sem sinal no celular | O service worker só registra com HTTPS válido; o aparelho precisa ter aberto a lista do dia com sinal antes. |
+| E-mail dos termos não chega | Na ficha do aluno, aba Consentimentos: a situação do e-mail no motor, com o motivo. "Suprimida" com "E-mail desligado" é caixa local em `Production`: configure o SMTP ou copie o link da ficha. Falha do SMTP é tentada de novo pela fila `esc_mensagens`. |
 | Link de nova senha não chega | Ver o job na fila `esc_integracoes` (`/jobs`): a falha do SMTP é tentada 5 vezes. Conferir `Email__*`. Em `Production` com `CaixaLocal`, o e-mail está desligado: a gestão gera o link na ficha da pessoa (botão "Link de nova senha"). Quem entra só pelo CPF sempre recebe o link da gestão. |
 | Lote de importação "não encontrado" | O certificado do Data Protection mudou: descarte e envie a planilha de novo. |
 

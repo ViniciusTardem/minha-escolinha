@@ -36,6 +36,15 @@ public class ConsentimentosController(ServicoConsentimentos servico, ServicoAlun
         return Redirect($"/Alunos/Ficha/{requisicao.AlunoId}?aba=consentimentos");
     }
 
+    /// <summary>Envia (de novo) os termos sem resposta para o 1º responsável aceitar pelo link (D111).</summary>
+    [HttpPost]
+    public async Task<IActionResult> EnviarTermos(Guid alunoId, [FromServices] ServicoTermos termos, CancellationToken ct)
+    {
+        var resultado = await termos.EnviarAsync(alunoId, ct);
+        TempData[resultado.Sucesso ? ChavesTempData.Sucesso : ChavesTempData.Erro] = resultado.Mensagem;
+        return Redirect($"/Alunos/Ficha/{alunoId}?aba=consentimentos");
+    }
+
     [HttpGet]
     public async Task<IActionResult> Revogar(Guid id, CancellationToken ct)
     {

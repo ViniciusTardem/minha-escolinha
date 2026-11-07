@@ -41,6 +41,10 @@ public class EmissorGatilhos(
     public const string OrigemCobranca = "Cobranca";
     public const string OrigemConvocacao = "Convocacao";
     public const string OrigemEvento = "Evento";
+    public const string OrigemTermos = "PedidoTermos";
+
+    /// <summary>O "template" do e-mail dos termos: não é da Meta, é o texto montado pelo motor (D111).</summary>
+    public const string TemplateEmailTermos = "email_termos_consentimento";
 
     /// <summary>
     /// Treino cancelado (§8.3): os responsáveis que recebem notificação, dos alunos que treinam na turma, um aviso por
@@ -124,6 +128,28 @@ public class EmissorGatilhos(
         var tipo = convite.Tipo == TipoConvite.Responsavel ? TipoDestinatario.Responsavel : TipoDestinatario.Professor;
         await CriarAsync(regra, template, OrigemConvite, convite.ConviteAcesso_ID, tipo, convite.FichaId, convite.Nome, convite.Telefone,
             null, null, valores, false, null, relogio.Agora(), ct);
+    }
+
+    /// <summary>
+    /// Os termos de consentimento para o 1º responsável aceitar pelo link (D111): só por e-mail, sem template da Meta nem
+    /// crédito. O texto guardado leva o link até o envio; depois, o link sai mascarado (como o do convite).
+    /// </summary>
+    public async Task<bool> TermosConsentimentoAsync(Guid pedidoId, Guid responsavelId, string responsavel, string email, Guid alunoId,
+        string aluno, string termos, string link, DateTime expiraEm, CancellationToken ct = default)
+    {
+        var regra = CatalogoGatilhos.Obter(GatilhoMensagem.TermosConsentimento);
+        var chave = Mensagem.MontarChave(regra.Gatilho, pedidoId, TipoDestinatario.Responsavel, responsavelId, CanalMensagem.Email);
+        if (await repositorio.ChaveEmUsoAsync(chave, ct)) return false;
+
+        var escolinha = await NomeEscolinhaAsync(ct);
+        var validade = expiraEm.ToString("dd/MM/yyyy", PtBr);
+        string[] parametros = [PrimeiroNome(responsavel), escolinha, aluno, termos, link, validade];
+        var conteudo = $"Olá, {parametros[0]}! {escolinha} pede a sua resposta aos termos de {termos} de {aluno}. " +
+                       $"Leia e responda pelo link {link}, válido até {validade}. Se não reconhece este pedido, ignore esta mensagem.";
+        repositorio.AdicionarMensagem(Mensagem.Nova(regra, CanalMensagem.Email, OrigemTermos, pedidoId, TipoDestinatario.Responsavel,
+            responsavelId, responsavel, null, null, alunoId, TemplateEmailTermos, JsonSerializer.Serialize(parametros), conteudo, false,
+            null, relogio.Agora(), email: email));
+        return true;
     }
 
     /// <summary>

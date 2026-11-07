@@ -86,6 +86,7 @@ public sealed class BancoDeTestes : IAsyncLifetime
             DELETE FROM RastreioWhatsApp;
             DELETE FROM ConviteAcesso;
             DELETE FROM TemplateMensagem;
+            DELETE FROM PedidoTermos;
             DELETE FROM ConsentimentoAluno;
             DELETE FROM VinculoAlunoResponsavel;
             DELETE FROM Matricula;

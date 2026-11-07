@@ -13,6 +13,8 @@
     };
     if (presenca is not null) abas.Insert(3, ("presenca", "Presença", null));
     var financeiro = ViewData["Financeiro"] as IReadOnlyList<LinhaMensalidade>;
+    var termosFicha = ViewData["Termos"] as TermosDaFicha;
+    var aguardandoLink = termosFicha?.Ultimo is { Situacao: SituacaoPedidoTermos.Aguardando, Vencido: false };
     if (financeiro is not null)
     {
         // O contador é o que pede atenção (em aberto ou com divergência); tudo pago, sem contador.
@@ -28,7 +30,10 @@
     if (!Model.TemMatriculaAtiva && Model.Situacao != SituacaoAluno.Desistente) alertas.Add("Sem matrícula ativa: o aluno não está em nenhuma turma.");
     if (!Model.TemPagador && Model.Situacao != SituacaoAluno.Desistente && Model.Pode.VerValores) alertas.Add("Nenhum responsável marcado como pagador: a cobrança não sai sem ele.");
     if (!Model.AlguemRecebeNotificacao) alertas.Add("Nenhum responsável recebe os avisos e as convocações.");
-    if (consentimentoDados == EstadoConsentimento.Pendente) alertas.Add("Consentimento de tratamento de dados ainda não registrado.");
+    if (consentimentoDados == EstadoConsentimento.Pendente)
+        alertas.Add(aguardandoLink
+            ? "Consentimento de tratamento de dados aguardando a resposta do responsável pelo link."
+            : "Consentimento de tratamento de dados ainda não registrado.");
 }
 
 <div class="kt-container-fixed">
@@ -418,6 +423,92 @@
 
     @* ── Consentimentos ── *@
     <section id="painel_consentimentos" role="tabpanel" aria-labelledby="aba_consentimentos" hidden="@(aba != "consentimentos")">
+        @if (termosFicha is not null)
+        {
+            @* D111: o link de aceite do 1º responsável. O link só aparece enquanto vale, para a gestão repassar. *@
+            var p = termosFicha.Ultimo;
+            <div class="kt-card mb-5">
+                <div class="kt-card-header flex-wrap gap-2 py-4">
+                    <h3 class="kt-card-title flex items-center gap-2"><i class="ki-filled ki-shield-tick text-primary"></i> Aceite pelo link do responsável</h3>
+                    @if (p is { Vencido: true })
+                    {
+                        <selo-status valor="SinalTela.LinkTermosVencido"></selo-status>
+                    }
+                    else if (p is not null)
+                    {
+                        <selo-status valor="p.Situacao"></selo-status>
+                    }
+                </div>
+                <div class="kt-card-content flex flex-col gap-3 text-sm">
+                    @if (p is null)
+                    {
+                        <span class="text-secondary-foreground">Nenhum link enviado. O link pede ao 1º responsável os termos ainda sem resposta.</span>
+                    }
+                    else
+                    {
+                        <span class="text-secondary-foreground">
+                            Para @p.Responsavel (@EmissaoTermos.Termos(p.PedeDados, p.PedeImagem)), por @p.CriadoPorNome em @Formatacao.DataHora(p.CriadoEm).
+                            @if (p.Situacao == SituacaoPedidoTermos.Aguardando)
+                            {
+                                <span>@(p.Vencido ? "Venceu" : "Vale até") @Formatacao.DataHora(p.ExpiraEm).</span>
+                            }
+                        </span>
+                        @if (p.EnviadoPara is not null)
+                        {
+                            <span class="flex flex-wrap items-center gap-2 text-secondary-foreground">
+                                <span class="wrap-anywhere">E-mail para @p.EnviadoPara</span>
+                                @if (p.Email is { } email)
+                                {
+                                    <selo-status valor="email"></selo-status>
+                                }
+                            </span>
+                            @if (p.MotivoEmail is not null && p.Email is SituacaoMensagem.Suprimida or SituacaoMensagem.Falhou)
+                            {
+                                <span class="text-secondary-foreground">@p.MotivoEmail</span>
+                            }
+                        }
+                        else if (p.Situacao == SituacaoPedidoTermos.Aguardando && !p.Vencido)
+                        {
+                            <span class="text-secondary-foreground">Sem e-mail no cadastro: copie o link e repasse ao responsável.</span>
+                        }
+                        @if (p.Link is not null)
+                        {
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                <span class="font-medium text-mono wrap-anywhere grow" id="link-termos">@p.Link</span>
+                                <button class="kt-btn kt-btn-sm kt-btn-outline shrink-0 justify-center" type="button" data-esc-copiar="#link-termos">
+                                    <i class="ki-filled ki-copy"></i> Copiar
+                                </button>
+                            </div>
+                        }
+                        @if (p.Situacao == SituacaoPedidoTermos.Respondido)
+                        {
+                            <span class="text-foreground">
+                                Respondido em @Formatacao.DataHora(p.RespondidoEm):
+                                @string.Join("; ", new[]
+                                {
+                                    p.AceitouDados is { } d ? $"tratamento de dados {(d ? "aceito" : "não aceito")}" : null,
+                                    p.AceitouImagem is { } i ? $"uso de imagem {(i ? "autorizado" : "não autorizado")}" : null
+                                }.Where(x => x is not null)).
+                            </span>
+                        }
+                    }
+                    @if (termosFicha.PodeEnviar)
+                    {
+                        <form method="post" asp-controller="Consentimentos" asp-action="EnviarTermos" class="self-start"
+                              data-esc-confirmar="@(aguardandoLink ? "Enviar de novo? O link anterior deixa de valer." : null)">
+                            <input type="hidden" name="alunoId" value="@Model.Id" />
+                            <button class="kt-btn kt-btn-sm kt-btn-outline" type="submit">
+                                <i class="ki-filled ki-sms"></i> @(p is null ? "Enviar os termos" : "Enviar de novo")
+                            </button>
+                        </form>
+                    }
+                    else if (termosFicha.MotivoNaoEnvia is not null && p is null)
+                    {
+                        <span class="text-secondary-foreground">@termosFicha.MotivoNaoEnvia</span>
+                    }
+                </div>
+            </div>
+        }
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
             @foreach (var termo in TermosConsentimento.Todos)
             {

@@ -1,0 +1,15 @@
+@{
+    ViewData["Title"] = "Resposta registrada";
+    Layout = "_LayoutAutenticacao";
+    var mensagem = TempData[ChavesTempData.Sucesso] as string;
+    // O corpo roda antes do layout: sem isto, o toast repetiria a mensagem do cartão.
+    TempData.Remove(ChavesTempData.Sucesso);
+}
+
+<div class="kt-card max-w-[420px] w-full">
+    <div class="kt-card-content flex flex-col items-center gap-4 p-8 sm:p-10 text-center">
+        <i class="ki-filled ki-shield-tick text-4xl text-primary"></i>
+        <h1 class="text-lg font-medium text-mono">Resposta registrada</h1>
+        <p class="text-sm text-secondary-foreground">@(mensagem ?? "A sua resposta aos termos foi registrada. Este link não vale mais.")</p>
+    </div>
+</div>

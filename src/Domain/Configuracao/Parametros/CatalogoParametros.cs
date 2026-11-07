@@ -43,6 +43,7 @@ public static class ChavesParametro
 
     // Matrícula
     public const string MatriculaTrialDiasAviso = "matricula.trial.dias_aviso_antes";
+    public const string MatriculaTermosValidadeDias = "matricula.termos.validade_dias";
 
     // Nível de turma (BL-M02-12): o valor da escolinha é o inicial das turmas novas.
     public const string TurmaMensalidade = "turma.mensalidade";
@@ -179,6 +180,9 @@ public static class CatalogoParametros
         new(ChavesParametro.MatriculaTrialDiasAviso, DominioParametro.Matricula, TipoParametro.Inteiro, EscopoParametro.Escolinha,
             "Aviso do fim do trial", "Quantos dias antes do fim do trial o gestor vê o aviso (e outro no próprio dia).",
             "3", 1, 30, "dias antes", false, "Spec §6 (Aluno)"),
+        new(ChavesParametro.MatriculaTermosValidadeDias, DominioParametro.Matricula, TipoParametro.Inteiro, EscopoParametro.Escolinha,
+            "Validade do link dos termos", "Por quantos dias o link de aceite dos termos (tratamento de dados e uso de imagem) vale para o responsável.",
+            "15", 1, 90, "dias", true, "D111"),
 
         // ── Nível de turma (valor inicial das turmas novas) ──
         new(ChavesParametro.TurmaMensalidade, DominioParametro.Financeiro, TipoParametro.Moeda, EscopoParametro.Turma,

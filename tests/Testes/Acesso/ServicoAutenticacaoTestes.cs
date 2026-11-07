@@ -215,6 +215,7 @@ public class ServicoAutenticacaoTestes
         public Task<RecuperacaoSenha?> ObterRecuperacaoAsync(Guid id, CancellationToken ct = default) => Task.FromResult<RecuperacaoSenha?>(null);
 
         public Task<RecuperacaoSenha?> RecuperacaoPorHashAsync(string tokenHash, CancellationToken ct = default) => Task.FromResult<RecuperacaoSenha?>(null);
+public Task<MinhaEscolinha.Domain.Alunos.PedidoTermos?> PedidoTermosPorHashAsync(string tokenHash, CancellationToken ct = default) =>            Task.FromResult<MinhaEscolinha.Domain.Alunos.PedidoTermos?>(null);
 
         public Task SalvarAsync(CancellationToken ct = default) => Task.CompletedTask;
     }

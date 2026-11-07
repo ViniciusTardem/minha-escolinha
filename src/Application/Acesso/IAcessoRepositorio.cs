@@ -48,6 +48,12 @@ public interface IAcessoRepositorio
 
     void AdicionarVinculo(VinculoAtuacao vinculo);
 
+    /// <summary>
+    /// O pedido de aceite dos termos pelo hash do segredo do link, em qualquer escolinha (a página é anônima: a escolinha
+    /// sai do pedido, D111). Mora aqui, no arquivo autorizado a ignorar o filtro, como o convite.
+    /// </summary>
+    Task<Domain.Alunos.PedidoTermos?> PedidoTermosPorHashAsync(string tokenHash, CancellationToken ct = default);
+
     /// <summary>Pedido de nova senha (BL-M01-09): global, como a credencial.</summary>
     void AdicionarRecuperacao(RecuperacaoSenha recuperacao);
 

@@ -61,7 +61,8 @@ public class ServicoAlunos(
     IValidator<MudarSituacaoRequisicao> validadorSituacao,
     Presencas.IRiscoEvasao risco,
     Financeiro.EfeitosFinanceirosDoCadastro financeiro,
-    Eventos.EfeitosConvocacaoDoCadastro convocacoes)
+    Eventos.EfeitosConvocacaoDoCadastro convocacoes,
+    EmissaoTermos termos)
 {
     public const string Entidade = nameof(Aluno);
     private static readonly CultureInfo PtBr = new("pt-BR");
@@ -218,6 +219,17 @@ public class ServicoAlunos(
 
         var avisos = new List<string>(resolucao.Avisos);
         if (await AvisoCapacidadeAsync(turma, 1, ct) is { } capacidade) avisos.Add(capacidade);
+
+        // D111: os termos que a gestão não coletou vão para o 1º responsável do cadastro aceitar pelo link.
+        var pedeDados = r.Consentimentos.Any(c => c.Finalidade == FinalidadeConsentimento.TratamentoDados && c.Resposta == RespostaConsentimento.NaoColetado);
+        var pedeImagem = r.Consentimentos.Any(c => c.Finalidade == FinalidadeConsentimento.UsoImagem && c.Resposta == RespostaConsentimento.NaoColetado);
+        if (r.EnviarTermos && (pedeDados || pedeImagem))
+        {
+            var principal = resolucao.Resolvidos[0].Responsavel;
+            avisos.Add(await termos.PrepararAsync(aluno.Aluno_ID, aluno.Nome, principal, pedeDados, pedeImagem, ct)
+                ? $"Os termos foram por e-mail para {principal.Nome} aceitar pelo link."
+                : $"{principal.Nome} não tem e-mail: copie o link dos termos na ficha do aluno e repasse.");
+        }
 
         await repositorio.SalvarAsync(ct);
         financeiro.CadastroMudou();

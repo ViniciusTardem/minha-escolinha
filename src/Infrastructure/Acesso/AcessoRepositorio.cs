@@ -9,7 +9,8 @@ namespace MinhaEscolinha.Infrastructure.Acesso;
 /// <summary>
 /// ARQUIVO NA LISTA PERMITIDA do <c>IgnoreQueryFilters</c>: o login e a montagem do contexto leem os vínculos da pessoa
 /// antes de existir escolinha escolhida, e a ativação anônima acha o convite pelo hash do link. Toda leitura que ignora o
-/// filtro aqui filtra explicitamente pela pessoa (e pela escolinha, quando informada) ou pelo hash do convite.
+/// filtro aqui filtra explicitamente pela pessoa (e pela escolinha, quando informada) ou pelo hash do convite ou do pedido de
+/// aceite dos termos (D111).
 /// </summary>
 public class AcessoRepositorio(EscolinhaDbContext contexto) : IAcessoRepositorio
 {
@@ -77,6 +78,9 @@ public class AcessoRepositorio(EscolinhaDbContext contexto) : IAcessoRepositorio
         contexto.Convites.IgnoreQueryFilters().AsNoTracking().FirstOrDefaultAsync(c => c.TokenHash == tokenHash, ct);
 
     public void AdicionarVinculo(VinculoAtuacao vinculo) => contexto.VinculosAtuacao.Add(vinculo);
+
+    public Task<Domain.Alunos.PedidoTermos?> PedidoTermosPorHashAsync(string tokenHash, CancellationToken ct = default) =>
+        contexto.PedidosTermos.IgnoreQueryFilters().AsNoTracking().FirstOrDefaultAsync(p => p.TokenHash == tokenHash, ct);
 
     public void AdicionarRecuperacao(RecuperacaoSenha recuperacao) => contexto.RecuperacoesSenha.Add(recuperacao);
 

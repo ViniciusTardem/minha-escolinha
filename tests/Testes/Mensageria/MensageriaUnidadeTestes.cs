@@ -15,7 +15,11 @@ public class CatalogoGatilhosTestes
         var gatilhos = Enum.GetValues<GatilhoMensagem>();
         Assert.Equal(gatilhos.Length, CatalogoGatilhos.Todas.Count);
         Assert.Equal(gatilhos.OrderBy(g => g), CatalogoGatilhos.Todas.Select(r => r.Gatilho).OrderBy(g => g));
-        Assert.All(gatilhos, g => Assert.Contains(TemplatesPadrao.Todos, t => t.Gatilho == g && t.Tom == TomMensagem.Cordial));
+        // O gatilho só por e-mail (os termos, D111) não tem template da Meta: o texto é do motor.
+        Assert.All(gatilhos.Where(g => !CatalogoGatilhos.Obter(g).SoPorEmail),
+            g => Assert.Contains(TemplatesPadrao.Todos, t => t.Gatilho == g && t.Tom == TomMensagem.Cordial));
+        Assert.DoesNotContain(TemplatesPadrao.Todos, t => CatalogoGatilhos.Obter(t.Gatilho).SoPorEmail);
+        Assert.Equal([GatilhoMensagem.TermosConsentimento], CatalogoGatilhos.Todas.Where(r => r.SoPorEmail).Select(r => r.Gatilho));
     }
 
     [Fact]
@@ -69,7 +73,7 @@ public class CatalogoGatilhosTestes
     {
         // P02: o número é o oficial da plataforma, então as variações ficam prontas para a submissão, e a Meta recusa o
         // texto que termina numa variável, mesmo seguida só de pontuação.
-        Assert.All(Enum.GetValues<GatilhoMensagem>(), g => Assert.All(Enum.GetValues<TomMensagem>(),
+        Assert.All(Enum.GetValues<GatilhoMensagem>().Where(g => !CatalogoGatilhos.Obter(g).SoPorEmail), g => Assert.All(Enum.GetValues<TomMensagem>(),
             tom => Assert.Contains(TemplatesPadrao.Todos, t => t.Gatilho == g && t.Tom == tom)));
         Assert.All(TemplatesPadrao.Todos, p =>
         {

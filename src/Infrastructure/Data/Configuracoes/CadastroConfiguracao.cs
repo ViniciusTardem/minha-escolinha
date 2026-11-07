@@ -5,6 +5,7 @@ using MinhaEscolinha.Domain.Alunos;
 using MinhaEscolinha.Domain.Comum;
 using MinhaEscolinha.Domain.Configuracao;
 using MinhaEscolinha.Domain.Equipe;
+using MinhaEscolinha.Domain.Mensageria;
 using MinhaEscolinha.Domain.Turmas;
 
 namespace MinhaEscolinha.Infrastructure.Data.Configuracoes;
@@ -367,5 +368,35 @@ public class ConsentimentoAlunoConfiguracao : IEntityTypeConfiguration<Consentim
 
         builder.HasIndex(c => new { c.Escolinha_ID, c.Aluno_ID, c.Finalidade, c.RegistradoEm })
             .HasDatabaseName("IX_ConsentimentoAluno_Escolinha_Aluno_Finalidade_Em");
+    }
+}
+
+public class PedidoTermosConfiguracao : IEntityTypeConfiguration<PedidoTermos>
+{
+    public void Configure(EntityTypeBuilder<PedidoTermos> builder)
+    {
+        builder.ToTable("PedidoTermos");
+
+        builder.HasKey(p => p.PedidoTermos_ID).HasName("PK_PedidoTermos");
+        builder.Property(p => p.PedidoTermos_ID).HasDefaultValueSql("NEWSEQUENTIALID()").ValueGeneratedOnAdd();
+        builder.HasOne<Escolinha>().WithMany().HasForeignKey(p => p.Escolinha_ID)
+            .HasConstraintName("FK_PedidoTermos_Escolinha").OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Aluno>().WithMany().HasForeignKey(p => p.Aluno_ID)
+            .HasConstraintName("FK_PedidoTermos_Aluno").OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(p => p.Responsavel).WithMany().HasForeignKey(p => p.Responsavel_ID)
+            .HasConstraintName("FK_PedidoTermos_Responsavel").OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(p => p.TokenHash).HasMaxLength(PedidoTermos.TamanhoHash).IsUnicode(false).IsFixedLength().IsRequired();
+        builder.Property(p => p.TokenProtegido).HasMaxLength(1000).IsUnicode(false);
+        builder.Property(p => p.CriadoPorNome).HasMaxLength(PedidoTermos.TamanhoAutor).IsRequired();
+        builder.Property(p => p.EnviadoPara).HasMaxLength(Mensagem.TamanhoEmail);
+        builder.Property(p => p.RespondidoDoIp).HasMaxLength(PedidoTermos.TamanhoIp).IsUnicode(false);
+        builder.Property(p => p.MotivoCancelamento).HasMaxLength(PedidoTermos.TamanhoMotivo);
+        builder.Property(p => p.Versao).IsRowVersion();
+
+        builder.HasIndex(p => new { p.Escolinha_ID, p.TokenHash }).IsUnique().HasDatabaseName("UQ_PedidoTermos_Escolinha_TokenHash");
+        // A página pública acha o pedido pelo hash, antes de saber a escolinha (como o convite).
+        builder.HasIndex(p => p.TokenHash).HasDatabaseName("IX_PedidoTermos_TokenHash");
+        builder.HasIndex(p => new { p.Escolinha_ID, p.Aluno_ID, p.CriadoEm }).HasDatabaseName("IX_PedidoTermos_Escolinha_Aluno_CriadoEm");
     }
 }
