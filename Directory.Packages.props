@@ -8,7 +8,14 @@
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Fixa também as versões transitivas listadas abaixo (avisos NU1902/NU1903 de 06/11/2026). -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
+
+  <ItemGroup Label="Transitivos com correção de segurança (vêm do Data Protection; só patch da linha 9.0)">
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.22" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="9.0.22" />
+  </ItemGroup>
 
   <ItemGroup Label="Application">
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
