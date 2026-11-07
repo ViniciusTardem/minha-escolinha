@@ -187,4 +187,6 @@ O e-mail serve para duas coisas: o link de nova senha de quem entra com e-mail, 
 
 Publicar a versão anterior por cima. **Atenção às migrations:** a versão nova pode ter alterado o banco, e voltar o código sem voltar o banco pode falhar. Por isso o backup antes de cada publicação (§3).
 
-A subida para o .NET 10 (D113) não trouxe migration: voltar para a versão anterior (.NET 9) é seguro quanto ao banco. O backup da §3 continua valendo.
+A subida para o .NET 10 (D113) não trouxe migration: voltar para a versão anterior (.NET 9) é seguro quanto ao banco, **desde que o `dotnet ef migrations has-pending-model-changes` tenha dado "nada pendente"** (a verificação da D113 ainda não rodou). O backup da §3 continua valendo. Depois de 10/11/2026 o .NET 9 está sem correção de segurança: voltar é só para sair de um problema, não para ficar.
+
+**IIS:** mesmo o app self-contained precisa do módulo do ASP.NET Core (ANCM), que vem do Hosting Bundle e exige administrador para instalar. Na primeira publicação do 10, se o site responder 500.3x, instale o Hosting Bundle 10 (P56).
