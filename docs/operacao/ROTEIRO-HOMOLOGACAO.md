@@ -89,6 +89,7 @@ No celular, com o responsável de dois filhos:
 - [ ] `/jobs` só abre para a equipe da plataforma; os recorrentes da §7 do runbook estão lá, no horário de Brasília.
 - [ ] Reiniciar o site: ninguém é deslogado, os jobs voltam sozinhos e a chave Asaas da escolinha continua valendo.
 - [ ] Logs: nenhum CPF inteiro, nenhuma chave nem token.
+- [ ] Depois da subida para o .NET 10 (D113): o site abre sem erro 500.3x (se abrir, instale o Hosting Bundle 10, P56); o `/health` mostra `hangfire` Healthy; a connection string de produção tem `Application Name`, para o EF e o Hangfire não separarem o pool de conexões sem querer.
 - [ ] Backup do banco restaurado num servidor de teste, com o mesmo certificado do Data Protection: o sistema sobe e a chave Asaas funciona.
 
 ## 10. Antes da produção

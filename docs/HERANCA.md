@@ -18,7 +18,7 @@ Inventário feito em 26/09/2026 e atualizado ao fim de cada fatia.
 
 | O que detectar | No DP | Na Minha Escolinha |
 |---|---|---|
-| **Linguagem, framework e versão** | C#, ASP.NET Core MVC + Razor, .NET 9 | **Igual**: .NET 9, SDK 9.0.100, pacotes 9.0.20. O servidor só tem o runtime 9 (D02); subir para o 10 antes do fim do suporte (P24). |
+| **Linguagem, framework e versão** | C#, ASP.NET Core MVC + Razor, .NET 9 | **Desvio (X02, D113):** .NET 10 LTS, SDK 10.0.100, pacotes 10.0.14; o DP está no 9. Publicação self-contained (P56). |
 | **Camada de dados e migração** | EF Core SQL Server. Migrations em `Infrastructure/Migrations`, aplicadas no startup. PK `<Entidade>_ID` com `NEWSEQUENTIALID()`, `datetime2(3)` no horário de Brasília, índices `IX_`/`UQ_`, tabelas no singular. | Igual. Banco próprio (`escolinhaesporte`, compatibilidade 150) e migration `Inicial` com 11 tabelas. |
 | **Autenticação e autorização** | Cookie próprio + tabela `Usuario` + BCrypt (fator 11) + perfis e políticas. Carimbo de segurança revalidado, troca obrigatória de senha, bloqueio (5 tentativas → 15 min), rate limit no login. | O mesmo mecanismo sobre `Pessoa` + `Credencial` (global) + `VinculoAtuacao` (papel por escolinha), mais o motor de permissões da matriz da §7 (D04, D08) |
 | **Multi-tenant** | Não existe (um cliente só) | Novo: `Escolinha_ID` + filtro global do EF Core + interceptor + contexto por requisição (X01) |
@@ -37,7 +37,7 @@ Portado com o prefixo trocado; ajustes anotados.
 
 | Camada | Arquivos |
 |---|---|
-| Raiz | `global.json` (SDK 9.0.100, igual ao do DP), `Directory.Build.props`, `Directory.Packages.props` (linha 9.0.x, versões do DP), `.gitignore` (+ `docs/metronic/`), `.config/dotnet-tools.json` (dotnet-ef 9.0.20) |
+| Raiz | `global.json` (SDK 10.0.100; o DP usa o 9, X02), `Directory.Build.props`, `Directory.Packages.props` (linha 10.0.x; as demais versões, as do DP), `.gitignore` (+ `docs/metronic/`), `.config/dotnet-tools.json` (dotnet-ef da linha 10) |
 | Domain | `Comum/DataHoraBrasil`, `IEntidadeAuditavel`, `TextoHelper` (+ `NormalizarParaBusca`), `Cpf`, `Telefone` (+ sobrecarga de 1 argumento). `Cnpj` e `Endereco` são novos. |
 | Application | `Comum/ResultadoOperacao` (+ `Campo`, `Invalido`: X06), `Pagina`, `IRelogioBrasil`, `IUsuarioAtual` (Id = `Pessoa_ID`); `Acesso/Senhas` (hash, senha temporária, regra de senha forte) |
 | Infrastructure | `Tempo/RelogioBrasil`; `Data/Interceptadores/AuditoriaInterceptor`; `Seguranca` (BCrypt, guarda de banco de produção); `Data/Seed/SeedAdministradorPlataforma`; `Hangfire/HangfireEscolinhaExtensions`; trechos de `DependencyInjection` |
@@ -158,4 +158,4 @@ Varredura por **conteúdo** em todo `C:\Users\vinic\Documents\Projetos`, em 26/0
 | ZapSign e GoHighLevel | Fora do escopo. As integrações do produto são Asaas e WhatsApp (§8), mais o Stripe da LDNA (X08). |
 | A fila de e-mails e os alertas por e-mail do DP | O e-mail aqui não é canal de aviso (R3). Do DP veio só o envio (`EnvioEmailCaixaLocal` e `EnvioEmailSmtp`, com as mesmas opções `Email:*`), usado apenas no link de nova senha, por job (D107). |
 | Parâmetros em linha única tipada (`ParametrosDp`) | A spec pede catálogo por domínio (X03) |
-| Swashbuckle, `FluentValidation.AspNetCore`, pin de `System.Private.Uri` | Sem API pública; pacote descontinuado. Pin desnecessário: com o EF Core 9.0.20, o build não acusa a vulnerabilidade (NU1903) que motivou o pin no DP. |
+| Swashbuckle, `FluentValidation.AspNetCore`, pin de `System.Private.Uri` | Sem API pública; pacote descontinuado. Pin desnecessário: com o EF Core 9.0.20, o build não acusava a vulnerabilidade (NU1903) que motivou o pin no DP. No .NET 10 a conferência é refeita na máquina do responsável (D112, D113). |

@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dotnet:
+    name: Build e testes (.NET 10)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # SQL Server 2019 descartável para os testes com banco (D114). A senha nasce aqui, a cada execução,
+      # e nunca fica em arquivo versionado (regra de ouro 7).
+      - name: Subir o SQL Server de testes
+        run: |
+          SENHA="Aa1!$(openssl rand -hex 12)"
+          echo "::add-mask::$SENHA"
+          docker run -d --name sql-testes -p 1433:1433 \
+            -e ACCEPT_EULA=Y -e "MSSQL_SA_PASSWORD=$SENHA" \
+            mcr.microsoft.com/mssql/server:2019-latest
+          echo "ESC_TESTES_SQL=Server=localhost,1433;Database=escolinhaesporte_Testes;User ID=sa;Password=$SENHA;TrustServerCertificate=True;Encrypt=False;Application Name=MinhaEscolinha.Testes" >> "$GITHUB_ENV"
+          for i in $(seq 1 40); do
+            if docker logs sql-testes 2>&1 | grep -q "SQL Server is now ready for client connections"; then exit 0; fi
+            sleep 3
+          done
+          docker logs sql-testes
+          echo "SQL Server não ficou pronto a tempo" >&2
+          exit 1
+
+      - name: Restaurar
+        run: |
+          dotnet tool restore
+          dotnet restore MinhaEscolinha.sln
+
+      - name: Compilar (sem aviso)
+        run: dotnet build MinhaEscolinha.sln --no-restore --configuration Release -warnaserror
+
+      - name: Testes (inclui os com banco)
+        run: dotnet test tests/Testes --no-build --configuration Release --logger "trx;LogFileName=resultado.trx"
+
+      - name: Pacotes vulneráveis
+        run: |
+          dotnet list MinhaEscolinha.sln package --vulnerable --include-transitive 2>&1 | tee vulneraveis.txt
+          if grep -q "has the following vulnerable packages" vulneraveis.txt; then
+            echo "Há pacote com vulnerabilidade conhecida." >&2
+            exit 1
+          fi
+
+      - name: Guardar o resultado dos testes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultado-testes
+          path: "**/resultado.trx"
+          if-no-files-found: ignore
+
+  front:
+    name: Front (classes CSS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: src/Web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/Web/package-lock.json
+      - run: npm ci
+      - run: npm run verificar-classes

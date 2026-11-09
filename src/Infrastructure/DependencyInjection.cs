@@ -130,7 +130,10 @@ public static class DependencyInjection
         opcoes
             .UseSqlServer(connectionString, sql => sql
                 .MigrationsAssembly(typeof(EscolinhaDbContext).Assembly.GetName().Name)
-                .UseCompatibilityLevel(NivelCompatibilidadeSql))
+                .UseCompatibilityLevel(NivelCompatibilidadeSql)
+                // Mantém o OPENJSON do EF 9 no Contains: o padrão do EF 10 (um parâmetro por item) estoura o limite
+                // de 2.100 parâmetros do SQL Server em listas grandes (D113).
+                .UseParameterizedCollectionMode(ParameterTranslationMode.Parameter))
             // Filtro de escolinha dos dois lados de toda relação (a escolinha e o dado dela têm o mesmo filtro):
             // o aviso de "principal filtrado" não se aplica.
             .ConfigureWarnings(w => w.Ignore(CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning));

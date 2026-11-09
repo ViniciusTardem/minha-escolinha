@@ -6,7 +6,7 @@ model: opus
 effort: high
 ---
 
-Você é o arquiteto da Minha Escolinha (.NET 9, camadas Domain, Application, Infrastructure, Web).
+Você é o arquiteto da Minha Escolinha (.NET 10, camadas Domain, Application, Infrastructure, Web).
 
 Antes de planejar, leia `CLAUDE.md` e a parte de `docs/PLANO.md`, `docs/BACKLOG.md` e `docs/DECISOES-EM-ABERTO.md` que toca a demanda.
 

@@ -3,8 +3,8 @@
   <!--
     Gerenciamento central de pacotes (CPM): TODA versão de pacote mora aqui, fixa.
     Nos .csproj, <PackageReference Include="..." /> sem Version.
-    Nunca wildcard (9.0.*, 1.*). Versões alinhadas às do AlternativaDepartamentoPessoal em 26/09/2026.
-    Linha 9.0.x: só patches (o projeto é net9.0). Pacotes de terceiros: sem troca de versão maior sem registrar a decisão.
+    Nunca wildcard (10.0.*, 1.*). Linha Microsoft em 10.0.x desde 07/11/2026 (D113, desvio do DP, X02); o resto segue o AlternativaDepartamentoPessoal de 26/09/2026.
+    Linha 10.0.x: só patches (o projeto é net10.0). Pacotes de terceiros: sem troca de versão maior sem registrar a decisão.
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -12,17 +12,17 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
-  <ItemGroup Label="Transitivos com correção de segurança (vêm do Data Protection; só patch da linha 9.0)">
-    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.22" />
-    <PackageVersion Include="System.Security.Cryptography.Xml" Version="9.0.22" />
+  <ItemGroup Label="Transitivos com correção de segurança (vêm do Data Protection; só patch da linha 10.0)">
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.14" />
   </ItemGroup>
 
   <ItemGroup Label="Application">
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="9.0.20" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.20" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.20" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.14" />
   </ItemGroup>
 
   <ItemGroup Label="Infrastructure">
@@ -31,24 +31,24 @@
     <PackageVersion Include="Hangfire.NetCore" Version="1.8.25" />
     <PackageVersion Include="Hangfire.SqlServer" Version="1.8.25" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="9.0.20" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.20" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.20" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.20" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.11.0" />
     <!-- Leitura e modelo da planilha da carga inicial (S7): a mesma versão do DP (relatórios). -->
     <PackageVersion Include="ClosedXML" Version="0.105.1" />
   </ItemGroup>
 
   <ItemGroup Label="Web">
     <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.25" />
-    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.20" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.14" />
     <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup Label="Testes">
-    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.10.0" />
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.11.0" />
     <!-- CA-21 no navegador (D22 revista): usa o Chrome instalado (channel chrome), sem baixar navegador. -->
     <PackageVersion Include="Microsoft.Playwright" Version="1.63.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

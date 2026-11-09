@@ -30,7 +30,7 @@ Públicos:
 ```
 EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
 ├── global.json · Directory.Build.props (prefixo MinhaEscolinha) · Directory.Packages.props (versões fixas)
-├── .config/dotnet-tools.json      (dotnet-ef 9.0.20)
+├── .config/dotnet-tools.json      (dotnet-ef 10.0.14)
 ├── docs/  PLANO · HERANCA · BACKLOG · DECISOES-EM-ABERTO · especificacao/ · design/
 │          operacao/ (RUNBOOK do servidor, script do banco, roteiro de homologação, revisão dos templates)
 │          metronic/ (referência local do Metronic, FORA do git: 61 MB, licença comercial)
@@ -83,7 +83,7 @@ EscolinhaEsporte/                  (pasta; solução MinhaEscolinha.sln)
   E o contrário: a entidade que entra por `DbSet.Add` com a chave de um pai rastreado já aparece na coleção dele (correção de relacionamentos do EF). Acrescentá-la de novo à coleção deixa a lista com ela duas vezes; confira com `Contains` antes (D65).
 - **Multi-escolinha (X01):**
   - toda entidade de escolinha implementa `IEntidadeDaEscolinha` (`Escolinha_ID`), e todo índice único começa por `Escolinha_ID`;
-  - o filtro global de escolinha é fechado por padrão: sem contexto, a consulta devolve zero linhas. No EF Core 9 cada entidade tem **um** filtro e `IgnoreQueryFilters()` ignora todos; outro filtro futuro (ex.: exclusão lógica) entra na mesma expressão;
+  - o filtro global de escolinha é fechado por padrão: sem contexto, a consulta devolve zero linhas. O EF 10 aceita filtros nomeados, mas o projeto mantém **um** filtro anônimo por entidade, e `IgnoreQueryFilters()` ignora todos; outro filtro futuro (ex.: exclusão lógica) entra na mesma expressão;
   - o `EscolinhaInterceptor` carimba a escolinha no insert e lança exceção em gravação sem contexto, em outra escolinha ou trocando `Escolinha_ID`;
   - na requisição, o contexto vem do `ContextoEscolinhaMiddleware`; em plataforma, jobs e startup, do `IExecutorEscolinha`, que abre um escopo com o contexto definido;
   - `IgnoreQueryFilters()` só em `AcessoRepositorio.cs` (que também acha o convite e o pedido dos termos pelo hash do link) e `ConsultasPlataforma.cs`. Um teste falha em qualquer outro arquivo. Aumentar a lista é decisão registrada, nunca atalho;
@@ -231,7 +231,7 @@ Metronic 9 + KTUI + Tailwind 4.1.8 + KeenIcons (só `ki-filled`). O mapa das tel
 ## 7. Comandos
 
 ```powershell
-# .NET 9, igual ao DP: SDK 9.0.100 no global.json (rollForward latestFeature)
+# .NET 10 LTS (D113; o DP está no 9): SDK 10.0.100 no global.json (rollForward latestFeature)
 dotnet build MinhaEscolinha.sln          # precisa terminar sem aviso
 dotnet test tests/Testes                 # inclui os testes com banco (escolinhaesporte_Testes, autenticação do Windows)
                                          # outra conexão para os testes: variável ESC_TESTES_SQL
@@ -298,7 +298,7 @@ dotnet dev-certs https --trust
 ## 8. Avisos operacionais
 
 - **Servidor:** publicação, variáveis de ambiente, integrações, jobs e problemas comuns em [`docs/operacao/RUNBOOK.md`](docs/operacao/RUNBOOK.md); o banco pelo script de `docs/operacao/sql`; a validação antes da produção em [`docs/operacao/ROTEIRO-HOMOLOGACAO.md`](docs/operacao/ROTEIRO-HOMOLOGACAO.md). Mudou uma variável, um job ou uma trava? Atualize o runbook na mesma entrega.
-- **.NET 9 perde o suporte em 10/11/2026.** O projeto está em .NET 9 porque o servidor só tem esse runtime (D02). Antes dessa data, instale o Hosting Bundle do .NET 10 no servidor e suba o projeto, ou publique self-contained (P24).
+- **.NET 10 LTS** (suporte até 10/11/2028, D113). A publicação é self-contained: republique a cada patch do runtime, com o SDK 10 no último patch. O tipo de hospedagem (Hosting Bundle ou self-contained) está na P56. O suporte do .NET 9 acaba em 10/11/2026 (histórico: D02, D109).
 - **Production exige certificado do Data Protection:** `DataProtection:CertificadoArquivo` e `DataProtection:CertificadoSenha`. Sem ele, o app **não sobe**. Perder o certificado significa perder as chaves Asaas de todas as escolinhas, e cada uma terá de vincular a conta de novo.
 - **WhatsApp** (S2): roda em modo **Simulado** (`/dev/whatsapp`) até haver conta na Meta (P34). Trava de ambiente (`GuardaWhatsApp`):
   - **Simulado** em Production: o canal fica desligado, com aviso no log. As mensagens essenciais ficam retidas, e o portal continua;

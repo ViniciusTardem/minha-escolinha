@@ -8,7 +8,7 @@ Plano vivo, atualizado ao fim de cada fatia. Cada documento responde por uma coi
 | **Como** construir | A herança do AlternativaDepartamentoPessoal ([`HERANCA.md`](HERANCA.md)) |
 | **Em que ordem** e onde estamos | Este plano |
 
-Última atualização: **28/09/2026**. **As 8 fatias do piloto estão prontas: os 81 entregáveis.** F0, S0 a S7 e os extras EX-01 e EX-02 estão commitados na `main` (o S7 em `a262578`, pronto sem a planilha real). Nada foi enviado a remoto. Depois do S7: a guarda de 90 dias dos webhooks (P22, D96), a chamada sem sinal validada nesta máquina (P37) e a operação documentada em [`operacao/`](operacao/) (runbook, script do banco e roteiro de homologação). O que falta depende de fora: um servidor com HTTPS público, as contas (da Meta para o S2 e o S5, P34; da Asaas para o S4 e o S6, P41), a planilha da escolinha (P21) e as decisões da §8.
+Última atualização: **07/11/2026** (migração para o .NET 10, EX-09, D113; o resto do quadro vale como em 28/09/2026). **As 8 fatias do piloto estão prontas: os 81 entregáveis.** F0, S0 a S7 e os extras EX-01 e EX-02 estão commitados na `main` (o S7 em `a262578`, pronto sem a planilha real). Nada foi enviado a remoto. Depois do S7: a guarda de 90 dias dos webhooks (P22, D96), a chamada sem sinal validada nesta máquina (P37) e a operação documentada em [`operacao/`](operacao/) (runbook, script do banco e roteiro de homologação). O que falta depende de fora: um servidor com HTTPS público, as contas (da Meta para o S2 e o S5, P34; da Asaas para o S4 e o S6, P41), a planilha da escolinha (P21) e as decisões da §8.
 
 ---
 
@@ -54,7 +54,7 @@ O registro completo, com data, está em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-AB
 
 | Tema | Decisão | Ref. |
 |---|---|---|
-| Runtime | .NET 9, igual ao DP (o servidor só tem o 9). O suporte termina em 10/11/2026: subir para o 10 antes disso. | D02, P24 |
+| Runtime | .NET 10 LTS (suporte até 10/11/2028), publicado self-contained; o DP continua no 9. Verificação na máquina do responsável pendente. | D113, X02, P56 |
 | Multi-escolinha | `Escolinha_ID` + filtro global do EF Core, fechado por padrão, + interceptor que valida as gravações. `IgnoreQueryFilters` só nos arquivos da lista permitida (teste). | X01 |
 | Identidade | `Pessoa` + `Credencial` globais; `VinculoAtuacao` (papel × situação) por escolinha; os vínculos são relidos a cada requisição | D04, D07 |
 | Circularidade do S0 | A equipe da plataforma cria a escolinha e o 1º gestor numa gravação só; a senha temporária aparece uma vez | D05 |
@@ -91,6 +91,7 @@ O registro completo, com data, está em [`DECISOES-EM-ABERTO.md`](DECISOES-EM-AB
 | S7 — Carga inicial da escolinha piloto | 5 | **Pronto** e commitado (`a262578`), com os 5 concluídos, sem a planilha real: o modelo e o mapeamento das colunas a recebem sem código novo (P21). | 28/09/2026 |
 
 | Depois do S7 — pendências decididas pelo responsável e os 4 itens adiados liberados (EX-03 a EX-07) | — | **Pronto** e commitado em blocos (`1b93862`, `6d8c103`, `1447f10`, `bdd6716`, `311f7c5`, `0a3793e`, `1896994` e o bloco final), com as decisões D97 a D110 | 28/09/2026 |
+| EX-09 — Subida para o .NET 10 LTS (D113) | — | **Implementado e verificado no CI** em 09/11/2026 (build 0 aviso, 450 testes aprovados, 1 ignorado); falta na máquina do responsável o teste no SQL Express, o CA-21, o publish e a conferência manual | 07/11/2026 |
 
 Os critérios de aceite, com a fatia em que cada teste nasce, estão no fim do [`BACKLOG.md`](BACKLOG.md).
 
@@ -264,9 +265,9 @@ Antes do piloto de verdade: as contas da Meta e da Asaas (P34, P41), o servidor 
 
 ### 4.10 O que o F0 entregou (referência)
 - **Base do projeto:**
-  - solução de 4 camadas + testes, em .NET 9;
+  - solução de 4 camadas + testes, em .NET 10 (era .NET 9 no F0; D113);
   - Central Package Management, com o prefixo `MinhaEscolinha` nas DLLs;
-  - EF Core 9 com migration no startup;
+  - EF Core com migration no startup (9 no F0, 10 desde a D113);
   - Hangfire com as filas `esc_*` e `/health` (banco + Hangfire).
 - **Segurança e operação:**
   - Serilog em arquivo diário;
@@ -306,8 +307,8 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 
 ## 7. Ambiente local
 
-- **.NET:** o projeto usa o **SDK 9.0.100** (`global.json`, com `rollForward: latestFeature`), como o DP. Os runtimes 9 da máquina são o 9.0.0 do ASP.NET Core e o 9.0.5 do .NET.
-- **SDK 10 também instalado:** o SDK 10.0.401 entrou pelo winget (o instalador pediu reinício do PC) e fica pronto para quando o projeto subir para o 10 (P24). Uma cópia dele no perfil do usuário (`%LOCALAPPDATA%\Microsoft\dotnet`) não é mais necessária e pode ser apagada.
+- **.NET:** o projeto usa o **SDK 10.0.100** (`global.json`, com `rollForward: latestFeature`) desde a D113 (07/11/2026). O DP está no 9. A máquina tem o SDK 10.0.401; o build, os testes e o publish no 10 ainda não foram executados (pendente).
+- **SDK 10:** o 10.0.401 entrou pelo winget (o instalador pediu reinício do PC). Uma cópia dele no perfil do usuário (`%LOCALAPPDATA%\Microsoft\dotnet`) não é mais necessária e pode ser apagada.
 - **Certificado HTTPS de desenvolvimento:** o SDK novo gerou um certificado ainda não confiado. Rode `dotnet dev-certs https --trust` uma vez; o Windows pede confirmação.
 - **SQL Server:**
   - servidor `VINICIUSTARDEM\SQLEXPRESS`, banco `escolinhaesporte` (compatibilidade 150, AUTO_CLOSE desligado);
@@ -346,7 +347,7 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | Revisão jurídica dos termos de consentimento (tratamento de dados e uso de imagem), incluindo o WhatsApp no termo de tratamento de dados | Produção; opt-in da Meta | P29, P15 |
 | A chamada sem sinal num Android e num iPhone, no servidor com HTTPS (nesta máquina já foi validada) | A reabertura da chamada sem sinal no aparelho real (CA-21) | P37 |
 | Confirmar com a planilha real: ela diz quem paga? Traz endereço ou outro campo fora do modelo? | Nada bloqueia; seguem os encaminhamentos provisórios | P52, P54 |
-| Antes de 10/11/2026: publicar self-contained com o runtime 9 mais recente; depois dessa data o .NET 9 fica sem correção de segurança, e subir para o .NET 10 é decisão do responsável | Segurança do servidor | P24, D109 |
+| Rodar na máquina do responsável a verificação da subida para o .NET 10: build com 0 aviso, `dotnet test` com banco, `dotnet ef migrations has-pending-model-changes`, CA-21 e `dotnet publish`; confirmar o tipo de hospedagem | Fechar o EX-09 e a segurança do servidor depois de 10/11/2026 | D113, P56 |
 
 ---
 
@@ -405,3 +406,4 @@ Base: `C:\Users\vinic\Documents\Projetos\.NET\AlternativaDepartamentoPessoal\`. 
 | 28/09/2026 | **Os itens do WhatsApp, por último:** <ul><li>**P02:** a revisão dos 13 templates para a submissão à Meta (`operacao/TEMPLATES-WHATSAPP.md`), conferida nas regras publicadas pela Meta. Utilidade para todos; quatro textos terminam numa variável e ganham a proposta de uma frase fixa; os de 6 ou 7 variáveis correm o risco de "variáveis demais para o tamanho"; os exemplos de cada variável. Nada foi mudado nos textos: a decisão é do responsável.</li><li>**P34 e P14:** o passo a passo da conta na Meta no runbook (§6.2), do app ao webhook, e o que muda para o número de produção.</li><li>**P55, nova:** o envio procura o template pelo nome gravado na mensagem, e trocar a versão na tela descarta o que está na fila com o nome antigo.</li><li>**O teste de contrato instável do WhatsApp (S6):** ao menos 13 rodadas completas seguidas passaram desde a falha (5 delas hoje), e a causa não apareceu. A mensagem daquela falha se perdeu porque a saída do `dotnet test` foi cortada. Na próxima falha, guardar a saída inteira.</li></ul> |
 | 28/09/2026 | **As referências decididas pelo responsável** ("fazer as referências P32, P39, P38, P40, P44, P50, P45, P47, P51, P24, P02, P33, P35, P36, P55, P42, P43, P46, P48, P49, P53, P31, CA-21, D22" e "Item 22, pode fazer"), em blocos commitados: <ul><li>templates nos dois tons e o nome anterior aceito no envio (P02, P55);</li><li>risco com a meta da turma e o mínimo de sessões, fila da chamada por pessoa (P32, P39, P38);</li><li>respostas das famílias, SAIR, remarcação de treino e aviso de horário novo (P35, P36, P33, BL-M04-07);</li><li>nova confirmação, turma do professor, mudança perto do jogo, texto da família e placar (P45, P47, P51, P48, P46);</li><li>cobrar de novo, cliente atualizado na Asaas, QR code, periodicidade e mensalidades no portal (P43, P42, P49, P44, P50);</li><li>horários do local e descarte diário do lote esquecido (P31, P53);</li><li>visão única dos filhos, troca de escolinha e recuperação de senha por e-mail ou link da gestão (BL-M10-02, BL-M01-02, BL-M01-09);</li><li>o CA-21 automatizado no Chrome, com o `Microsoft.Playwright` (D22, D108, X09), aprovado contra o app;</li><li>P24 (continua no .NET 9) e P40 (grupos provisórios) decididas sem código.</li></ul> Decisões D97 a D110. Continuam aguardando o responsável: o servidor, a sandbox da Asaas, a conta na Meta, a revisão jurídica, a identidade visual, o Stripe, a planilha real, os valores dos parâmetros, os aparelhos reais e as fases fora do escopo. |
 | 29/09/2026 | **Termos de consentimento pelo link do responsável** (melhoria pedida pelo responsável, D111, EX-08): o cadastro manda o link de aceite ao 1º responsável por e-mail, pelo motor único (canal E-mail e gatilho novos, aprovados); a página confere o CPF e registra cada termo em separado; a ficha mostra a situação e o link para quem não tem e-mail. Validado no app (e-mail na caixa local, página em 375 e 320 px); corrigido o radio sem escolha, que o KTUI pintava como marcado. 447 testes. |
+| 07/11/2026 | **Subida para o .NET 10 LTS** (D113, EX-09), aprovada pelo responsável nesta sessão; supera a D109 e resolve a P24. Código alterado (SDK 10.0.100, pacotes 10.0.14, `UseParameterizedCollectionMode(Parameter)`), sem migration. **Verificação:** o CI (D114) passou em 09/11/2026; o teste no SQL Express, o CA-21, o publish e a conferência manual ficam para a máquina do responsável (Windows, SDK 10.0.401). Nova pendência P56 (hospedagem). |

@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.EntityFrameworkCore;
 using MinhaEscolinha.Web.Infraestrutura;
 
 namespace MinhaEscolinha.Testes.Arquitetura;
@@ -107,6 +108,34 @@ public partial class RegrasDeOuroTestes
         Assert.True(semNome.Count == 0,
             "Parâmetro de action que é coleção ou dicionário precisa de [FromForm(Name = ...)], [FromQuery(Name = ...)] ou "
             + "[Bind(Prefix = ...)]: " + string.Join(", ", semNome));
+    }
+
+    /// <summary>
+    /// X01 no EF Core 10: toda entidade de escolinha (e a própria Escolinha) tem exatamente UM filtro de consulta, e ele é
+    /// anônimo. Com filtro nomeado, o <c>IgnoreQueryFilters()</c> sem argumento deixaria de ser "tudo ou nada" para quem
+    /// lê o código, e um segundo filtro poderia ficar de fora da checagem de escolinha.
+    /// Atenção: <c>GetDeclaredQueryFilters()</c> e <c>IQueryFilter.Key</c> (nulo = anônimo) são a API do EF Core 10 como
+    /// o plano a descreve; confirmar os nomes exatos no primeiro build com o SDK 10.
+    /// </summary>
+    [Fact]
+    public void Toda_entidade_de_escolinha_tem_exatamente_um_filtro_de_consulta_anonimo()
+    {
+        using var contexto = MinhaEscolinha.Testes.Infraestrutura.BancoDeTestes.NovoContextoSemEscolinha();
+
+        var problemas = new List<string>();
+        foreach (var tipo in contexto.Model.GetEntityTypes()
+                     .Where(t => typeof(MinhaEscolinha.Domain.Comum.IEntidadeDaEscolinha).IsAssignableFrom(t.ClrType)
+                                 || t.ClrType == typeof(MinhaEscolinha.Domain.Configuracao.Escolinha)))
+        {
+            var filtros = tipo.GetDeclaredQueryFilters().ToList();
+            if (filtros.Count != 1)
+                problemas.Add($"{tipo.ClrType.Name}: {filtros.Count} filtros (esperado 1)");
+            else if (filtros[0].Key is not null)
+                problemas.Add($"{tipo.ClrType.Name}: filtro nomeado \"{filtros[0].Key}\" (esperado anônimo)");
+        }
+
+        Assert.True(problemas.Count == 0,
+            "Entidade de escolinha tem um único filtro de consulta, anônimo (X01): " + string.Join("; ", problemas));
     }
 
     [Fact]
