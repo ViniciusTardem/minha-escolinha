@@ -101,7 +101,7 @@ Todos os comandos, inclusive os de cada integração, estão em [`CLAUDE.md`](CL
 
 ## Avisos
 
-- O projeto está no .NET 10 LTS (suporte até 10/11/2028); o suporte do 9 acaba em 10/11/2026. Veja a D113 em `docs/DECISOES-EM-ABERTO.md`. A verificação da subida (build, testes, publish) ainda roda na máquina do responsável.
+- O projeto está no .NET 10 LTS (suporte até 10/11/2028); o suporte do 9 acaba em 10/11/2026. Veja a D113 em `docs/DECISOES-EM-ABERTO.md`. O CI (D114) passou em 09/11/2026 (build 0 aviso, 450 testes); faltam, na máquina do responsável, o teste no SQL Express, o CA-21 e o publish.
 - Em produção, o app exige o certificado do Data Protection. Sem ele, não sobe.
 - Cobrança real e WhatsApp real para números que não são de teste só com aprovação explícita.
 
